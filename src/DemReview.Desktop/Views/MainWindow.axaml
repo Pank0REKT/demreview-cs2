@@ -1,0 +1,140 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:DemReview.Desktop.ViewModels"
+        xmlns:behaviors="using:DemReview.Desktop.Behaviors"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
+        x:Class="DemReview.Desktop.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding WindowTitle}"
+        Width="1280" Height="800" MinWidth="900" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        behaviors:FileDrop.Command="{Binding LoadFileCommand}">
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenCommand}" />
+        <KeyBinding Gesture="F5" Command="{Binding ReloadCommand}" />
+        <KeyBinding Gesture="Escape" Command="{Binding CancelCommand}" />
+    </Window.KeyBindings>
+
+    <DockPanel>
+        <!-- Меню -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_Файл">
+                <MenuItem Header="_Открыть демку…" InputGesture="Ctrl+O" Command="{Binding OpenCommand}" />
+                <MenuItem Header="_Повторный анализ" InputGesture="F5" Command="{Binding ReloadCommand}" />
+                <Separator />
+                <MenuItem Header="_Отменить разбор" InputGesture="Escape" Command="{Binding CancelCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Сервис">
+                <MenuItem Header="Папка с картами (maps)" Command="{Binding OpenMapsFolderCommand}" />
+                <MenuItem Header="Папка данных и журналов" Command="{Binding OpenDataFolderCommand}" />
+            </MenuItem>
+        </Menu>
+
+        <!-- Строка состояния: прогресс и отмена -->
+        <Border DockPanel.Dock="Bottom" Padding="12,6" Background="{DynamicResource PanelBackgroundBrush}">
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                <ProgressBar Grid.Column="1" Width="240" Minimum="0" Maximum="100"
+                             Value="{Binding ProgressPercent}" IsVisible="{Binding IsBusy}" VerticalAlignment="Center" />
+                <Button Grid.Column="2" Content="Отмена (Esc)" Command="{Binding CancelCommand}" IsVisible="{Binding IsBusy}" />
+            </Grid>
+        </Border>
+
+        <!-- Сообщение об ошибке -->
+        <Border DockPanel.Dock="Top" IsVisible="{Binding HasError}" Margin="12,8,12,0" Padding="12,8" CornerRadius="4"
+                Background="#4D2B2B" BorderBrush="#C25050" BorderThickness="1">
+            <Grid ColumnDefinitions="*,Auto">
+                <SelectableTextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                <Button Grid.Column="1" Content="Закрыть" Command="{Binding DismissErrorCommand}" Margin="12,0,0,0" />
+            </Grid>
+        </Border>
+
+        <Grid ColumnDefinitions="320,4,*">
+            <!-- Левая панель: игроки -->
+            <DockPanel Margin="12,12,0,12">
+                <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="0,0,0,8">
+                    <TextBlock Classes="header" Text="Игроки" />
+                    <TextBlock Classes="secondary" Text="{Binding MatchSummary}" TextWrapping="Wrap" IsVisible="{Binding HasMatch}" />
+                </StackPanel>
+                <Grid>
+                    <ListBox ItemsSource="{Binding Players}" SelectedItem="{Binding SelectedPlayer}" IsVisible="{Binding HasMatch}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:PlayerRowViewModel">
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" Margin="0,2">
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Column="1" Text="{Binding KdaText}" />
+                                    <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Classes="secondary" Text="{Binding TeamText}"
+                                               Classes.side-t="{Binding Side, Converter={x:Static vm:SideConverters.IsT}}"
+                                               Classes.side-ct="{Binding Side, Converter={x:Static vm:SideConverters.IsCT}}" />
+                                    <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Classes="secondary" Text="{Binding SteamIdText}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <TextBlock IsVisible="{Binding !HasMatch}" Classes="secondary" TextWrapping="Wrap" Margin="0,8"
+                               Text="Список игроков появится после открытия демки." />
+                </Grid>
+            </DockPanel>
+
+            <GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="Transparent" />
+
+            <!-- Центр: вкладки -->
+            <Grid Grid.Column="2" Margin="0,4,12,12">
+                <!-- Пустое состояние -->
+                <Border IsVisible="{Binding !HasMatch}" BorderBrush="{DynamicResource PanelBorderBrush}"
+                        BorderThickness="2" CornerRadius="8" Margin="0,8,0,0">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12">
+                        <TextBlock Classes="header" HorizontalAlignment="Center" Text="Перетащите сюда файл .dem" />
+                        <TextBlock Classes="secondary" HorizontalAlignment="Center" Text="или откройте его через меню «Файл» (Ctrl+O)" />
+                        <Button HorizontalAlignment="Center" Content="Открыть демку…" Command="{Binding OpenCommand}" IsEnabled="{Binding IsIdle}" />
+                    </StackPanel>
+                </Border>
+
+                <TabControl IsVisible="{Binding HasMatch}">
+                    <TabItem Header="Радар">
+                        <Grid>
+                            <TextBlock IsVisible="{Binding !HasSelectedPlayer}" Classes="secondary" HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" Text="Выберите игрока в списке слева." />
+                            <StackPanel IsVisible="{Binding HasSelectedPlayer}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
+                                <TextBlock Classes="header" HorizontalAlignment="Center" Text="{Binding SelectedPlayer.Name, FallbackValue=''}" />
+                                <TextBlock Classes="secondary" HorizontalAlignment="Center" Text="Радар с маршрутами игрока — этап 2." />
+                            </StackPanel>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem Header="Статистика">
+                        <DataGrid ItemsSource="{Binding Rounds}" IsReadOnly="True" AutoGenerateColumns="False"
+                                  GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Раунд" Binding="{Binding Number}" x:DataType="vm:RoundRowViewModel" />
+                                <DataGridTextColumn Header="Счёт до (T : CT)" Binding="{Binding ScoreBefore}" x:DataType="vm:RoundRowViewModel" />
+                                <DataGridTextColumn Header="Победитель" Binding="{Binding Winner}" x:DataType="vm:RoundRowViewModel" />
+                                <DataGridTextColumn Header="Причина" Binding="{Binding Reason}" x:DataType="vm:RoundRowViewModel" Width="*" />
+                                <DataGridTextColumn Header="Длительность" Binding="{Binding Duration}" x:DataType="vm:RoundRowViewModel" />
+                                <DataGridTextColumn Header="Овертайм" Binding="{Binding Overtime}" x:DataType="vm:RoundRowViewModel" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </TabItem>
+
+                    <TabItem Header="Профиль игрока">
+                        <Grid>
+                            <TextBlock IsVisible="{Binding !HasSelectedPlayer}" Classes="secondary" HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" Text="Выберите игрока в списке слева." />
+                            <StackPanel IsVisible="{Binding HasSelectedPlayer}" Margin="8" Spacing="6">
+                                <TextBlock Classes="header" Text="{Binding SelectedPlayer.Name, FallbackValue=''}" />
+                                <TextBlock Text="{Binding SelectedPlayer.SteamIdText, StringFormat='SteamID: {0}', FallbackValue=''}" />
+                                <TextBlock Text="{Binding SelectedPlayer.TeamText, StringFormat='Команда: {0}', FallbackValue=''}" />
+                                <TextBlock Text="{Binding SelectedPlayer.KdaText, StringFormat='Убийства / смерти / ассисты: {0}', FallbackValue=''}" />
+                                <TextBlock Text="{Binding SelectedPlayer.SidesByHalfText, FallbackValue=''}" />
+                                <TextBlock Classes="secondary" Margin="0,12,0,0" Text="Паттерны поведения и профиль — этап 6." />
+                            </StackPanel>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</Window>

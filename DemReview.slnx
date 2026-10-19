@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DemReview.Application/DemReview.Application.csproj" />
+    <Project Path="src/DemReview.Desktop/DemReview.Desktop.csproj" />
+    <Project Path="src/DemReview.Domain/DemReview.Domain.csproj" />
+    <Project Path="src/DemReview.Infrastructure/DemReview.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DemReview.Tests/DemReview.Tests.csproj" />
+  </Folder>
+</Solution>

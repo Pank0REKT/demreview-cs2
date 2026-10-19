@@ -1,0 +1,59 @@
+using Avalonia.Controls;
+using Avalonia.Platform.Storage;
+using Avalonia.Threading;
+
+namespace DemReview.Desktop.Services;
+
+/// <summary>Доступ к UI-потоку из ViewModel без прямой зависимости от Avalonia.</summary>
+public interface IUiDispatcher
+{
+    void Post(Action action);
+}
+
+public sealed class AvaloniaUiDispatcher : IUiDispatcher
+{
+    public void Post(Action action)
+    {
+        if (Dispatcher.UIThread.CheckAccess())
+            action();
+        else
+            Dispatcher.UIThread.Post(action);
+    }
+}
+
+/// <summary><see cref="IProgress{T}"/>, доставляющий обновления в UI-поток через Dispatcher.UIThread.</summary>
+public sealed class UiProgress<T>(IUiDispatcher dispatcher, Action<T> handler) : IProgress<T>
+{
+    public void Report(T value) => dispatcher.Post(() => handler(value));
+}
+
+/// <summary>Ссылка на главное окно — для диалогов, которым нужен TopLevel.</summary>
+public sealed class MainWindowAccessor
+{
+    public Window? Window { get; set; }
+}
+
+public interface IFileDialogService
+{
+    Task<string?> PickDemoFileAsync();
+}
+
+public sealed class AvaloniaFileDialogService(MainWindowAccessor windowAccessor) : IFileDialogService
+{
+    private static readonly FilePickerFileType DemoFileType = new("Демки CS2 (*.dem)") { Patterns = ["*.dem"] };
+
+    public async Task<string?> PickDemoFileAsync()
+    {
+        if (windowAccessor.Window?.StorageProvider is not { } storage)
+            return null;
+
+        var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Открыть демку CS2",
+            AllowMultiple = false,
+            FileTypeFilter = [DemoFileType, FilePickerFileTypes.All],
+        });
+
+        return files.Count > 0 ? files[0].TryGetLocalPath() : null;
+    }
+}

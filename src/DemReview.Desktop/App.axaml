@@ -1,0 +1,43 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="DemReview.Desktop.App"
+             Name="DemReview"
+             RequestedThemeVariant="Dark">
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#A6ADB8" />
+                    <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#1C1F24" />
+                    <SolidColorBrush x:Key="PanelBorderBrush" Color="#3A3F47" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#5A6270" />
+                    <SolidColorBrush x:Key="PanelBackgroundBrush" Color="#F0F2F5" />
+                    <SolidColorBrush x:Key="PanelBorderBrush" Color="#C8CDD4" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+
+        <Style Selector="TextBlock.secondary">
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+        <Style Selector="TextBlock.header">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="TextBlock.side-t">
+            <Setter Property="Foreground" Value="#E8B04A" />
+        </Style>
+        <Style Selector="TextBlock.side-ct">
+            <Setter Property="Foreground" Value="#6FA8DC" />
+        </Style>
+    </Application.Styles>
+</Application>

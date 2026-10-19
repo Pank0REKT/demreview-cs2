@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\DemReview.Domain\DemReview.Domain.csproj" />
+    <ProjectReference Include="..\DemReview.Application\DemReview.Application.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="DemoFile.Game.Cs" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="DemReview.Tests" />
+  </ItemGroup>
+</Project>

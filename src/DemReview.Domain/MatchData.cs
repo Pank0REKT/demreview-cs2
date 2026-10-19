@@ -1,0 +1,61 @@
+using System.Numerics;
+
+namespace DemReview.Domain;
+
+/// <summary>Результат разбора одной демки.</summary>
+public sealed record MatchData(
+    string SourcePath,
+    string MapName,
+    int TickRate,
+    MatchScore FinalScore,
+    IReadOnlyList<RoundInfo> Rounds,
+    IReadOnlyList<PlayerInfo> Players,
+    IReadOnlyList<KillEvent> Kills)
+{
+    public PlayerInfo? FindPlayer(ulong steamId) => Players.FirstOrDefault(p => p.SteamId == steamId);
+}
+
+/// <summary>Итоговый счёт. Команды названы по составу на конец матча.</summary>
+public sealed record MatchScore(string TeamTName, int TeamTScore, string TeamCTName, int TeamCTScore);
+
+/// <summary>Раунд матча. Тики — игровые (GameTick).</summary>
+public sealed record RoundInfo(
+    int Number,
+    int StartTick,
+    int FreezeEndTick,
+    int EndTick,
+    Side Winner,
+    RoundEndReason EndReason,
+    int ScoreTBefore,
+    int ScoreCTBefore,
+    bool IsOvertime)
+{
+    public bool ContainsTick(int tick) => tick >= StartTick && tick <= EndTick;
+}
+
+/// <summary>Игрок матча. Идентифицируется по SteamID (боты — по синтетическому ID).</summary>
+public sealed record PlayerInfo(
+    ulong SteamId,
+    string Name,
+    bool IsBot,
+    Side FinalSide,
+    string TeamName,
+    int Kills,
+    int Deaths,
+    int Assists,
+    IReadOnlyDictionary<int, Side> SideByRound)
+{
+    public Side SideInRound(int round) => SideByRound.TryGetValue(round, out var side) ? side : Side.None;
+}
+
+/// <summary>Убийство (игрок → игрок).</summary>
+public sealed record KillEvent(
+    int Tick,
+    int Round,
+    ulong? AttackerSteamId,
+    ulong VictimSteamId,
+    ulong? AssisterSteamId,
+    string Weapon,
+    bool Headshot,
+    Vector3? AttackerPosition,
+    Vector3 VictimPosition);
