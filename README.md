@@ -115,7 +115,7 @@ updates are installed manually by downloading the new build.
 Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download).
 
 ```bash
-git clone <repository url>
+git clone https://github.com/Pank0REKT/demreview.git
 cd demreview
 dotnet build DemReview.slnx
 dotnet test --solution DemReview.slnx
