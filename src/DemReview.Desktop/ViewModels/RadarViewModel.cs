@@ -5,6 +5,7 @@ using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DemReview.Application;
+using DemReview.Application.Grenades;
 using DemReview.Application.Maps;
 using DemReview.Application.Routes;
 using DemReview.Desktop.Controls;
@@ -13,19 +14,27 @@ using Microsoft.Extensions.Logging;
 
 namespace DemReview.Desktop.ViewModels;
 
-/// <summary>Вкладка «Радар»: подложка карты, маршруты выбранного игрока, частые маршруты и тайминги.</summary>
+/// <summary>Вкладка «Радар»: подложка карты, маршруты и гранаты выбранного игрока, частые маршруты, раскидки.</summary>
 public partial class RadarViewModel(
     IRouteAnalysisService routeAnalysis,
+    IGrenadeAnalysisService grenadeAnalysis,
     IMapConfigProvider mapConfigs,
     IMapImageProvider mapImages,
     IMapCoordinateConverter converter,
+    ISettingsService settings,
     IPlatformService platform,
     ILogger<RadarViewModel> logger) : ViewModelBase
 {
+    /// <summary>Радиус облака дыма и зоны огня, игровые units.</summary>
+    private const float SmokeRadius = 144;
+    private const float FireRadius = 120;
+
     private MatchData? _match;
     private MapConfig? _map;
-    private RouteAnalysis? _analysis;
+    private RouteAnalysis? _routes;
+    private GrenadeAnalysis? _grenades;
     private int _analysisVersion;
+    private bool _updatingSelection;
 
     [ObservableProperty]
     public partial Bitmap? MapImage { get; private set; }
@@ -41,7 +50,13 @@ public partial class RadarViewModel(
     public partial IReadOnlyList<RadarRoute> Routes { get; private set; } = [];
 
     [ObservableProperty]
+    public partial IReadOnlyList<RadarGrenade> Grenades { get; private set; } = [];
+
+    [ObservableProperty]
     public partial IReadOnlySet<int> HighlightedRounds { get; private set; } = new HashSet<int>();
+
+    [ObservableProperty]
+    public partial IReadOnlySet<int> HighlightedGrenades { get; private set; } = new HashSet<int>();
 
     [ObservableProperty]
     public partial Func<Point, Point>? RadarToWorld { get; private set; }
@@ -50,10 +65,28 @@ public partial class RadarViewModel(
     public partial bool ShowRoutes { get; set; } = true;
 
     [ObservableProperty]
+    public partial bool ShowGrenades { get; set; } = true;
+
+    [ObservableProperty]
     public partial bool ShowT { get; set; } = true;
 
     [ObservableProperty]
     public partial bool ShowCT { get; set; } = true;
+
+    [ObservableProperty]
+    public partial bool ShowHe { get; set; } = true;
+
+    [ObservableProperty]
+    public partial bool ShowFlash { get; set; } = true;
+
+    [ObservableProperty]
+    public partial bool ShowSmoke { get; set; } = true;
+
+    [ObservableProperty]
+    public partial bool ShowFire { get; set; } = true;
+
+    [ObservableProperty]
+    public partial bool ShowDecoy { get; set; } = true;
 
     [ObservableProperty]
     public partial RouteRoundRow? SelectedRound { get; set; }
@@ -62,7 +95,13 @@ public partial class RadarViewModel(
     public partial FrequentRouteRow? SelectedFrequentRoute { get; set; }
 
     [ObservableProperty]
-    public partial bool IsAnalyzing { get; private set; }
+    public partial GrenadeClusterRow? SelectedCluster { get; set; }
+
+    [ObservableProperty]
+    public partial GrenadeThrowRow? SelectedThrow { get; set; }
+
+    [ObservableProperty]
+    public partial string FlashSummaryText { get; private set; } = "";
 
     public ObservableCollection<RouteRoundRow> RoundRows { get; } = [];
 
@@ -70,25 +109,26 @@ public partial class RadarViewModel(
 
     public ObservableCollection<ZoneTimingRow> ZoneTimings { get; } = [];
 
+    public ObservableCollection<GrenadeClusterRow> GrenadeClusters { get; } = [];
+
+    public ObservableCollection<GrenadeThrowRow> GrenadeThrows { get; } = [];
+
+    public ObservableCollection<GrenadeSummaryRow> GrenadeSummary { get; } = [];
+
     public bool HasMapHint => MapHint is not null;
 
-    partial void OnShowTChanged(bool value) => RebuildRoutes();
+    partial void OnShowTChanged(bool value) => RebuildLayers();
+    partial void OnShowCTChanged(bool value) => RebuildLayers();
+    partial void OnShowHeChanged(bool value) => RebuildLayers();
+    partial void OnShowFlashChanged(bool value) => RebuildLayers();
+    partial void OnShowSmokeChanged(bool value) => RebuildLayers();
+    partial void OnShowFireChanged(bool value) => RebuildLayers();
+    partial void OnShowDecoyChanged(bool value) => RebuildLayers();
 
-    partial void OnShowCTChanged(bool value) => RebuildRoutes();
-
-    partial void OnSelectedRoundChanged(RouteRoundRow? value)
-    {
-        if (value is not null)
-            SelectedFrequentRoute = null;
-        UpdateHighlight();
-    }
-
-    partial void OnSelectedFrequentRouteChanged(FrequentRouteRow? value)
-    {
-        if (value is not null)
-            SelectedRound = null;
-        UpdateHighlight();
-    }
+    partial void OnSelectedRoundChanged(RouteRoundRow? value) => OnSelectionChanged(value);
+    partial void OnSelectedFrequentRouteChanged(FrequentRouteRow? value) => OnSelectionChanged(value);
+    partial void OnSelectedClusterChanged(GrenadeClusterRow? value) => OnSelectionChanged(value);
+    partial void OnSelectedThrowChanged(GrenadeThrowRow? value) => OnSelectionChanged(value);
 
     /// <summary>Новая демка: конфиг карты и изображение подложки.</summary>
     public void SetMatch(MatchData match)
@@ -120,7 +160,7 @@ public partial class RadarViewModel(
         Clear();
     }
 
-    /// <summary>Анализ маршрутов выбранного игрока — в фоновом потоке.</summary>
+    /// <summary>Анализ маршрутов и гранат выбранного игрока — в фоновом потоке.</summary>
     public async Task ShowPlayerAsync(ulong? steamId)
     {
         var version = ++_analysisVersion;
@@ -130,33 +170,24 @@ public partial class RadarViewModel(
             return;
         }
 
-        IsAnalyzing = true;
-        try
-        {
-            var analysis = await Task.Run(() => routeAnalysis.Analyze(match, id));
-            if (version != _analysisVersion)
-                return;
+        var current = settings.Current;
+        var clusterOptions = new GrenadeClusterOptions(current.GrenadeClusterThrowDistance, current.GrenadeClusterLandDistance);
+        var (routes, grenades) = await Task.Run(() =>
+            (routeAnalysis.Analyze(match, id), grenadeAnalysis.Analyze(match, id, clusterOptions)));
+        if (version != _analysisVersion)
+            return;
 
-            _analysis = analysis;
-            FillLists(analysis);
-            RebuildRoutes();
-        }
-        finally
-        {
-            if (version == _analysisVersion)
-                IsAnalyzing = false;
-        }
+        _routes = routes;
+        _grenades = grenades;
+        FillLists(routes, grenades);
+        RebuildLayers();
     }
 
     [RelayCommand]
     private void OpenMapsFolder() => platform.OpenFolder(platform.MapsDirectory);
 
     [RelayCommand]
-    private void ClearSelection()
-    {
-        SelectedRound = null;
-        SelectedFrequentRoute = null;
-    }
+    private void ClearSelection() => OnSelectionChanged(null);
 
     private Bitmap? LoadImage(string mapName, List<string> hints)
     {
@@ -180,67 +211,163 @@ public partial class RadarViewModel(
 
     private void Clear()
     {
-        _analysis = null;
+        _routes = null;
+        _grenades = null;
         RoundRows.Clear();
         FrequentRoutes.Clear();
         ZoneTimings.Clear();
+        GrenadeClusters.Clear();
+        GrenadeThrows.Clear();
+        GrenadeSummary.Clear();
+        FlashSummaryText = "";
         Routes = [];
-        HighlightedRounds = new HashSet<int>();
+        Grenades = [];
+        OnSelectionChanged(null);
     }
 
-    private void FillLists(RouteAnalysis analysis)
+    private void FillLists(RouteAnalysis routes, GrenadeAnalysis grenades)
     {
-        SelectedRound = null;
-        SelectedFrequentRoute = null;
+        OnSelectionChanged(null);
 
         RoundRows.Clear();
-        foreach (var round in analysis.Rounds)
+        foreach (var round in routes.Rounds)
             RoundRows.Add(new RouteRoundRow(round));
 
         FrequentRoutes.Clear();
-        foreach (var route in analysis.FrequentRoutes)
+        foreach (var route in routes.FrequentRoutes)
             FrequentRoutes.Add(new FrequentRouteRow(route));
 
         ZoneTimings.Clear();
-        foreach (var timing in analysis.ZoneTimings.Where(t => t.Rounds >= 2))
+        foreach (var timing in routes.ZoneTimings.Where(t => t.Rounds >= 2))
             ZoneTimings.Add(new ZoneTimingRow(timing));
+
+        GrenadeClusters.Clear();
+        foreach (var cluster in grenades.Clusters)
+            GrenadeClusters.Add(new GrenadeClusterRow(cluster));
+
+        GrenadeThrows.Clear();
+        foreach (var t in grenades.Throws)
+            GrenadeThrows.Add(new GrenadeThrowRow(t, grenades.LandZones.GetValueOrDefault(t.Id, ""), _match!));
+
+        GrenadeSummary.Clear();
+        foreach (var s in grenades.Summary)
+            GrenadeSummary.Add(new GrenadeSummaryRow(s));
+
+        var f = grenades.Flashes;
+        FlashSummaryText = f.Thrown == 0
+            ? "Флешек не бросал."
+            : $"Флешек: {f.Thrown}. Ослепил противников: {f.EnemiesBlinded} ({f.EnemyBlindSeconds:F1} с), " +
+              $"союзников: {f.TeammatesBlinded} ({f.TeammateBlindSeconds:F1} с), себя: {f.SelfBlinded}. " +
+              $"Без ослеплённых противников: {f.WithoutEnemyVictims}.";
     }
 
-    private void RebuildRoutes()
+    private bool IsSideVisible(Side side) => side switch
     {
-        if (_analysis is not { } analysis || _map is not { } map)
-        {
-            Routes = [];
+        Side.T => ShowT,
+        Side.CT => ShowCT,
+        _ => ShowT && ShowCT,
+    };
+
+    private bool IsTypeVisible(GrenadeType type) => type switch
+    {
+        GrenadeType.HighExplosive => ShowHe,
+        GrenadeType.Flashbang => ShowFlash,
+        GrenadeType.Smoke => ShowSmoke,
+        GrenadeType.Molotov or GrenadeType.Incendiary => ShowFire,
+        GrenadeType.Decoy => ShowDecoy,
+        _ => true,
+    };
+
+    private void RebuildLayers()
+    {
+        if (_map is not { } map)
             return;
+
+        Point ToRadar(System.Numerics.Vector3 world)
+        {
+            var v = converter.ToRadar(map, world);
+            return new Point(v.X, v.Y);
         }
 
         var tIndex = 0;
         var ctIndex = 0;
-        Routes = analysis.Rounds
-            .Where(r => r.Side == Side.T ? ShowT : r.Side == Side.CT ? ShowCT : ShowT && ShowCT)
+        Routes = _routes is null ? [] : _routes.Rounds
+            .Where(r => IsSideVisible(r.Side))
             .Select(r =>
             {
                 var color = r.Side == Side.CT ? Palette.Ct(ctIndex++) : Palette.T(tIndex++);
-                var points = r.Path.Select(s => converter.ToRadar(map, s.Position)).Select(v => new Point(v.X, v.Y)).ToList();
+                var points = r.Path.Select(s => ToRadar(s.Position)).ToList();
                 var lower = r.Path.Select(s => converter.IsLowerLevel(map, s.Position)).ToList();
                 return new RadarRoute(r.Round, points, lower, color, r.Died);
             })
             .ToList();
+
+        Grenades = _grenades is null ? [] : _grenades.Throws
+            .Where(g => IsSideVisible(g.ThrowerSide) && IsTypeVisible(g.Type))
+            .Select(g => new RadarGrenade(
+                g.Id,
+                g.Round,
+                KindOf(g.Type),
+                ToRadar(g.ThrowerPosition),
+                g.DetonatePosition is { } land ? ToRadar(land) : null,
+                (g.Type == GrenadeType.Smoke ? SmokeRadius : FireRadius) / map.Scale,
+                Palette.Grenade(g.Type)))
+            .ToList();
     }
 
-    private void UpdateHighlight()
+    /// <summary>Выбор в одном списке снимает выбор в остальных и задаёт подсветку на радаре.</summary>
+    private void OnSelectionChanged(object? selected)
     {
-        HighlightedRounds = SelectedRound is { } round ? new HashSet<int> { round.Round }
-            : SelectedFrequentRoute is { } frequent ? frequent.Route.Rounds.ToHashSet()
-            : new HashSet<int>();
+        if (_updatingSelection)
+            return;
+
+        _updatingSelection = true;
+        try
+        {
+            if (selected is not RouteRoundRow) SelectedRound = null;
+            if (selected is not FrequentRouteRow) SelectedFrequentRoute = null;
+            if (selected is not GrenadeClusterRow) SelectedCluster = null;
+            if (selected is not GrenadeThrowRow) SelectedThrow = null;
+        }
+        finally
+        {
+            _updatingSelection = false;
+        }
+
+        (HighlightedRounds, HighlightedGrenades) = selected switch
+        {
+            RouteRoundRow r => (new HashSet<int> { r.Round }, new HashSet<int>()),
+            FrequentRouteRow f => (f.Route.Rounds.ToHashSet(), new HashSet<int>()),
+            GrenadeClusterRow c => (c.Cluster.Rounds.ToHashSet(), c.Cluster.Throws.Select(t => t.Id).ToHashSet()),
+            GrenadeThrowRow t => (new HashSet<int> { t.Throw.Round }, new HashSet<int> { t.Throw.Id }),
+            _ => ((IReadOnlySet<int>)new HashSet<int>(), (IReadOnlySet<int>)new HashSet<int>()),
+        };
     }
 
-    /// <summary>Оттенки для маршрутов: тёплые для T, холодные для CT, соседние раунды различимы.</summary>
+    private static RadarGrenadeKind KindOf(GrenadeType type) => type switch
+    {
+        GrenadeType.HighExplosive => RadarGrenadeKind.HighExplosive,
+        GrenadeType.Flashbang => RadarGrenadeKind.Flash,
+        GrenadeType.Smoke => RadarGrenadeKind.Smoke,
+        GrenadeType.Decoy => RadarGrenadeKind.Decoy,
+        _ => RadarGrenadeKind.Fire,
+    };
+
+    /// <summary>Цвета слоёв: маршруты T — тёплые, CT — холодные; гранаты — по типу.</summary>
     private static class Palette
     {
         public static Color T(int i) => FromHsv(18 + (i * 37) % 50, 0.85, 1.0);
 
         public static Color Ct(int i) => FromHsv(185 + (i * 41) % 60, 0.75, 1.0);
+
+        public static Color Grenade(GrenadeType type) => type switch
+        {
+            GrenadeType.HighExplosive => Color.FromRgb(255, 80, 80),
+            GrenadeType.Flashbang => Color.FromRgb(250, 240, 120),
+            GrenadeType.Smoke => Color.FromRgb(205, 212, 222),
+            GrenadeType.Molotov or GrenadeType.Incendiary => Color.FromRgb(255, 140, 26),
+            _ => Color.FromRgb(110, 215, 110),
+        };
 
         private static Color FromHsv(double h, double s, double v)
         {
@@ -294,4 +421,45 @@ public sealed class ZoneTimingRow(ZoneTiming timing)
     public string Median => Texts.Time(timing.MedianArrival);
 
     public string Range => $"{Texts.Time(timing.EarliestArrival)} – {Texts.Time(timing.LatestArrival)}";
+}
+
+public sealed class GrenadeClusterRow(GrenadeCluster cluster)
+{
+    public GrenadeCluster Cluster { get; } = cluster;
+
+    public string Header =>
+        $"{Texts.GrenadeName(Cluster.Type)} ×{Cluster.Throws.Count} · {Texts.SideShort(Cluster.Side)} · ~{Texts.Time(Cluster.MedianThrowTime)}";
+
+    public string RouteText => $"{Texts.ZoneOrUnknown(Cluster.FromZone)} → {Texts.ZoneOrUnknown(Cluster.ToZone)}";
+
+    public string RoundsText => "Раунды: " + string.Join(", ", Cluster.Rounds);
+}
+
+public sealed class GrenadeThrowRow(GrenadeThrow grenade, string landZone, MatchData match)
+{
+    public GrenadeThrow Throw { get; } = grenade;
+
+    public string Header => $"Р{Throw.Round} · {Texts.Time(Throw.ThrowTime)} · {Texts.GrenadeName(Throw.Type)} · {Texts.SideShort(Throw.ThrowerSide)}";
+
+    public string Details
+    {
+        get
+        {
+            var target = Throw.Detonated ? Texts.ZoneOrUnknown(landZone) : "не сработала";
+            var text = $"{Texts.ZoneOrUnknown(Throw.ThrowerPlace)} → {target}";
+            if (Throw.Type != GrenadeType.Flashbang || Throw.FlashVictims.Count == 0)
+                return text;
+
+            var victims = Throw.FlashVictims
+                .OrderBy(v => v.IsTeammate)
+                .Select(v => $"{(v.IsSelf ? "себя" : match.FindPlayer(v.SteamId)?.Name ?? "?")}{(v.IsTeammate && !v.IsSelf ? " (союзник)" : "")} {v.Duration:F1} с");
+            return $"{text} · ослепил: {string.Join(", ", victims)}";
+        }
+    }
+}
+
+public sealed class GrenadeSummaryRow(GrenadeTypeSummary summary)
+{
+    public string Text =>
+        $"{Texts.SideShort(summary.Side)} · {Texts.GrenadeName(summary.Type)}: {summary.Count} в {summary.Rounds} раунд(ах), медиана {Texts.Time(summary.MedianThrowTime)}";
 }

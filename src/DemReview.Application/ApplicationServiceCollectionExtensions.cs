@@ -1,3 +1,4 @@
+using DemReview.Application.Grenades;
 using DemReview.Application.Maps;
 using DemReview.Application.Parsing;
 using DemReview.Application.Routes;
@@ -12,6 +13,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddSingleton<IMatchLoader, MatchLoader>();
         services.AddSingleton<IMapCoordinateConverter, MapCoordinateConverter>();
         services.AddSingleton<IRouteAnalysisService, RouteAnalysisService>();
+        services.AddSingleton<IGrenadeAnalysisService, GrenadeAnalysisService>();
         return services;
     }
 }

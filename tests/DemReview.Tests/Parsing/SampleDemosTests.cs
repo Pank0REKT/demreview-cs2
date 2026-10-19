@@ -54,6 +54,27 @@ public class SampleDemosTests
         var samples = match.Tracks.Values.SelectMany(t => t.Samples).ToList();
         Assert.True(samples.Count(s => s.Place.Length > 0) > samples.Count * 0.9, "Слишком много сэмплов без названия зоны");
         Assert.All(samples, s => Assert.InRange(s.TimeInRound, 0, 200));
+
+        // Гранаты: бросившие — игроки матча, бросок связан с детонацией.
+        var grenades = match.Grenades;
+        Assert.NotEmpty(grenades);
+        Assert.All(grenades, g => Assert.NotNull(match.FindPlayer(g.ThrowerSteamId)));
+        Assert.All(grenades, g => Assert.NotEqual(Side.None, g.ThrowerSide));
+        Assert.All(grenades, g => Assert.True(g.ThrowTime >= 0, $"Бросок #{g.Id} раньше конца фризтайма"));
+
+        var instant = grenades.Where(g => g.Type is GrenadeType.HighExplosive or GrenadeType.Flashbang or GrenadeType.Smoke).ToList();
+        Assert.True(instant.Count(g => g.Detonated) >= instant.Count * 0.95,
+            $"Детонация найдена у {instant.Count(g => g.Detonated)} из {instant.Count} HE/flash/smoke");
+
+        var fire = grenades.Where(g => g.Type is GrenadeType.Molotov or GrenadeType.Incendiary).ToList();
+        Assert.True(fire.Count(g => g.Detonated) >= fire.Count * 0.8,
+            $"Возгорание найдено у {fire.Count(g => g.Detonated)} из {fire.Count} молотовых");
+
+        // Детонация недалеко по времени от броска (граната не «склеилась» с чужой).
+        Assert.All(grenades.Where(g => g.Detonated), g => Assert.InRange(g.DetonateTick!.Value - g.ThrowTick, 0, 64 * 25));
+
+        var flashes = grenades.Where(g => g.Type == GrenadeType.Flashbang).ToList();
+        Assert.True(flashes.Count(f => f.FlashVictims.Count > 0) >= flashes.Count / 3, "Слишком мало флешек с ослеплёнными");
     }
 
     /// <summary>

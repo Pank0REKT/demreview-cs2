@@ -63,6 +63,19 @@ public static class Texts
         _ => "—",
     };
 
+    public static string GrenadeName(GrenadeType type) => type switch
+    {
+        GrenadeType.HighExplosive => "HE",
+        GrenadeType.Flashbang => "Флешка",
+        GrenadeType.Smoke => "Дым",
+        GrenadeType.Molotov => "Молотов",
+        GrenadeType.Incendiary => "Зажигательная",
+        GrenadeType.Decoy => "Ложная",
+        _ => type.ToString(),
+    };
+
+    public static string ZoneOrUnknown(string zone) => string.IsNullOrEmpty(zone) ? "?" : zone;
+
     /// <summary>Время от конца фризтайма в формате м:сс.</summary>
     public static string Time(float seconds)
     {

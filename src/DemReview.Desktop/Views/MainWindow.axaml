@@ -101,7 +101,9 @@
                             <Grid>
                                 <controls:RadarControl MapImage="{Binding MapImage}" Routes="{Binding Routes}"
                                                        HighlightedRounds="{Binding HighlightedRounds}"
-                                                       ShowRoutes="{Binding ShowRoutes}" RadarToWorld="{Binding RadarToWorld}" />
+                                                       ShowRoutes="{Binding ShowRoutes}" RadarToWorld="{Binding RadarToWorld}"
+                                                       Grenades="{Binding Grenades}" HighlightedGrenades="{Binding HighlightedGrenades}"
+                                                       ShowGrenades="{Binding ShowGrenades}" />
 
                                 <TextBlock Text="{Binding MapTitle}" Classes="header" Margin="12,8" IsHitTestVisible="False"
                                            HorizontalAlignment="Left" VerticalAlignment="Top" />
@@ -130,6 +132,14 @@
                                         <CheckBox Content="Маршруты" IsChecked="{Binding ShowRoutes}" Margin="0,0,12,0" />
                                         <CheckBox Content="T" IsChecked="{Binding ShowT}" Margin="0,0,12,0" />
                                         <CheckBox Content="CT" IsChecked="{Binding ShowCT}" />
+                                    </WrapPanel>
+                                    <WrapPanel>
+                                        <CheckBox Content="Гранаты:" IsChecked="{Binding ShowGrenades}" Margin="0,0,8,0" />
+                                        <CheckBox Content="HE" IsChecked="{Binding ShowHe}" IsEnabled="{Binding ShowGrenades}" Margin="0,0,8,0" Foreground="#FF5050" />
+                                        <CheckBox Content="флеш" IsChecked="{Binding ShowFlash}" IsEnabled="{Binding ShowGrenades}" Margin="0,0,8,0" Foreground="#FAF078" />
+                                        <CheckBox Content="дым" IsChecked="{Binding ShowSmoke}" IsEnabled="{Binding ShowGrenades}" Margin="0,0,8,0" Foreground="#CDD4DE" />
+                                        <CheckBox Content="огонь" IsChecked="{Binding ShowFire}" IsEnabled="{Binding ShowGrenades}" Margin="0,0,8,0" Foreground="#FF8C1A" />
+                                        <CheckBox Content="ложн." IsChecked="{Binding ShowDecoy}" IsEnabled="{Binding ShowGrenades}" Foreground="#6ED76E" />
                                     </WrapPanel>
                                     <Button Content="Показать все раунды" Command="{Binding ClearSelectionCommand}" />
                                 </StackPanel>
@@ -163,6 +173,51 @@
                                                 </ListBox.ItemTemplate>
                                             </ListBox>
                                         </Grid>
+                                    </TabItem>
+                                    <TabItem Header="Гранаты" FontSize="14">
+                                        <DockPanel>
+                                            <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="4,4,4,8">
+                                                <ItemsControl ItemsSource="{Binding GrenadeSummary}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="vm:GrenadeSummaryRow">
+                                                            <TextBlock Text="{Binding Text}" FontSize="12" TextWrapping="Wrap" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <TextBlock Text="{Binding FlashSummaryText}" Classes="secondary" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <TabControl Padding="0">
+                                                <TabItem Header="Раскидки" FontSize="13">
+                                                    <Grid>
+                                                        <TextBlock IsVisible="{Binding !GrenadeClusters.Count}" Classes="secondary" Margin="4,8" TextWrapping="Wrap"
+                                                                   Text="Повторяющихся раскидок (тот же тип, близкие точки броска и падения минимум в 2 бросках) нет." />
+                                                        <ListBox ItemsSource="{Binding GrenadeClusters}" SelectedItem="{Binding SelectedCluster}">
+                                                            <ListBox.ItemTemplate>
+                                                                <DataTemplate x:DataType="vm:GrenadeClusterRow">
+                                                                    <StackPanel Spacing="2">
+                                                                        <TextBlock Text="{Binding Header}" FontWeight="SemiBold" />
+                                                                        <TextBlock Text="{Binding RouteText}" TextWrapping="Wrap" />
+                                                                        <TextBlock Text="{Binding RoundsText}" Classes="secondary" />
+                                                                    </StackPanel>
+                                                                </DataTemplate>
+                                                            </ListBox.ItemTemplate>
+                                                        </ListBox>
+                                                    </Grid>
+                                                </TabItem>
+                                                <TabItem Header="Все броски" FontSize="13">
+                                                    <ListBox ItemsSource="{Binding GrenadeThrows}" SelectedItem="{Binding SelectedThrow}">
+                                                        <ListBox.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:GrenadeThrowRow">
+                                                                <StackPanel Spacing="2">
+                                                                    <TextBlock Text="{Binding Header}" FontWeight="SemiBold" />
+                                                                    <TextBlock Text="{Binding Details}" Classes="secondary" TextWrapping="Wrap" />
+                                                                </StackPanel>
+                                                            </DataTemplate>
+                                                        </ListBox.ItemTemplate>
+                                                    </ListBox>
+                                                </TabItem>
+                                            </TabControl>
+                                        </DockPanel>
                                     </TabItem>
                                     <TabItem Header="Тайминги" FontSize="14">
                                         <DataGrid ItemsSource="{Binding ZoneTimings}" IsReadOnly="True" AutoGenerateColumns="False"

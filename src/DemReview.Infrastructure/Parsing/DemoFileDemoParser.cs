@@ -24,6 +24,7 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
         var builder = new MatchBuilder();
         Subscribe(demo, builder);
         SubscribeSampling(demo, builder, Math.Clamp(options.SampleTickStep, 1, 128));
+        SubscribeGrenades(demo, builder);
 
         var reader = DemoFileReader.Create(demo, stream);
         var lastReported = -1;
@@ -152,6 +153,108 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
                 e.PlayerPawn is { } victimPawn ? ToVector(victimPawn.Origin) : Vector3.Zero);
         };
     }
+
+    /// <summary>
+    /// Гранаты: бросок — создание снаряда (CBaseCSGrenadeProjectile.Create срабатывает и для наследников),
+    /// детонация HE/flash/smoke/decoy — по entity id снаряда в событии, ослепления — по entity id флешки.
+    /// У inferno_startburn entity id — это CInferno, а не снаряд, поэтому молотов связывается с огнём
+    /// по бросившему (OwnerEntity у CInferno) и удалению снаряда в тот же тик рядом с точкой возгорания.
+    /// </summary>
+    private static void SubscribeGrenades(CsDemoParser demo, MatchBuilder builder)
+    {
+        int Tick() => (int)demo.CurrentGameTick.Value;
+        var byEntity = new Dictionary<int, int>();
+        var molotovEnds = new List<(int Tick, Vector3 Position, ulong Thrower, int GrenadeId)>();
+        var infernoStarts = new List<(int Tick, Vector3 Position, ulong Thrower)>();
+
+        demo.EntityEvents.CBaseCSGrenadeProjectile.Create += projectile =>
+        {
+            if (GrenadeTypeOf(projectile) is not { } type ||
+                demo.GetEntityByHandle(projectile.ThrowerHandle) is not CCSPlayerPawn { Controller: { } controller } pawn)
+                return;
+
+            var eye = pawn.EyeAngles;
+            var id = builder.ThrowGrenade(type, KeyOf(controller), Tick(), ToVector(pawn.Origin), eye.Pitch, eye.Yaw,
+                pawn.LastPlaceName ?? "", ToVector(projectile.InitialPosition));
+            var entity = (int)projectile.EntityIndex.Value;
+            if (id is { } grenadeId)
+                byEntity[entity] = grenadeId;
+            else
+                byEntity.Remove(entity);
+        };
+
+        void Detonate(int entityId, float x, float y, float z)
+        {
+            if (byEntity.TryGetValue(entityId, out var id))
+                builder.DetonateGrenade(id, Tick(), new Vector3(x, y, z));
+        }
+
+        demo.Source1GameEvents.HegrenadeDetonate += e => Detonate(e.Entityid, e.X, e.Y, e.Z);
+        demo.Source1GameEvents.FlashbangDetonate += e => Detonate(e.Entityid, e.X, e.Y, e.Z);
+        demo.Source1GameEvents.SmokegrenadeDetonate += e => Detonate(e.Entityid, e.X, e.Y, e.Z);
+        demo.Source1GameEvents.DecoyStarted += e => Detonate(e.Entityid, e.X, e.Y, e.Z);
+
+        demo.Source1GameEvents.PlayerBlind += e =>
+        {
+            if (e.Player is { } victim && byEntity.TryGetValue(e.Entityid, out var id))
+                builder.AddFlashVictim(id, KeyOf(victim), e.BlindDuration);
+        };
+
+        // Молотов: снаряд удаляется и в тот же тик появляется CInferno. Порядок событий внутри тика не гарантирован —
+        // сопоставляем в обе стороны.
+        void TryLinkMolotov()
+        {
+            var tick = Tick();
+            molotovEnds.RemoveAll(m => tick - m.Tick > 4);
+            infernoStarts.RemoveAll(i => tick - i.Tick > 4);
+
+            foreach (var fire in infernoStarts.ToList())
+            {
+                var match = molotovEnds
+                    .Where(m => m.Thrower == fire.Thrower && Math.Abs(m.Tick - fire.Tick) <= 2)
+                    .OrderBy(m => Vector3.DistanceSquared(m.Position, fire.Position))
+                    .FirstOrDefault();
+                if (match.GrenadeId == 0)
+                    continue;
+
+                builder.DetonateGrenade(match.GrenadeId, fire.Tick, fire.Position);
+                molotovEnds.Remove(match);
+                infernoStarts.Remove(fire);
+            }
+        }
+
+        demo.EntityEvents.CMolotovProjectile.Delete += projectile =>
+        {
+            if (!byEntity.Remove((int)projectile.EntityIndex.Value, out var id) ||
+                demo.GetEntityByHandle(projectile.ThrowerHandle) is not CCSPlayerPawn { Controller: { } controller })
+                return;
+
+            molotovEnds.Add((Tick(), ToVector(projectile.Origin), KeyOf(controller), id));
+            TryLinkMolotov();
+        };
+
+        demo.EntityEvents.CInferno.Create += inferno =>
+        {
+            var owner = demo.GetEntityByHandle(inferno.OwnerEntityHandle);
+            var controller = (owner as CCSPlayerPawn)?.Controller ?? owner as CCSPlayerController;
+            if (controller is null)
+                return;
+
+            infernoStarts.Add((Tick(), ToVector(inferno.Origin), KeyOf(controller)));
+            TryLinkMolotov();
+        };
+    }
+
+    private static GrenadeType? GrenadeTypeOf(CBaseCSGrenadeProjectile projectile) => projectile switch
+    {
+        CHEGrenadeProjectile => GrenadeType.HighExplosive,
+        CFlashbangProjectile => GrenadeType.Flashbang,
+        CSmokeGrenadeProjectile => GrenadeType.Smoke,
+        CMolotovProjectile { IsIncGrenade: true } => GrenadeType.Incendiary,
+        CMolotovProjectile => GrenadeType.Molotov,
+        CDecoyProjectile => GrenadeType.Decoy,
+        _ => null,
+    };
 
     /// <summary>
     /// Выборка состояния живых игроков каждые <paramref name="step"/> тиков во время раунда.

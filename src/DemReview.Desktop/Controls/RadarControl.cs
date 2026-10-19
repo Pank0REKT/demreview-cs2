@@ -11,6 +11,13 @@ namespace DemReview.Desktop.Controls;
 /// <param name="LowerLevel">Для многоуровневых карт: точка на нижнем уровне (рисуется пунктиром).</param>
 public sealed record RadarRoute(int Round, IReadOnlyList<Point> Points, IReadOnlyList<bool> LowerLevel, Color Color, bool Died);
 
+/// <summary>Вид отметки детонации гранаты.</summary>
+public enum RadarGrenadeKind { HighExplosive, Flash, Smoke, Fire, Decoy }
+
+/// <summary>Граната для отрисовки: точка броска и детонации в пикселях радара.</summary>
+/// <param name="EffectRadius">Радиус зоны действия (дым, огонь) в пикселях радара.</param>
+public sealed record RadarGrenade(int Id, int Round, RadarGrenadeKind Kind, Point From, Point? To, double EffectRadius, Color Color);
+
 /// <summary>
 /// Радар карты: подложка (изображение или сетка), слои данных, зум колесом мыши и панорамирование.
 /// Всё рисуется в одном <see cref="Render"/> — без отдельных контролов на каждую точку.
@@ -47,7 +54,8 @@ public sealed class RadarControl : Control
 
     static RadarControl()
     {
-        AffectsRender<RadarControl>(MapImageProperty, RoutesProperty, HighlightedRoundsProperty, ShowRoutesProperty);
+        AffectsRender<RadarControl>(MapImageProperty, RoutesProperty, HighlightedRoundsProperty, ShowRoutesProperty,
+            GrenadesProperty, HighlightedGrenadesProperty, ShowGrenadesProperty);
         RoutesProperty.Changed.AddClassHandler<RadarControl>((c, _) => c._geometryCache = null);
         ClipToBoundsProperty.OverrideDefaultValue<RadarControl>(true);
         FocusableProperty.OverrideDefaultValue<RadarControl>(true);
@@ -75,6 +83,34 @@ public sealed class RadarControl : Control
     {
         get => GetValue(ShowRoutesProperty);
         set => SetValue(ShowRoutesProperty, value);
+    }
+
+    public static readonly StyledProperty<IReadOnlyList<RadarGrenade>?> GrenadesProperty =
+        AvaloniaProperty.Register<RadarControl, IReadOnlyList<RadarGrenade>?>(nameof(Grenades));
+
+    /// <summary>Выделенные гранаты (кластер раскидки или один бросок).</summary>
+    public static readonly StyledProperty<IReadOnlySet<int>?> HighlightedGrenadesProperty =
+        AvaloniaProperty.Register<RadarControl, IReadOnlySet<int>?>(nameof(HighlightedGrenades));
+
+    public static readonly StyledProperty<bool> ShowGrenadesProperty =
+        AvaloniaProperty.Register<RadarControl, bool>(nameof(ShowGrenades), true);
+
+    public IReadOnlyList<RadarGrenade>? Grenades
+    {
+        get => GetValue(GrenadesProperty);
+        set => SetValue(GrenadesProperty, value);
+    }
+
+    public IReadOnlySet<int>? HighlightedGrenades
+    {
+        get => GetValue(HighlightedGrenadesProperty);
+        set => SetValue(HighlightedGrenadesProperty, value);
+    }
+
+    public bool ShowGrenades
+    {
+        get => GetValue(ShowGrenadesProperty);
+        set => SetValue(ShowGrenadesProperty, value);
     }
 
     public Func<Point, Point>? RadarToWorld
@@ -119,6 +155,8 @@ public sealed class RadarControl : Control
             DrawBackground(context, scale);
             if (ShowRoutes)
                 DrawRoutes(context, scale);
+            if (ShowGrenades)
+                DrawGrenades(context, scale);
         }
 
         DrawCursorCoordinates(context);
@@ -184,6 +222,64 @@ public sealed class RadarControl : Control
                 var s = 3.5 / scale;
                 context.DrawRectangle(brush, null, new Rect(end.X - s, end.Y - s, 2 * s, 2 * s));
             }
+        }
+    }
+
+    /// <summary>
+    /// Гранаты: линия бросок → детонация, у дыма и огня — круг зоны действия.
+    /// Выделение: явно выбранные гранаты, иначе гранаты выделенных раундов, иначе все.
+    /// </summary>
+    private void DrawGrenades(DrawingContext context, double scale)
+    {
+        if (Grenades is not { Count: > 0 } grenades)
+            return;
+
+        var byId = HighlightedGrenades is { Count: > 0 } ids ? ids : null;
+        var byRound = byId is null && HighlightedRounds is { Count: > 0 } rounds ? rounds : null;
+        bool IsActive(RadarGrenade g) => byId?.Contains(g.Id) ?? byRound?.Contains(g.Round) ?? true;
+
+        foreach (var g in grenades.OrderBy(IsActive))
+        {
+            var active = IsActive(g);
+            var color = g.Color;
+            var lineBrush = new SolidColorBrush(Color.FromArgb((byte)(active ? 200 : 35), color.R, color.G, color.B));
+            var fillBrush = new SolidColorBrush(Color.FromArgb((byte)(active ? 70 : 12), color.R, color.G, color.B));
+            var markBrush = new SolidColorBrush(Color.FromArgb((byte)(active ? 255 : 50), color.R, color.G, color.B));
+
+            context.DrawEllipse(markBrush, null, g.From, 2.5 / scale, 2.5 / scale);
+            if (g.To is not { } to)
+                continue;
+
+            var linePen = new Pen(lineBrush, (active ? 1.6 : 1) / scale, new DashStyle([4, 3], 0));
+            context.DrawLine(linePen, g.From, to);
+
+            switch (g.Kind)
+            {
+                case RadarGrenadeKind.Smoke:
+                case RadarGrenadeKind.Fire:
+                    context.DrawEllipse(fillBrush, new Pen(lineBrush, 1.2 / scale), to, g.EffectRadius, g.EffectRadius);
+                    break;
+                case RadarGrenadeKind.HighExplosive:
+                    DrawStar(context, markBrush, to, 6 / scale, 8);
+                    break;
+                case RadarGrenadeKind.Flash:
+                    context.DrawEllipse(markBrush, new Pen(lineBrush, 2 / scale), to, 4 / scale, 4 / scale);
+                    break;
+                case RadarGrenadeKind.Decoy:
+                    var s = 3.5 / scale;
+                    context.DrawRectangle(null, new Pen(markBrush, 1.5 / scale), new Rect(to.X - s, to.Y - s, 2 * s, 2 * s));
+                    break;
+            }
+        }
+    }
+
+    private static void DrawStar(DrawingContext context, IBrush brush, Point center, double radius, int rays)
+    {
+        var pen = new Pen(brush, radius / 3);
+        for (var i = 0; i < rays; i++)
+        {
+            var angle = Math.PI * 2 * i / rays;
+            context.DrawLine(pen, center, center + new Vector(Math.Cos(angle) * radius, Math.Sin(angle) * radius));
         }
     }
 

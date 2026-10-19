@@ -6,6 +6,12 @@ public sealed record AppSettings
     /// <summary>Шаг выборки позиций, тиков.</summary>
     public int SampleTickStep { get; init; } = 16;
 
+    /// <summary>Порог расстояния между точками броска в одной раскидке, units.</summary>
+    public float GrenadeClusterThrowDistance { get; init; } = 150;
+
+    /// <summary>Порог расстояния между точками детонации в одной раскидке, units.</summary>
+    public float GrenadeClusterLandDistance { get; init; } = 250;
+
     public WindowPlacement? MainWindow { get; init; }
 }
 

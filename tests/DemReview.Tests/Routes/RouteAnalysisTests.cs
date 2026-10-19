@@ -27,7 +27,7 @@ public class RouteAnalysisTests
         var player = new PlayerInfo(Me, "me", false, side, "A", 0, 0, 0, roundNumbers.ToDictionary(r => r, _ => side));
         var roundInfos = roundNumbers.Select(r => new RoundInfo(r, 0, 0, 1, Side.T, RoundEndReason.TerroristsWin, 0, 0, false)).ToList();
         return new MatchData("x.dem", "de_mirage", 64, new MatchScore("A", 0, "B", 0), roundInfos, [player], [],
-            new Dictionary<ulong, PlayerTrack> { [Me] = new(Me, samples) }, 16);
+            new Dictionary<ulong, PlayerTrack> { [Me] = new(Me, samples) }, 16, []);
     }
 
     [Fact]

@@ -22,6 +22,8 @@ internal sealed class MatchBuilder
     private readonly List<KillEvent> _kills = [];
     private readonly Dictionary<ulong, List<PlayerSample>> _samples = [];
     private readonly Dictionary<ulong, PlayerState> _players = [];
+    private readonly List<GrenadeState> _grenades = [];
+    private int _nextGrenadeId = 1;
     private OpenRound? _current;
     private int _pendingStartTick = -1;
 
@@ -36,6 +38,7 @@ internal sealed class MatchBuilder
         _rounds.Clear();
         _kills.Clear();
         _samples.Clear();
+        _grenades.Clear();
         _current = null;
         foreach (var player in _players.Values)
             player.Sides.Clear();
@@ -55,6 +58,7 @@ internal sealed class MatchBuilder
         _kills.RemoveAll(k => k.Round >= number);
         foreach (var list in _samples.Values)
             list.RemoveAll(s => s.Round >= number);
+        _grenades.RemoveAll(g => g.Round >= number);
         foreach (var player in _players.Values)
             player.Sides.Remove(number);
 
@@ -101,6 +105,55 @@ internal sealed class MatchBuilder
         _kills.Add(new KillEvent(tick, round, attacker, victim, assister, weapon, headshot, attackerPosition, victimPosition));
     }
 
+    /// <summary>Бросок гранаты. Возвращает идентификатор для последующей детонации или null, если раунд не идёт.</summary>
+    public int? ThrowGrenade(GrenadeType type, ulong thrower, int tick, Vector3 throwerPosition, float pitch, float yaw,
+        string place, Vector3 projectileStart)
+    {
+        if (CurrentRoundNumber is not { } round)
+            return null;
+
+        var freezeEnd = _current?.FreezeEndTick ?? _rounds.LastOrDefault()?.FreezeEndTick ?? tick;
+        var side = _players.TryGetValue(thrower, out var p) && p.Sides.TryGetValue(round, out var s) ? s : Side.None;
+        var state = new GrenadeState(_nextGrenadeId++, type, thrower, side, round, tick,
+            (tick - freezeEnd) / 64f, throwerPosition, pitch, yaw, place, projectileStart);
+        _grenades.Add(state);
+        return state.Id;
+    }
+
+    public void DetonateGrenade(int id, int tick, Vector3 position)
+    {
+        if (_grenades.Find(g => g.Id == id) is { DetonateTick: null } grenade)
+        {
+            grenade.DetonateTick = tick;
+            grenade.DetonatePosition = position;
+        }
+    }
+
+    public void AddFlashVictim(int id, ulong victim, float duration)
+    {
+        if (_grenades.Find(g => g.Id == id) is not { } grenade || duration <= 0)
+            return;
+
+        var victimSide = _players.TryGetValue(victim, out var p) && p.Sides.TryGetValue(grenade.Round, out var s) ? s : Side.None;
+        var isSelf = victim == grenade.Thrower;
+        grenade.Victims.Add(new FlashVictim(victim, duration, isSelf || victimSide == grenade.Side, isSelf));
+    }
+
+    private List<GrenadeThrow> BuildGrenades() =>
+        _grenades
+            .Select(g => new GrenadeThrow(g.Id, g.Type, g.Thrower, g.Side, g.Round, g.ThrowTick, g.ThrowTime,
+                g.ThrowerPosition, g.Pitch, g.Yaw, g.Place, g.ProjectileStart, g.DetonateTick, g.DetonatePosition,
+                g.Victims.ToList()))
+            .ToList();
+
+    private sealed record GrenadeState(int Id, GrenadeType Type, ulong Thrower, Side Side, int Round, int ThrowTick,
+        float ThrowTime, Vector3 ThrowerPosition, float Pitch, float Yaw, string Place, Vector3 ProjectileStart)
+    {
+        public int? DetonateTick { get; set; }
+        public Vector3? DetonatePosition { get; set; }
+        public List<FlashVictim> Victims { get; } = [];
+    }
+
     /// <summary>Сэмпл позиции игрока; принимается только во время идущего раунда.</summary>
     public void AddSample(ulong player, PlayerSample sample)
     {
@@ -132,7 +185,7 @@ internal sealed class MatchBuilder
 
         return new MatchData(sourcePath, mapName, tickRate,
             new MatchScore(teamTName, finalScoreT, teamCTName, finalScoreCT),
-            rounds, players, _kills.ToList(), tracks, sampleTickStep);
+            rounds, players, _kills.ToList(), tracks, sampleTickStep, BuildGrenades());
     }
 
     private PlayerInfo BuildPlayer(PlayerState state, IReadOnlyList<RoundInfo> rounds, string teamTName, string teamCTName)
