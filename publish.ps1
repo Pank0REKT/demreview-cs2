@@ -19,6 +19,5 @@ foreach ($rid in $Rids) {
         -o $out
     if ($LASTEXITCODE -ne 0) { throw "dotnet publish для $rid завершился с ошибкой $LASTEXITCODE" }
 
-    Copy-Item -Recurse -Force (Join-Path $root 'maps') (Join-Path $out 'maps')
     Write-Host "==> Готово: $out"
 }

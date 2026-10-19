@@ -20,7 +20,6 @@ for rid in "${rids[@]}"; do
         -p:DebugType=none \
         -o "$out"
 
-    cp -r "$root/maps" "$out/maps"
     [ "$rid" = "linux-x64" ] && chmod +x "$out/DemReview"
     echo "==> Готово: $out"
 done

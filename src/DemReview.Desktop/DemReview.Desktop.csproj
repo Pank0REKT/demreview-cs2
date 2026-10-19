@@ -17,6 +17,11 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Папка maps/ из корня репозитория — рядом с exe и при сборке, и при публикации (не внутрь single-file) -->
+    <None Include="..\..\maps\**" Link="maps\%(RecursiveDir)%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\DemReview.Domain\DemReview.Domain.csproj" />
     <ProjectReference Include="..\DemReview.Application\DemReview.Application.csproj" />
     <ProjectReference Include="..\DemReview.Infrastructure\DemReview.Infrastructure.csproj" />
