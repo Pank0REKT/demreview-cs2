@@ -36,6 +36,9 @@ public sealed class MainWindowAccessor
 public interface IFileDialogService
 {
     Task<string?> PickDemoFileAsync();
+
+    /// <summary>Диалог сохранения профиля (Markdown или JSON); возвращает локальный путь или null.</summary>
+    Task<string?> PickProfileSavePathAsync(string suggestedName);
 }
 
 public sealed class AvaloniaFileDialogService(MainWindowAccessor windowAccessor) : IFileDialogService
@@ -55,5 +58,26 @@ public sealed class AvaloniaFileDialogService(MainWindowAccessor windowAccessor)
         });
 
         return files.Count > 0 ? files[0].TryGetLocalPath() : null;
+    }
+
+    public async Task<string?> PickProfileSavePathAsync(string suggestedName)
+    {
+        if (windowAccessor.Window?.StorageProvider is not { } storage)
+            return null;
+
+        var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Экспорт профиля игрока",
+            SuggestedFileName = suggestedName,
+            DefaultExtension = "md",
+            ShowOverwritePrompt = true,
+            FileTypeChoices =
+            [
+                new FilePickerFileType("Markdown (*.md)") { Patterns = ["*.md"] },
+                new FilePickerFileType("JSON (*.json)") { Patterns = ["*.json"] },
+            ],
+        });
+
+        return file?.TryGetLocalPath();
     }
 }

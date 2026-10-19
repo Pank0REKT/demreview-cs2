@@ -27,6 +27,8 @@ public abstract class PlatformServiceBase : IPlatformService
         using var process = Process.Start(CreateOpenFolderStartInfo(path));
     }
 
+    public abstract string NormalizePathKey(string fullPath);
+
     protected abstract ProcessStartInfo CreateOpenFolderStartInfo(string path);
 }
 
@@ -37,6 +39,8 @@ public sealed class WindowsPlatformService : PlatformServiceBase
     public override string WindowIconFileName => "demreview.ico";
 
     public override StringComparer PathComparer => StringComparer.OrdinalIgnoreCase;
+
+    public override string NormalizePathKey(string fullPath) => fullPath.ToUpperInvariant();
 
     protected override ProcessStartInfo CreateOpenFolderStartInfo(string path) =>
         new("explorer.exe") { ArgumentList = { path }, UseShellExecute = false };
@@ -49,6 +53,8 @@ public sealed class LinuxPlatformService : PlatformServiceBase
     public override string WindowIconFileName => "demreview.png";
 
     public override StringComparer PathComparer => StringComparer.Ordinal;
+
+    public override string NormalizePathKey(string fullPath) => fullPath;
 
     protected override ProcessStartInfo CreateOpenFolderStartInfo(string path) =>
         new("xdg-open") { ArgumentList = { path }, UseShellExecute = false };

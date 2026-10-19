@@ -19,7 +19,7 @@ public sealed class InMemoryMatchCache : IMatchCache
     public bool TryGet(DemoFileKey key, out MatchData match)
     {
         if (_items.TryGetValue(key.FullPath, out var item) && item.Key.Length == key.Length &&
-            item.Key.LastWriteTimeUtc == key.LastWriteTimeUtc)
+            item.Key.LastWriteTimeUtc == key.LastWriteTimeUtc && item.Key.SampleTickStep == key.SampleTickStep)
         {
             match = item.Match;
             return true;

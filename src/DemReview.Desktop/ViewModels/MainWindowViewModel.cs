@@ -17,6 +17,7 @@ public partial class MainWindowViewModel(
     StartupOptions startup,
     RadarViewModel radar,
     StatisticsViewModel statistics,
+    ProfileViewModel profile,
     ILogger<MainWindowViewModel> logger) : ViewModelBase
 {
     private CancellationTokenSource? _loadCts;
@@ -51,6 +52,12 @@ public partial class MainWindowViewModel(
     public StatisticsViewModel Statistics { get; } = statistics;
 
     public FilterViewModel Filter { get; } = CreateFilter(radar, statistics, logger);
+
+    public ProfileViewModel Profile { get; } = profile;
+
+    /// <summary>Вкладка центральной области: 0 — радар, 1 — статистика, 2 — профиль.</summary>
+    [ObservableProperty]
+    public partial int SelectedTabIndex { get; set; }
 
     /// <summary>Фильтры применяются к радару и статистике.</summary>
     private static FilterViewModel CreateFilter(RadarViewModel radar, StatisticsViewModel statistics, ILogger logger)
@@ -101,7 +108,7 @@ public partial class MainWindowViewModel(
     {
         try
         {
-            await Task.WhenAll(Radar.ShowPlayerAsync(steamId), Statistics.ShowPlayerAsync(steamId));
+            await Task.WhenAll(Radar.ShowPlayerAsync(steamId), Statistics.ShowPlayerAsync(steamId), Profile.ShowPlayerAsync(steamId));
         }
         catch (Exception ex)
         {
@@ -111,8 +118,16 @@ public partial class MainWindowViewModel(
     }
 
     /// <summary>Вызывается после показа окна: открывает файл из командной строки.</summary>
-    public Task InitializeAsync() =>
-        startup.DemoPath is { } path ? LoadFileAsync(path) : Task.CompletedTask;
+    public Task InitializeAsync()
+    {
+        Profile.ShowOnRadarRequested += (pattern, switchTab) =>
+        {
+            Radar.FocusPattern(pattern);
+            if (switchTab)
+                SelectedTabIndex = 0;
+        };
+        return startup.DemoPath is { } path ? LoadFileAsync(path) : Task.CompletedTask;
+    }
 
     [RelayCommand]
     private async Task OpenAsync()
@@ -124,6 +139,13 @@ public partial class MainWindowViewModel(
 
     [RelayCommand]
     private Task ReloadAsync() => CurrentPath is { } path ? LoadFileAsync(path) : Task.CompletedTask;
+
+    /// <summary>Разобрать демку заново, минуя кеш (например, после изменения шага сэмплов).</summary>
+    [RelayCommand]
+    private Task ReparseAsync() => CurrentPath is { } path ? LoadAsync(path, bypassCache: true) : Task.CompletedTask;
+
+    [RelayCommand]
+    private Task ExportAsync() => Profile.ExportCommand.ExecuteAsync(null);
 
     [RelayCommand(CanExecute = nameof(IsBusy))]
     private void Cancel() => _loadCts?.Cancel();
@@ -139,7 +161,9 @@ public partial class MainWindowViewModel(
 
     /// <summary>Загрузка демки: разбор в фоне, прогресс и отмена.</summary>
     [RelayCommand]
-    public async Task LoadFileAsync(string path)
+    public Task LoadFileAsync(string path) => LoadAsync(path, bypassCache: false);
+
+    private async Task LoadAsync(string path, bool bypassCache)
     {
         _loadCts?.Cancel();
         using var cts = new CancellationTokenSource();
@@ -160,7 +184,7 @@ public partial class MainWindowViewModel(
 
         try
         {
-            var match = await loader.LoadAsync(path, progress, cts.Token);
+            var match = await loader.LoadAsync(path, progress, cts.Token, bypassCache);
             ShowMatch(match, path);
             StatusText = $"Загружено: {Path.GetFileName(path)}";
         }
@@ -199,6 +223,7 @@ public partial class MainWindowViewModel(
         Radar.SetMatch(match);
         Statistics.SetMatch(match);
         Filter.SetMatch(match);
+        Profile.SetMatch(match);
 
         Players.Clear();
         foreach (var player in match.Players)

@@ -17,6 +17,7 @@ internal sealed class SyntheticMatch
     private readonly List<GrenadeThrow> _grenades = [];
     private readonly Dictionary<(ulong, int), int> _equipment = [];
     private readonly Dictionary<(ulong, int), string[]> _routes = [];
+    private readonly Dictionary<string, Vector3> _zonePositions = [];
 
     public SyntheticMatch Player(ulong id, Func<int, Side> side)
     {
@@ -67,6 +68,13 @@ internal sealed class SyntheticMatch
         return this;
     }
 
+    /// <summary>Координаты зоны: сэмплы в этой зоне получают эту позицию.</summary>
+    public SyntheticMatch ZonePosition(string zone, float x, float y)
+    {
+        _zonePositions[zone] = new Vector3(x, y, 0);
+        return this;
+    }
+
     public SyntheticMatch Kill(int round, float seconds, ulong? attacker, ulong victim)
     {
         _kills.Add(new KillEvent(At(round, seconds), round, attacker, victim, null, "ak47", false, null, Vector3.Zero));
@@ -109,7 +117,7 @@ internal sealed class SyntheticMatch
                     if (death is not null && tick > death.Tick)
                         break;
                     var zone = zones[Math.Min(zones.Length - 1, (int)(s / 5))];
-                    samples.Add(new PlayerSample(tick, round.Number, s, Vector3.Zero, 0, 0, 0, MovementFlags.None, "ak47",
+                    samples.Add(new PlayerSample(tick, round.Number, s, _zonePositions.GetValueOrDefault(zone), 0, 0, 0, MovementFlags.None, "ak47",
                         100, 100, 800, equipment, zone));
                 }
             }

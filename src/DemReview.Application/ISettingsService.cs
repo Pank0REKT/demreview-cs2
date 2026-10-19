@@ -24,6 +24,12 @@ public sealed record AppSettings
     /// <summary>Первый контакт не раньше (или его нет) — пассивный раунд, секунд.</summary>
     public float PassiveContactSeconds { get; init; } = 50;
 
+    /// <summary>Паттерн показывается при частоте не ниже (0..1).</summary>
+    public double PatternMinShare { get; init; } = 0.6;
+
+    /// <summary>Паттерн показывается при числе примеров не меньше.</summary>
+    public int PatternMinExamples { get; init; } = 3;
+
     public WindowPlacement? MainWindow { get; init; }
 }
 

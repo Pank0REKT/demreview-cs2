@@ -19,6 +19,9 @@
     <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
 
+    <!-- Хранение -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
+
     <!-- Парсинг демок -->
     <PackageVersion Include="DemoFile.Game.Cs" Version="0.44.1" />
 

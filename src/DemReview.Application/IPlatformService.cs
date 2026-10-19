@@ -18,6 +18,9 @@ public interface IPlatformService
     /// <summary>Сравнение путей с учётом регистрозависимости файловой системы.</summary>
     StringComparer PathComparer { get; }
 
+    /// <summary>Ключ пути для хранилища: на Windows регистр не важен, на Linux важен.</summary>
+    string NormalizePathKey(string fullPath);
+
     /// <summary>Открывает каталог в файловом менеджере ОС.</summary>
     void OpenFolder(string path);
 }

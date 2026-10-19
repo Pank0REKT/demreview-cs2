@@ -11,6 +11,7 @@ using DemReview.Application.Filters;
 using DemReview.Application.Grenades;
 using DemReview.Application.Heatmaps;
 using DemReview.Application.Maps;
+using DemReview.Application.Patterns;
 using DemReview.Application.Routes;
 using DemReview.Application.Situations;
 using DemReview.Desktop.Controls;
@@ -59,6 +60,7 @@ public partial class RadarViewModel : ViewModelBase
     private int _analysisVersion;
     private int _heatmapVersion;
     private bool _updatingSelection;
+    private IReadOnlySet<int>? _focusRounds;
 
     public RadarViewModel(
         IRouteAnalysisService routeAnalysis,
@@ -232,6 +234,7 @@ public partial class RadarViewModel : ViewModelBase
         if (version != _analysisVersion)
             return;
 
+        ClearFocus();
         _routes = routes;
         _grenades = grenades;
         FillLists();
@@ -244,6 +247,7 @@ public partial class RadarViewModel : ViewModelBase
     public async Task SetFilterAsync(AnalysisFilter filter)
     {
         _filter = filter;
+        ClearFocus();
         FillLists();
         UpdateTimelineRound();
         RebuildLayers();
@@ -254,7 +258,39 @@ public partial class RadarViewModel : ViewModelBase
     private void OpenMapsFolder() => _platform.OpenFolder(_platform.MapsDirectory);
 
     [RelayCommand]
-    private void ClearSelection() => OnSelectionChanged(null);
+    private void ClearSelection()
+    {
+        ClearFocus();
+        OnSelectionChanged(null);
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasFocus))]
+    public partial string? FocusText { get; private set; }
+
+    public bool HasFocus => FocusText is not null;
+
+    /// <summary>Показать раунды-примеры паттерна наложенными друг на друга (и связанные гранаты).</summary>
+    public void FocusPattern(Pattern pattern)
+    {
+        _focusRounds = pattern.Rounds.ToHashSet();
+        FocusText = $"Раунды-примеры: {string.Join(", ", pattern.Rounds)} — {pattern.Text}";
+        OnSelectionChanged(null);
+        HighlightedRounds = _focusRounds;
+        HighlightedGrenades = pattern.GrenadeIds.ToHashSet();
+        UpdateTimelineRound();
+        RebuildLayers();
+    }
+
+    private void ClearFocus()
+    {
+        if (_focusRounds is null)
+            return;
+        _focusRounds = null;
+        FocusText = null;
+        UpdateTimelineRound();
+        RebuildLayers();
+    }
 
     private bool IncludesRound(int round) =>
         _context is not null && _steamId is { } id && _filter.IncludesRound(_context, id, round);
@@ -344,7 +380,8 @@ public partial class RadarViewModel : ViewModelBase
     /// <summary>Раунд таймлайна: раунд из фильтра, иначе выбранный в списке раундов.</summary>
     private void UpdateTimelineRound()
     {
-        var number = _filter.Round ?? SelectedRound?.Round;
+        // В режиме раундов-примеров паттерна таймлайн выключен: раунды показываются наложенными.
+        var number = _focusRounds is not null ? null : _filter.Round ?? SelectedRound?.Round;
         var round = number is { } n && _match?.FindRound(n) is { } r && _steamId is not null ? r : null;
         Timeline.SetRound(round, _match?.TickRate ?? 64);
     }
@@ -363,7 +400,9 @@ public partial class RadarViewModel : ViewModelBase
 
         var timelineRound = Timeline.Round;
         var tick = timelineRound is null ? int.MaxValue : (int)Timeline.CurrentTick;
-        bool RoundVisible(int round) => timelineRound is { } r ? round == r.Number : IncludesRound(round);
+        bool RoundVisible(int round) => timelineRound is { } r ? round == r.Number
+            : _focusRounds is { } focus ? focus.Contains(round)
+            : IncludesRound(round);
 
         var tIndex = 0;
         var ctIndex = 0;
@@ -523,6 +562,9 @@ public partial class RadarViewModel : ViewModelBase
     {
         if (_updatingSelection)
             return;
+
+        if (selected is not null)
+            ClearFocus();
 
         _updatingSelection = true;
         try

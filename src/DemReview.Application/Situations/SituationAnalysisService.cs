@@ -155,6 +155,13 @@ public static class Labels
 {
     public static string Side(Side side) => side switch { Domain.Side.T => "T", Domain.Side.CT => "CT", _ => "—" };
 
+    /// <summary>Время от конца фризтайма в формате м:сс.</summary>
+    public static string Time(float seconds)
+    {
+        var total = (int)Math.Round(Math.Max(0, seconds));
+        return $"{total / 60}:{total % 60:00}";
+    }
+
     public static string Buy(BuyType buy) => buy switch
     {
         BuyType.Pistol => "пистолетка",

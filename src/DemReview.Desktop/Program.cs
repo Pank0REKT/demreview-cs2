@@ -73,6 +73,7 @@ internal static class Program
             .AddSingleton<IFileDialogService, AvaloniaFileDialogService>()
             .AddSingleton<RadarViewModel>()
             .AddSingleton<StatisticsViewModel>()
+            .AddSingleton<ProfileViewModel>()
             .AddSingleton<MainWindowViewModel>();
 
         // Сервис платформы уже создан для логгера — регистрируем тот же экземпляр.

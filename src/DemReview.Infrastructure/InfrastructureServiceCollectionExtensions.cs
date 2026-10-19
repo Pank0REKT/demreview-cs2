@@ -15,7 +15,7 @@ public static class InfrastructureServiceCollectionExtensions
     {
         services.AddSingleton(CreatePlatformService());
         services.AddSingleton<ISettingsService, JsonSettingsService>();
-        services.AddSingleton<IMatchCache, InMemoryMatchCache>();
+        services.AddSingleton<IMatchCache, SqliteMatchCache>();
         services.AddSingleton<IDemoParser, DemoFileDemoParser>();
         services.AddSingleton<IMapConfigProvider, EmbeddedMapConfigProvider>();
         services.AddSingleton<IMapImageProvider, LocalMapImageProvider>();

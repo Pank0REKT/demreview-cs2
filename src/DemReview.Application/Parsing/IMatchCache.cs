@@ -10,11 +10,11 @@ public interface IMatchCache
 }
 
 /// <summary>Идентификатор версии файла демки.</summary>
-public sealed record DemoFileKey(string FullPath, long Length, DateTime LastWriteTimeUtc)
+public sealed record DemoFileKey(string FullPath, long Length, DateTime LastWriteTimeUtc, int SampleTickStep = 16)
 {
-    public static DemoFileKey FromFile(string path)
+    public static DemoFileKey FromFile(string path, int sampleTickStep = 16)
     {
         var info = new FileInfo(path);
-        return new DemoFileKey(info.FullName, info.Length, info.LastWriteTimeUtc);
+        return new DemoFileKey(info.FullName, info.Length, info.LastWriteTimeUtc, sampleTickStep);
     }
 }
