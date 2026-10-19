@@ -8,6 +8,10 @@ often enough to be predictable. It works fully offline on Windows and Linux.
 
 ![Radar with all routes, grenades and deaths of one player](docs/images/radar-routes.png)
 
+> **About the project.** DemReview is a pet project built with the help of [Claude Code](https://claude.com/claude-code).
+> It is fully open source under the [MIT License](LICENSE) and is maintained by me
+> ([@Pank0REKT](https://github.com/Pank0REKT)). Bug reports and ideas are welcome in [Issues](../../issues).
+
 ## What it shows
 
 - **Radar.** Every route of the player on the map background, grenades from throw to detonation (smoke and fire
