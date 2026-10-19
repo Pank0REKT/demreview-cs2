@@ -20,17 +20,22 @@ internal sealed class MatchBuilder
 {
     private readonly List<RoundInfo> _rounds = [];
     private readonly List<KillEvent> _kills = [];
+    private readonly Dictionary<ulong, List<PlayerSample>> _samples = [];
     private readonly Dictionary<ulong, PlayerState> _players = [];
     private OpenRound? _current;
     private int _pendingStartTick = -1;
 
     public int? CurrentRoundNumber => _current?.Number ?? _rounds.LastOrDefault()?.Number;
 
+    /// <summary>Идущий раунд (после конца фризтайма и до конца раунда) — номер и тик конца фризтайма.</summary>
+    public (int Number, int FreezeEndTick)? LiveRound => _current is { } r ? (r.Number, r.FreezeEndTick) : null;
+
     /// <summary>Начало нового матча (begin_new_match): всё предыдущее — предматчевые раунды.</summary>
     public void BeginNewMatch()
     {
         _rounds.Clear();
         _kills.Clear();
+        _samples.Clear();
         _current = null;
         foreach (var player in _players.Values)
             player.Sides.Clear();
@@ -48,6 +53,8 @@ internal sealed class MatchBuilder
         // Откат раунда (восстановление бэкапа): переписываем раунды начиная с этого номера.
         _rounds.RemoveAll(r => r.Number >= number);
         _kills.RemoveAll(k => k.Round >= number);
+        foreach (var list in _samples.Values)
+            list.RemoveAll(s => s.Round >= number);
         foreach (var player in _players.Values)
             player.Sides.Remove(number);
 
@@ -94,8 +101,19 @@ internal sealed class MatchBuilder
         _kills.Add(new KillEvent(tick, round, attacker, victim, assister, weapon, headshot, attackerPosition, victimPosition));
     }
 
+    /// <summary>Сэмпл позиции игрока; принимается только во время идущего раунда.</summary>
+    public void AddSample(ulong player, PlayerSample sample)
+    {
+        if (_current is null || sample.Round != _current.Number)
+            return;
+
+        if (!_samples.TryGetValue(player, out var list))
+            _samples[player] = list = [];
+        list.Add(sample);
+    }
+
     public MatchData Build(string sourcePath, string mapName, int tickRate, int lastTick,
-        string teamTName, string teamCTName, int finalScoreT, int finalScoreCT)
+        string teamTName, string teamCTName, int finalScoreT, int finalScoreCT, int sampleTickStep = 16)
     {
         var rounds = _rounds.ToList();
         // Демка оборвалась до конца раунда.
@@ -109,9 +127,12 @@ internal sealed class MatchBuilder
             .ThenByDescending(p => p.Kills)
             .ToList();
 
+        var tracks = players.ToDictionary(p => p.SteamId,
+            p => new PlayerTrack(p.SteamId, _samples.TryGetValue(p.SteamId, out var list) ? list.ToArray() : []));
+
         return new MatchData(sourcePath, mapName, tickRate,
             new MatchScore(teamTName, finalScoreT, teamCTName, finalScoreCT),
-            rounds, players, _kills.ToList());
+            rounds, players, _kills.ToList(), tracks, sampleTickStep);
     }
 
     private PlayerInfo BuildPlayer(PlayerState state, IReadOnlyList<RoundInfo> rounds, string teamTName, string teamCTName)

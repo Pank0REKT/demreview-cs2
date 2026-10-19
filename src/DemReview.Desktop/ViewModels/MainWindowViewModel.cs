@@ -15,6 +15,7 @@ public partial class MainWindowViewModel(
     IPlatformService platform,
     IUiDispatcher dispatcher,
     StartupOptions startup,
+    RadarViewModel radar,
     ILogger<MainWindowViewModel> logger) : ViewModelBase
 {
     private CancellationTokenSource? _loadCts;
@@ -44,6 +45,8 @@ public partial class MainWindowViewModel(
     [ObservableProperty]
     public partial string? CurrentPath { get; private set; }
 
+    public RadarViewModel Radar { get; } = radar;
+
     public ObservableCollection<PlayerRowViewModel> Players { get; } = [];
 
     public ObservableCollection<RoundRowViewModel> Rounds { get; } = [];
@@ -69,6 +72,21 @@ public partial class MainWindowViewModel(
     }
 
     partial void OnCurrentPathChanged(string? value) => OnPropertyChanged(nameof(WindowTitle));
+
+    partial void OnSelectedPlayerChanged(PlayerRowViewModel? value) => _ = ShowPlayerAsync(value?.SteamId);
+
+    private async Task ShowPlayerAsync(ulong? steamId)
+    {
+        try
+        {
+            await Radar.ShowPlayerAsync(steamId);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Ошибка анализа игрока {SteamId}", steamId);
+            ErrorMessage = $"Ошибка анализа игрока: {ex.Message}";
+        }
+    }
 
     /// <summary>Вызывается после показа окна: открывает файл из командной строки.</summary>
     public Task InitializeAsync() =>
@@ -156,6 +174,7 @@ public partial class MainWindowViewModel(
 
         Match = match;
         CurrentPath = path;
+        Radar.SetMatch(match);
 
         Players.Clear();
         foreach (var player in match.Players)

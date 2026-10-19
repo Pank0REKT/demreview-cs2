@@ -10,9 +10,16 @@ public sealed record MatchData(
     MatchScore FinalScore,
     IReadOnlyList<RoundInfo> Rounds,
     IReadOnlyList<PlayerInfo> Players,
-    IReadOnlyList<KillEvent> Kills)
+    IReadOnlyList<KillEvent> Kills,
+    IReadOnlyDictionary<ulong, PlayerTrack> Tracks,
+    int SampleTickStep)
 {
     public PlayerInfo? FindPlayer(ulong steamId) => Players.FirstOrDefault(p => p.SteamId == steamId);
+
+    public PlayerTrack TrackOf(ulong steamId) =>
+        Tracks.TryGetValue(steamId, out var track) ? track : new PlayerTrack(steamId, []);
+
+    public RoundInfo? FindRound(int number) => Rounds.FirstOrDefault(r => r.Number == number);
 }
 
 /// <summary>Итоговый счёт. Команды названы по составу на конец матча.</summary>

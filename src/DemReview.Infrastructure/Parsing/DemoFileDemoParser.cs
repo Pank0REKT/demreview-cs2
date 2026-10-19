@@ -1,6 +1,7 @@
 using System.Numerics;
 using DemoFile;
 using DemoFile.Game.Cs;
+using DemoFile.GameStatic;
 using DemReview.Application.Parsing;
 using DemReview.Domain;
 using Microsoft.Extensions.Logging;
@@ -22,6 +23,7 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
         var demo = new CsDemoParser();
         var builder = new MatchBuilder();
         Subscribe(demo, builder);
+        SubscribeSampling(demo, builder, Math.Clamp(options.SampleTickStep, 1, 128));
 
         var reader = DemoFileReader.Create(demo, stream);
         var lastReported = -1;
@@ -64,7 +66,7 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
         var teamCT = demo.TeamCounterTerrorist;
         var match = builder.Build(path, mapName, CsDemoParser.TickRate, (int)demo.CurrentGameTick.Value,
             TeamName(teamT.ClanTeamname, "Террористы"), TeamName(teamCT.ClanTeamname, "Спецназ"),
-            teamT.Score, teamCT.Score);
+            teamT.Score, teamCT.Score, options.SampleTickStep);
 
         if (match.Rounds.Count == 0)
             throw new DemoParseException("В демке не найдено ни одного сыгранного раунда.");
@@ -149,6 +151,94 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
                 e.AttackerPawn is { } attackerPawn ? ToVector(attackerPawn.Origin) : null,
                 e.PlayerPawn is { } victimPawn ? ToVector(victimPawn.Origin) : Vector3.Zero);
         };
+    }
+
+    /// <summary>
+    /// Выборка состояния живых игроков каждые <paramref name="step"/> тиков во время раунда.
+    /// В DemoFile.Net 0.44.1 нет события TickEnd (упомянуто в README) — используется OnCommandFinishPersistent.
+    /// </summary>
+    private static void SubscribeSampling(CsDemoParser demo, MatchBuilder builder, int step)
+    {
+        var lastSampleTick = int.MinValue;
+        var strings = new Dictionary<string, string>(StringComparer.Ordinal);
+        string Intern(string value) =>
+            strings.TryGetValue(value, out var existing) ? existing : strings[value] = value;
+
+        demo.Source1GameEvents.RoundFreezeEnd += _ => lastSampleTick = int.MinValue;
+
+        demo.OnCommandFinishPersistent += () =>
+        {
+            if (builder.LiveRound is not var (round, freezeEndTick))
+                return;
+
+            var tick = (int)demo.CurrentGameTick.Value;
+            if (tick < lastSampleTick + step)
+                return;
+            lastSampleTick = tick;
+
+            var timeInRound = (tick - freezeEndTick) / (float)CsDemoParser.TickRate;
+            foreach (var controller in demo.PlayersIncludingDisconnected)
+            {
+                if (!controller.PawnIsAlive || controller.PlayerPawn is not { IsAlive: true } pawn)
+                    continue;
+
+                builder.AddSample(KeyOf(controller), CreateSample(controller, pawn, tick, round, timeInRound, Intern));
+            }
+        };
+    }
+
+    private static PlayerSample CreateSample(CCSPlayerController controller, CCSPlayerPawn pawn, int tick, int round,
+        float timeInRound, Func<string, string> intern)
+    {
+        var flags = MovementFlags.None;
+        if (pawn.MovementServices is { } movement && (movement.Ducked || movement.Ducking))
+            flags |= MovementFlags.Ducking;
+        if ((pawn.Flags & FlOnGround) == 0)
+            flags |= MovementFlags.Airborne;
+        if (pawn.IsWalking)
+            flags |= MovementFlags.Walking;
+        if (pawn.IsScoped)
+            flags |= MovementFlags.Scoped;
+
+        var velocity = pawn.Velocity;
+        var eye = pawn.EyeAngles;
+
+        return new PlayerSample(
+            tick,
+            round,
+            timeInRound,
+            ToVector(pawn.Origin),
+            eye.Pitch,
+            eye.Yaw,
+            MathF.Sqrt(velocity.X * velocity.X + velocity.Y * velocity.Y),
+            flags,
+            intern(WeaponName(pawn.ActiveWeapon)),
+            (short)Math.Clamp(pawn.Health, 0, short.MaxValue),
+            (short)Math.Clamp(pawn.ArmorValue, 0, short.MaxValue),
+            controller.InGameMoneyServices?.Account ?? 0,
+            pawn.CurrentEquipmentValue,
+            intern(pawn.LastPlaceName ?? ""));
+    }
+
+    private const uint FlOnGround = 1;
+
+    /// <summary>Имя оружия по определению предмета (weapon_ak47 → ak47); все ножи — knife.</summary>
+    internal static string WeaponName(CCSWeaponBase? weapon)
+    {
+        if (weapon is null)
+            return "";
+
+        var index = weapon.AttributeManager.Item.ItemDefinitionIndex;
+        if (!GameItems.ItemDefinitions.TryGetValue(index, out var definition))
+            return weapon.ServerClass.Name;
+
+        return NormalizeWeaponName(definition.Name);
+    }
+
+    internal static string NormalizeWeaponName(string itemName)
+    {
+        var name = itemName.StartsWith("weapon_", StringComparison.Ordinal) ? itemName["weapon_".Length..] : itemName;
+        return name.StartsWith("knife", StringComparison.Ordinal) || name == "bayonet" ? "knife" : name;
     }
 
     private static PlayerSnapshot Snapshot(CCSPlayerController controller) =>

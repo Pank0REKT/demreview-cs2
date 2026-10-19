@@ -1,5 +1,7 @@
 using DemReview.Application;
+using DemReview.Application.Maps;
 using DemReview.Application.Parsing;
+using DemReview.Infrastructure.Maps;
 using DemReview.Infrastructure.Parsing;
 using DemReview.Infrastructure.Platform;
 using DemReview.Infrastructure.Storage;
@@ -15,6 +17,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<ISettingsService, JsonSettingsService>();
         services.AddSingleton<IMatchCache, InMemoryMatchCache>();
         services.AddSingleton<IDemoParser, DemoFileDemoParser>();
+        services.AddSingleton<IMapConfigProvider, EmbeddedMapConfigProvider>();
+        services.AddSingleton<IMapImageProvider, LocalMapImageProvider>();
         return services;
     }
 

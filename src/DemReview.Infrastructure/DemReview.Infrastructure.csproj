@@ -11,4 +11,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="DemReview.Tests" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Maps/maps.json" LogicalName="DemReview.Infrastructure.Maps.maps.json" />
+  </ItemGroup>
 </Project>

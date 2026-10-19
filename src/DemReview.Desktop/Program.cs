@@ -71,6 +71,7 @@ internal static class Program
             .AddSingleton<IUiDispatcher, AvaloniaUiDispatcher>()
             .AddSingleton<MainWindowAccessor>()
             .AddSingleton<IFileDialogService, AvaloniaFileDialogService>()
+            .AddSingleton<RadarViewModel>()
             .AddSingleton<MainWindowViewModel>();
 
         // Сервис платформы уже создан для логгера — регистрируем тот же экземпляр.

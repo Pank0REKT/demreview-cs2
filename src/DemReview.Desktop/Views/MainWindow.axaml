@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:DemReview.Desktop.ViewModels"
         xmlns:behaviors="using:DemReview.Desktop.Behaviors"
+        xmlns:controls="using:DemReview.Desktop.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
@@ -95,13 +96,92 @@
 
                 <TabControl IsVisible="{Binding HasMatch}">
                     <TabItem Header="Радар">
-                        <Grid>
-                            <TextBlock IsVisible="{Binding !HasSelectedPlayer}" Classes="secondary" HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" Text="Выберите игрока в списке слева." />
-                            <StackPanel IsVisible="{Binding HasSelectedPlayer}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
-                                <TextBlock Classes="header" HorizontalAlignment="Center" Text="{Binding SelectedPlayer.Name, FallbackValue=''}" />
-                                <TextBlock Classes="secondary" HorizontalAlignment="Center" Text="Радар с маршрутами игрока — этап 2." />
-                            </StackPanel>
+                        <Grid ColumnDefinitions="*,4,340" DataContext="{Binding Radar}" x:DataType="vm:RadarViewModel">
+                            <!-- Радар -->
+                            <Grid>
+                                <controls:RadarControl MapImage="{Binding MapImage}" Routes="{Binding Routes}"
+                                                       HighlightedRounds="{Binding HighlightedRounds}"
+                                                       ShowRoutes="{Binding ShowRoutes}" RadarToWorld="{Binding RadarToWorld}" />
+
+                                <TextBlock Text="{Binding MapTitle}" Classes="header" Margin="12,8" IsHitTestVisible="False"
+                                           HorizontalAlignment="Left" VerticalAlignment="Top" />
+
+                                <Border IsVisible="{Binding HasMapHint}" Margin="12,40,12,0" Padding="10,6" CornerRadius="4"
+                                        HorizontalAlignment="Left" VerticalAlignment="Top" Background="#CC1C1F24"
+                                        BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="{Binding MapHint}" TextWrapping="Wrap" MaxWidth="520" FontSize="12" />
+                                        <Button Content="Открыть папку maps" Command="{Binding OpenMapsFolderCommand}" FontSize="12" />
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock Classes="secondary" Margin="12,8" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                           IsHitTestVisible="False"
+                                           Text="Колесо — масштаб · перетаскивание — сдвиг · двойной клик — сброс" />
+                            </Grid>
+
+                            <GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="Transparent" />
+
+                            <!-- Панель маршрутов -->
+                            <DockPanel Grid.Column="2" Margin="8,8,0,0">
+                                <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+                                    <TextBlock Classes="header" Text="Слои" />
+                                    <WrapPanel>
+                                        <CheckBox Content="Маршруты" IsChecked="{Binding ShowRoutes}" Margin="0,0,12,0" />
+                                        <CheckBox Content="T" IsChecked="{Binding ShowT}" Margin="0,0,12,0" />
+                                        <CheckBox Content="CT" IsChecked="{Binding ShowCT}" />
+                                    </WrapPanel>
+                                    <Button Content="Показать все раунды" Command="{Binding ClearSelectionCommand}" />
+                                </StackPanel>
+
+                                <TabControl Padding="0">
+                                    <TabItem Header="Раунды" FontSize="14">
+                                        <ListBox ItemsSource="{Binding RoundRows}" SelectedItem="{Binding SelectedRound}">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:RouteRoundRow">
+                                                    <StackPanel Spacing="2">
+                                                        <TextBlock Text="{Binding Header}" FontWeight="SemiBold" />
+                                                        <TextBlock Text="{Binding ZonesText}" Classes="secondary" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </TabItem>
+                                    <TabItem Header="Частые" FontSize="14">
+                                        <Grid>
+                                            <TextBlock IsVisible="{Binding !FrequentRoutes.Count}" Classes="secondary" Margin="4,8" TextWrapping="Wrap"
+                                                       Text="Повторяющихся маршрутов (одинаковые первые 3 зоны минимум в 2 раундах) нет." />
+                                            <ListBox ItemsSource="{Binding FrequentRoutes}" SelectedItem="{Binding SelectedFrequentRoute}">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate x:DataType="vm:FrequentRouteRow">
+                                                        <StackPanel Spacing="2">
+                                                            <TextBlock Text="{Binding Header}" FontWeight="SemiBold" />
+                                                            <TextBlock Text="{Binding ZonesText}" TextWrapping="Wrap" />
+                                                            <TextBlock Text="{Binding RoundsText}" Classes="secondary" TextWrapping="Wrap" />
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                        </Grid>
+                                    </TabItem>
+                                    <TabItem Header="Тайминги" FontSize="14">
+                                        <DataGrid ItemsSource="{Binding ZoneTimings}" IsReadOnly="True" AutoGenerateColumns="False"
+                                                  CanUserSortColumns="True" GridLinesVisibility="Horizontal">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="Ст." Binding="{Binding Side}" x:DataType="vm:ZoneTimingRow" />
+                                                <DataGridTextColumn Header="Зона" Binding="{Binding Zone}" x:DataType="vm:ZoneTimingRow" Width="*" />
+                                                <DataGridTextColumn Header="Медиана" Binding="{Binding Median}" x:DataType="vm:ZoneTimingRow" />
+                                                <DataGridTextColumn Header="Разброс" Binding="{Binding Range}" x:DataType="vm:ZoneTimingRow" />
+                                                <DataGridTextColumn Header="Р." Binding="{Binding Rounds}" x:DataType="vm:ZoneTimingRow" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </TabItem>
+                                </TabControl>
+                            </DockPanel>
+
+                            <TextBlock Grid.ColumnSpan="3" IsVisible="{Binding !RoundRows.Count}" Classes="secondary"
+                                       HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,40" IsHitTestVisible="False"
+                                       Text="Выберите игрока в списке слева, чтобы увидеть его маршруты." />
                         </Grid>
                     </TabItem>
 

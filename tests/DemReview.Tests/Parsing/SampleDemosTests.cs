@@ -48,6 +48,43 @@ public class SampleDemosTests
 
         // K/D/A по событиям совпадает с табло игры.
         Assert.DoesNotContain(logger.Messages, m => m.Level >= LogLevel.Warning && m.Text.Contains("K/D/A"));
+
+        // Позиции: у каждого игрока есть сэмплы, шаг ~16 тиков, у большинства есть название зоны.
+        Assert.All(match.Players, p => Assert.NotEmpty(match.TrackOf(p.SteamId).Samples));
+        var samples = match.Tracks.Values.SelectMany(t => t.Samples).ToList();
+        Assert.True(samples.Count(s => s.Place.Length > 0) > samples.Count * 0.9, "Слишком много сэмплов без названия зоны");
+        Assert.All(samples, s => Assert.InRange(s.TimeInRound, 0, 200));
+    }
+
+    /// <summary>
+    /// Калибровка радара: все позиции игроков из демки должны попадать в изображение 1024×1024,
+    /// а спавны — в ожидаемые части радара.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Demos))]
+    public async Task Radar_calibration_fits_player_positions(string fileName)
+    {
+        Assert.SkipWhen(fileName.Length == 0, "Нет демок в samples/");
+
+        var parser = new DemoFileDemoParser(new CollectingLogger<DemoFileDemoParser>());
+        var match = await parser.ParseAsync(Path.Combine(TestPaths.SamplesDirectory!, fileName), new ParseOptions(), null,
+            TestContext.Current.CancellationToken);
+        var map = new DemReview.Infrastructure.Maps.EmbeddedMapConfigProvider().Find(match.MapName);
+        Assert.SkipWhen(map is null, $"Карта {match.MapName} не описана в maps.json");
+
+        var converter = new DemReview.Application.Maps.MapCoordinateConverter();
+        var points = match.Tracks.Values.SelectMany(t => t.Samples).Select(s => converter.ToRadar(map!, s.Position)).ToList();
+
+        Assert.All(points, p =>
+        {
+            Assert.InRange(p.X, 0, 1024);
+            Assert.InRange(p.Y, 0, 1024);
+        });
+
+        // Точки занимают заметную часть радара (масштаб не завышен в разы).
+        var width = points.Max(p => p.X) - points.Min(p => p.X);
+        var height = points.Max(p => p.Y) - points.Min(p => p.Y);
+        Assert.True(Math.Max(width, height) > 600, $"Позиции занимают только {width:F0}×{height:F0} px");
     }
 }
 

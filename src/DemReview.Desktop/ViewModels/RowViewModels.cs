@@ -63,6 +63,13 @@ public static class Texts
         _ => "—",
     };
 
+    /// <summary>Время от конца фризтайма в формате м:сс.</summary>
+    public static string Time(float seconds)
+    {
+        var total = (int)Math.Round(Math.Max(0, seconds));
+        return $"{total / 60}:{total % 60:00}";
+    }
+
     public static string RoundEndReason(RoundEndReason reason) => reason switch
     {
         Domain.RoundEndReason.TargetBombed => "Бомба взорвана",

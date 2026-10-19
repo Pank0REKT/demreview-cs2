@@ -1,0 +1,13 @@
+{
+  "_comment": "Параметры радаров CS2 (overview-файлы игры: game/csgo/resource/overviews/<map>.txt). px = (x - pos_x) / scale, py = (pos_y - y) / scale, изображение 1024x1024.",
+  "maps": [
+    { "name": "de_mirage",   "displayName": "Mirage",   "pos_x": -3230, "pos_y": 1713, "scale": 5.0 },
+    { "name": "de_inferno",  "displayName": "Inferno",  "pos_x": -2087, "pos_y": 3870, "scale": 4.9 },
+    { "name": "de_dust2",    "displayName": "Dust II",  "pos_x": -2476, "pos_y": 3239, "scale": 4.4 },
+    { "name": "de_nuke",     "displayName": "Nuke",     "pos_x": -3453, "pos_y": 2887, "scale": 7.0, "lowerLevelMaxZ": -495 },
+    { "name": "de_ancient",  "displayName": "Ancient",  "pos_x": -2953, "pos_y": 2164, "scale": 5.0 },
+    { "name": "de_anubis",   "displayName": "Anubis",   "pos_x": -2796, "pos_y": 3328, "scale": 5.22 },
+    { "name": "de_train",    "displayName": "Train",    "pos_x": -2308, "pos_y": 2078, "scale": 4.082 },
+    { "name": "de_overpass", "displayName": "Overpass", "pos_x": -4831, "pos_y": 1781, "scale": 5.2 }
+  ]
+}
