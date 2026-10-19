@@ -1,10 +1,12 @@
 using DemReview.Application;
 using DemReview.Application.Maps;
 using DemReview.Application.Parsing;
+using DemReview.Application.Updates;
 using DemReview.Infrastructure.Maps;
 using DemReview.Infrastructure.Parsing;
 using DemReview.Infrastructure.Platform;
 using DemReview.Infrastructure.Storage;
+using DemReview.Infrastructure.Updates;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DemReview.Infrastructure;
@@ -19,6 +21,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IDemoParser, DemoFileDemoParser>();
         services.AddSingleton<IMapConfigProvider, EmbeddedMapConfigProvider>();
         services.AddSingleton<IMapImageProvider, LocalMapImageProvider>();
+        services.AddSingleton<IUpdateChecker, GitHubUpdateChecker>();
         return services;
     }
 

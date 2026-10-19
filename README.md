@@ -1,109 +1,159 @@
 # DemReview
 
-Десктопное приложение для анализа поведения игрока по демке CS2 (`.dem`): маршруты, гранаты, ситуации
-«условия → действия», тепловые карты и профиль игрока с устойчивыми паттернами поведения.
-Работает полностью офлайн. Windows 10/11 x64 — основная платформа, Linux x64 — поддерживаемая.
-Интерфейс на русском и английском (выбор при первом запуске, смена — во вкладке «Настройки»).
+**English** · [Русский](README.ru.md)
 
-## Возможности
+DemReview is a desktop app that analyzes how **one specific player** behaves in a Counter-Strike 2 demo (`.dem`):
+where they go, which grenades they throw, how they react to the situation in a round, and which habits repeat
+often enough to be predictable. It works fully offline on Windows and Linux.
 
-- **Открытие демки:** Ctrl+O, перетаскивание файла на окно, аргумент командной строки («Открыть с помощью»).
-  Разбор в фоне с прогрессом и отменой (Esc).
-- **Радар** с подложкой карты: маршруты, гранаты (бросок → детонация, зоны дыма и огня), смерти, тепловая карта
-  позиций или смертей; зум колесом, перетаскивание.
-- **Таймлайн раунда:** ползунок и воспроизведение (×0,5–×8); все игроки с направлением взгляда (погибшие — крестиком),
-  ник при наведении мышью, киллфид как в игре (убийства и смерть анализируемого игрока выделены), всплывающий
-  урон над жертвами (нанесённый — жёлтый, полученный — красный), урон гранат у места взрыва; контекст
-  момента (численность, деньги, урон в раунде, закупки, бомба, счёт).
-- **Фильтры:** раунд, сторона, тип закупки команды, тип гранаты.
-- **Урон:** фактический (не больше оставшегося здоровья, как в табло игры); урон HE и огня привязан к броску —
-  в списке гранат и на радаре; урон за раунд в ситуациях, ADR в профиле.
-- **Статистика:** ситуации по раундам, частотные таблицы «условия → действия», раунды матча с закупками.
-- **Профиль игрока:** роль на каждой стороне с обоснованием, паттерны (частота, «N из M», уверенность по
-  интервалу Уилсона), сводка по сторонам, индекс предсказуемости. Клик по паттерну — раунды-примеры на радаре.
-- **Экспорт профиля** в Markdown или JSON (Ctrl+E) — на языке интерфейса.
-- **Кеш разобранных демок** в SQLite: повторное открытие — секунды вместо разбора.
-- **Настройки:** язык интерфейса, размер и очистка кеша, папки данных и карт.
+![Radar with all routes, grenades and deaths of one player](docs/images/radar-routes.png)
 
-## Горячие клавиши
+## What it shows
 
-| Клавиши | Действие |
+- **Radar.** Every route of the player on the map background, grenades from throw to detonation (smoke and fire
+  areas), deaths, heatmaps of positions or deaths. Zoom with the wheel, pan by dragging.
+- **Round replay.** Timeline with playback (×0.5–×8): all players with view direction, nickname on hover,
+  a game-style kill feed (the player's kills and death are highlighted), damage pop-ups over victims
+  (dealt — yellow, taken — red), grenade damage at the explosion, and the context of the moment: players alive,
+  money, buys, bomb, score.
+- **Filters.** Round, side, team buy (pistol, eco, force, full buy), grenade type.
+- **Statistics.** Each round as "conditions → decision": side, buy and score versus route, final position,
+  grenades, aggression, opening duel, damage. Frequency tables show how often each decision follows each condition.
+- **Player profile.** Role on each side with reasons, stable patterns ("On T (full buy): in 7 of 9 rounds takes
+  TSpawn → SideAlley → TopofMid"), confidence that accounts for the small sample of one demo, ADR and a
+  predictability index. One click shows a pattern's example rounds on the radar.
+- **Export** of the profile to Markdown or JSON.
+- **Russian and English** interface.
+
+| Round replay | Player profile |
 |---|---|
-| Ctrl+O | Открыть демку |
-| Ctrl+E | Экспорт профиля игрока |
-| F5 | Повторный анализ |
-| Shift+F5 | Разобрать демку заново (без кеша) |
-| Esc | Отменить разбор |
+| ![Kill feed and damage pop-ups on the timeline](docs/images/timeline.png) | ![Roles, side summary and patterns](docs/images/profile.png) |
 
-## Изображения карт
+![Conditions → actions table](docs/images/statistics.png)
 
-Положите PNG радаров (1024×1024) в папку `maps/` рядом с приложением, имя = имя карты в нижнем регистре:
-`de_mirage.png`, `de_inferno.png`, `de_dust2.png`, `de_nuke.png`, `de_ancient.png`, `de_anubis.png`,
-`de_train.png`, `de_overpass.png`. Подробности — в `maps/README.txt`. Без картинки радар рисуется с сеткой.
-Изображения — ассеты игры, в репозиторий не добавляются.
+## Download
 
-Калибровка координат (`src/DemReview.Infrastructure/Maps/maps.json`) проверена на реальных демках для
-de_mirage и de_anubis.
+Get the latest build from [Releases](../../releases/latest). Builds are self-contained: .NET is not required.
 
-## Данные пользователя
+- **Windows 10/11 x64:** unpack `DemReview-<version>-win-x64.zip` and run `DemReview.exe`.
+  The app is not code-signed, so Windows SmartScreen may warn on first start: *More info → Run anyway*.
+- **Linux x64:** unpack and run:
+  ```bash
+  tar -xzf DemReview-<version>-linux-x64.tar.gz
+  ./DemReview-<version>-linux-x64/DemReview
+  ```
+  A desktop session with X11 or XWayland is required.
 
-Каталог данных: Windows — `%LOCALAPPDATA%\DemReview`, Linux — `~/.local/share/DemReview`.
+Each release has `SHA256SUMS.txt` to verify the downloads.
 
-- `settings.json` — настройки (см. ниже), размер и положение окна;
-- `demreview.db` — кеш разобранных демок (SQLite, последние 50; можно удалить в любой момент);
-- `logs/` — журналы (14 дней).
+## How to use
 
-### Настройки (`settings.json`)
+1. **Open a demo:** *File → Open demo* (Ctrl+O), drag a `.dem` file onto the window, or pass the path on the
+   command line (on Windows you can use *Open with → DemReview*). Parsing runs in the background and can be
+   cancelled with Esc.
+2. **Pick a player** in the list on the left. All tabs now show this player.
+3. **Radar.** Layers are toggled on the right. Select a round in the *Rounds* list (or in the round filter) to open
+   the timeline: press *Play* or drag the slider. Hover a player to see the nickname, weapon and HP.
+   The *Frequent*, *Grenades* and *Timings* lists highlight their rounds and lineups on the radar.
+4. **Statistics.** *Player situations* lists every round; *Conditions → actions* shows frequency tables;
+   *Match rounds* shows the buys of both teams.
+5. **Player profile.** Patterns are shown when they happen in at least 60% of cases and in at least 3 rounds;
+   both thresholds can be changed on the tab. Watch "N of M" and the confidence dot (green — high, yellow — medium,
+   grey — low): one demo is a small sample. *Show on radar* overlays the example rounds.
+6. **Export** the profile with Ctrl+E: the format follows the file type (`.md` or `.json`), the text follows the
+   interface language.
+7. **Settings:** interface language, the parsed demo cache (size, clearing), data and map folders, update check.
 
-| Ключ | По умолчанию | Смысл |
+### Keyboard shortcuts
+
+| Keys | Action |
+|---|---|
+| Ctrl+O | Open demo |
+| Ctrl+E | Export player profile |
+| F5 | Analyze again |
+| Shift+F5 | Reparse the demo, skipping the cache |
+| Esc | Cancel parsing |
+
+### Maps
+
+Radar images and coordinates are included for de_mirage, de_inferno, de_dust2, de_nuke, de_ancient, de_anubis,
+de_train and de_overpass (coordinates are verified on real demos for Mirage and Anubis). Other maps are drawn
+on a grid with the scale fitted to player positions. How to add a map: [`maps/README.txt`](maps/README.txt).
+
+### Data and settings
+
+User data lives in `%LOCALAPPDATA%\DemReview` on Windows and `~/.local/share/DemReview` on Linux:
+
+- `settings.json` — settings and window placement;
+- `demreview.db` — cache of parsed demos (SQLite, last 50; safe to delete or clear in *Settings*);
+- `logs/` — logs for the last 14 days.
+
+Analysis thresholds can be tuned in `settings.json`:
+
+| Key | Default | Meaning |
 |---|---|---|
-| `Language` | — | Язык интерфейса: `ru` или `en`; нет значения — спросить при запуске |
-| `SampleTickStep` | 16 | Шаг выборки позиций, тиков (8–16) |
-| `GrenadeClusterThrowDistance` | 150 | Порог точек броска в одной раскидке, units |
-| `GrenadeClusterLandDistance` | 250 | Порог точек детонации в одной раскидке, units |
-| `BuyEcoMaxEquipment` | 1500 | Средняя экипировка ниже — эко, $ |
-| `BuyFullMinEquipment` | 3700 | Средняя экипировка не ниже — фулл-бай, $ (между — форс) |
-| `AggressiveContactSeconds` | 20 | Первый бой не позже — агрессивный раунд, с |
-| `PassiveContactSeconds` | 50 | Первый бой не раньше (или его нет) — пассивный раунд, с |
-| `PatternMinShare` | 0.6 | Минимальная частота паттерна (меняется и во вкладке «Профиль») |
-| `PatternMinExamples` | 3 | Минимум раундов-примеров паттерна |
+| `Language` | — | `ru` or `en`; empty — ask on start |
+| `CheckForUpdates` | `true` | Check GitHub for a new release on start |
+| `SampleTickStep` | 16 | Position sampling step, ticks (8–16) |
+| `GrenadeClusterThrowDistance` | 150 | Max distance between throw points in one lineup, units |
+| `GrenadeClusterLandDistance` | 250 | Max distance between detonation points in one lineup, units |
+| `BuyEcoMaxEquipment` | 1500 | Average equipment below this — eco, $ |
+| `BuyFullMinEquipment` | 3700 | Average equipment from this — full buy, $ (in between — force) |
+| `AggressiveContactSeconds` | 20 | First fight no later than this — aggressive round, s |
+| `PassiveContactSeconds` | 50 | First fight no earlier than this (or none) — passive round, s |
+| `PatternMinShare` | 0.6 | Minimum pattern frequency |
+| `PatternMinExamples` | 3 | Minimum example rounds of a pattern |
 
-## Сборка и запуск
+### Updates and privacy
 
-Требуется .NET SDK 10 (`global.json`). Пакеты NuGet хранятся в `.nuget/packages` внутри репозитория,
-источник — только nuget.org (`nuget.config`).
+DemReview does not send your data anywhere. The only network request is an optional check of the latest
+release on GitHub at start (*Settings → Updates*). When a new version is out, a banner links to the release page;
+updates are installed manually by downloading the new build.
+
+## Building from source
+
+Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download).
 
 ```bash
+git clone <repository url>
+cd demreview
 dotnet build DemReview.slnx
 dotnet test --solution DemReview.slnx
-dotnet run --project src/DemReview.Desktop -- "путь/к/демке.dem"
+dotnet run --project src/DemReview.Desktop -- "path/to/demo.dem"
 ```
 
-Тесты на реальных демках берут файлы из `samples/` (в `.gitignore`); если папки нет — пропускаются.
+NuGet packages are restored into `.nuget/packages` inside the repository (see `nuget.config`).
+Tests that need real demos take them from `samples/` (not in the repository) and are skipped without it.
 
-## Публикация
-
-Self-contained single-file сборки (на целевом ПК .NET не нужен), результат в `artifacts/<rid>/`
-(исполняемый файл + `maps/`):
-
-```powershell
-.\publish.ps1              # win-x64 и linux-x64
-.\publish.ps1 win-x64
-```
+Self-contained single-file builds go to `artifacts/<rid>/`:
 
 ```bash
-./publish.sh               # win-x64 и linux-x64
-./publish.sh linux-x64
+./publish.sh             # win-x64 and linux-x64; or: ./publish.sh linux-x64
+```
+```powershell
+.\publish.ps1            # win-x64 and linux-x64; or: .\publish.ps1 win-x64
 ```
 
-## Структура
+### Project structure
 
-| Проект | Назначение |
+| Project | Purpose |
 |---|---|
-| `DemReview.Domain` | Неизменяемые модели: матч, раунды, игроки, сэмплы позиций, гранаты, события |
-| `DemReview.Application` | Анализ: маршруты, гранаты, урон, контекст и экономика, «условия → действия», тепловые карты, фильтры, паттерны, экспорт, локализация (ru/en) |
-| `DemReview.Infrastructure` | Парсинг через DemoFile.Net, конфиги и изображения карт, кеш SQLite (EF Core), настройки, платформенные сервисы |
-| `DemReview.Desktop` | Avalonia UI (MVVM, CommunityToolkit.Mvvm), DI-хост, радар |
-| `DemReview.Tests` | xUnit v3: анализ и паттерны на синтетических данных, координаты, парсер на `samples/` |
+| `DemReview.Domain` | Immutable models: match, rounds, players, position samples, grenades, events |
+| `DemReview.Application` | Analysis: routes, grenades, damage, round context and economy, conditions → actions, heatmaps, filters, patterns, export, localization |
+| `DemReview.Infrastructure` | Demo parsing with [DemoFile.Net](https://github.com/saul/demofile-net), map data, SQLite cache (EF Core), settings, update check, platform services |
+| `DemReview.Desktop` | Avalonia UI (MVVM with CommunityToolkit.Mvvm), radar control, DI host |
+| `DemReview.Tests` | xUnit v3 tests |
 
-План и решения — в `docs/PLAN.md`.
+Code comments and design notes ([docs/PLAN.md](docs/PLAN.md)) are in Russian.
+
+### Releasing
+
+1. Update `Version` in `Directory.Build.props` and add a section to [CHANGELOG.md](CHANGELOG.md).
+2. Push a tag: `git tag v0.2.0 && git push origin v0.2.0`.
+3. GitHub Actions runs the tests, builds the Windows and Linux archives and creates a **draft** release.
+4. Review the draft on the Releases page and publish it.
+
+## License
+
+[MIT](LICENSE). Third-party components and the map images (© Valve Corporation) are listed in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). DemReview is not affiliated with or endorsed by Valve.

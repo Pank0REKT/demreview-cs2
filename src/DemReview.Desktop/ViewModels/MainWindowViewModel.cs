@@ -135,6 +135,7 @@ public partial class MainWindowViewModel(
             if (switchTab)
                 SelectedTabIndex = 0;
         };
+        _ = Settings.CheckOnStartupAsync();
         return startup.DemoPath is { } path ? LoadFileAsync(path) : Task.CompletedTask;
     }
 

@@ -63,6 +63,16 @@
             </Grid>
         </Border>
 
+        <!-- Новая версия на GitHub -->
+        <Border DockPanel.Dock="Top" IsVisible="{Binding Settings.HasUpdateBanner}" Margin="12,8,12,0" Padding="12,6" CornerRadius="4"
+                Background="#1C2A3A" BorderBrush="#5AA0E6" BorderThickness="1">
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                <TextBlock Text="{Binding Settings.UpdateBannerText}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                <Button Grid.Column="1" Content="{l:T 'Открыть страницу релиза', 'Open the release page'}" Command="{Binding Settings.OpenReleaseCommand}" />
+                <Button Grid.Column="2" Content="{l:T 'Не напоминать', 'Do not remind'}" Command="{Binding Settings.DismissUpdateCommand}" />
+            </Grid>
+        </Border>
+
         <Grid ColumnDefinitions="320,4,*">
             <!-- Левая панель: игроки -->
             <DockPanel Margin="12,12,0,12">
@@ -569,6 +579,19 @@
                                 </Grid>
                                 <TextBlock Classes="secondary" TextWrapping="Wrap"
                                            Text="{l:T 'Пороги анализа (типы закупки, агрессия, раскидки, шаг выборки) задаются в settings.json в папке данных.', 'Analysis thresholds (buy types, aggression, lineups, sampling step) are set in settings.json in the data folder.'}" />
+                            </StackPanel>
+
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="header" Text="{l:T 'Обновления', 'Updates'}" />
+                                <CheckBox Content="{l:T 'Проверять новые версии на GitHub при запуске', 'Check GitHub for new versions on startup'}"
+                                          IsChecked="{Binding CheckForUpdates}" IsEnabled="{Binding HasRepository}" />
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Content="{l:T 'Проверить сейчас', 'Check now'}" Command="{Binding CheckUpdatesNowCommand}" IsEnabled="{Binding HasRepository}" />
+                                    <Button Content="{l:T 'Страница проекта', 'Project page'}" Command="{Binding OpenProjectPageCommand}" IsVisible="{Binding HasRepository}" />
+                                </StackPanel>
+                                <TextBlock Classes="secondary" Text="{Binding UpdateStatusText}" TextWrapping="Wrap" />
+                                <TextBlock Classes="secondary" TextWrapping="Wrap"
+                                           Text="{l:T 'Один запрос к GitHub при запуске; без сети программа работает как обычно. Новая версия скачивается вручную со страницы релиза.', 'One request to GitHub on startup; without a network the app works as usual. New versions are downloaded manually from the release page.'}" />
                             </StackPanel>
 
                             <TextBlock Classes="secondary" Text="{Binding Version, StringFormat='DemReview {0}'}" />

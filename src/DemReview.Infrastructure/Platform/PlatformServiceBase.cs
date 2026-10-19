@@ -27,9 +27,19 @@ public abstract class PlatformServiceBase : IPlatformService
         using var process = Process.Start(CreateOpenFolderStartInfo(path));
     }
 
+    /// <summary>Открывает страницу в браузере. Только https — ссылки берутся из ответа GitHub.</summary>
+    public void OpenUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+            throw new ArgumentException($"Unsupported URL: {url}", nameof(url));
+        using var process = Process.Start(CreateOpenUrlStartInfo(uri.AbsoluteUri));
+    }
+
     public abstract string NormalizePathKey(string fullPath);
 
     protected abstract ProcessStartInfo CreateOpenFolderStartInfo(string path);
+
+    protected abstract ProcessStartInfo CreateOpenUrlStartInfo(string url);
 }
 
 public sealed class WindowsPlatformService : PlatformServiceBase
@@ -44,6 +54,8 @@ public sealed class WindowsPlatformService : PlatformServiceBase
 
     protected override ProcessStartInfo CreateOpenFolderStartInfo(string path) =>
         new("explorer.exe") { ArgumentList = { path }, UseShellExecute = false };
+
+    protected override ProcessStartInfo CreateOpenUrlStartInfo(string url) => new(url) { UseShellExecute = true };
 }
 
 public sealed class LinuxPlatformService : PlatformServiceBase
@@ -58,4 +70,7 @@ public sealed class LinuxPlatformService : PlatformServiceBase
 
     protected override ProcessStartInfo CreateOpenFolderStartInfo(string path) =>
         new("xdg-open") { ArgumentList = { path }, UseShellExecute = false };
+
+    protected override ProcessStartInfo CreateOpenUrlStartInfo(string url) =>
+        new("xdg-open") { ArgumentList = { url }, UseShellExecute = false };
 }

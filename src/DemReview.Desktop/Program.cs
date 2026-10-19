@@ -1,5 +1,7 @@
-﻿using Avalonia;
+﻿using System.Reflection;
+using Avalonia;
 using DemReview.Application;
+using DemReview.Application.Updates;
 using DemReview.Desktop.Services;
 using DemReview.Desktop.ViewModels;
 using DemReview.Infrastructure;
@@ -73,6 +75,7 @@ internal static class Program
             .AddSingleton<IFileDialogService, AvaloniaFileDialogService>()
             .AddSingleton<RadarViewModel>()
             .AddSingleton<StatisticsViewModel>()
+            .AddSingleton(CreateAppInfo())
             .AddSingleton<LanguageService>()
             .AddSingleton<ProfileViewModel>()
             .AddSingleton<SettingsViewModel>()
@@ -81,6 +84,14 @@ internal static class Program
         // Сервис платформы уже создан для логгера — регистрируем тот же экземпляр.
         builder.Services.AddSingleton(platform);
         return builder.Build();
+    }
+
+    /// <summary>Версия и адрес репозитория — из метаданных сборки (Directory.Build.props).</summary>
+    private static AppInfo CreateAppInfo()
+    {
+        var assembly = typeof(Program).Assembly;
+        var repository = assembly.GetCustomAttributes<AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == "RepositoryUrl")?.Value;
+        return new AppInfo(assembly.GetName().Version ?? new Version(0, 0, 0), repository ?? "");
     }
 
     private static Serilog.ILogger CreateLogger(IPlatformService platform) =>

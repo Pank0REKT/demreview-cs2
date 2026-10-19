@@ -33,6 +33,12 @@ public sealed record AppSettings
     /// <summary>Паттерн показывается при числе примеров не меньше.</summary>
     public int PatternMinExamples { get; init; } = 3;
 
+    /// <summary>Проверять новые релизы на GitHub при запуске (один запрос, без него всё работает офлайн).</summary>
+    public bool CheckForUpdates { get; init; } = true;
+
+    /// <summary>Версия, о которой пользователь попросил больше не напоминать.</summary>
+    public string? DismissedUpdateVersion { get; init; }
+
     public WindowPlacement? MainWindow { get; init; }
 }
 

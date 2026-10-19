@@ -6,9 +6,18 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <Company>Pank0REKT</Company>
+    <Authors>Pank0REKT</Authors>
     <Product>DemReview</Product>
+    <Copyright>Copyright (c) 2026 Pank0REKT</Copyright>
+    <!-- Версия релиза; сборка в GitHub Actions передаёт её из тега (v1.2.3 → 1.2.3). -->
     <Version>0.1.0</Version>
+    <!-- Адрес репозитория: ссылки в приложении и проверка новых релизов. OWNER — заменить на владельца. -->
+    <RepositoryUrl>https://github.com/OWNER/demreview</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <NeutralLanguage>ru</NeutralLanguage>
     <SatelliteResourceLanguages>ru;en</SatelliteResourceLanguages>
   </PropertyGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="RepositoryUrl" Value="$(RepositoryUrl)" />
+  </ItemGroup>
 </Project>

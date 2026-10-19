@@ -23,4 +23,7 @@ public interface IPlatformService
 
     /// <summary>Открывает каталог в файловом менеджере ОС.</summary>
     void OpenFolder(string path);
+
+    /// <summary>Открывает https-ссылку в браузере по умолчанию.</summary>
+    void OpenUrl(string url);
 }

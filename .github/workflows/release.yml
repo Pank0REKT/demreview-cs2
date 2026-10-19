@@ -1,0 +1,55 @@
+# Тег vX.Y.Z → тесты, сборки win-x64 и linux-x64, черновик релиза с архивами.
+# Черновик публикуется вручную на странице Releases.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Test
+        run: dotnet test --solution DemReview.slnx -c Release
+
+      - name: Publish
+        run: |
+          for rid in win-x64 linux-x64; do
+            dotnet publish src/DemReview.Desktop/DemReview.Desktop.csproj -c Release -r "$rid" --self-contained \
+              -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none \
+              -p:Version="$VERSION" -p:RepositoryUrl="${{ github.server_url }}/${{ github.repository }}" \
+              -o "artifacts/DemReview-$VERSION-$rid"
+            cp LICENSE THIRD-PARTY-NOTICES.md "artifacts/DemReview-$VERSION-$rid/"
+          done
+
+      - name: Package
+        working-directory: artifacts
+        run: |
+          zip -qr "DemReview-$VERSION-win-x64.zip" "DemReview-$VERSION-win-x64"
+          chmod +x "DemReview-$VERSION-linux-x64/DemReview"
+          tar -czf "DemReview-$VERSION-linux-x64.tar.gz" "DemReview-$VERSION-linux-x64"
+          sha256sum "DemReview-$VERSION-win-x64.zip" "DemReview-$VERSION-linux-x64.tar.gz" > SHA256SUMS.txt
+
+      - name: Draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: DemReview ${{ env.VERSION }}
+          generate_release_notes: true
+          files: |
+            artifacts/DemReview-${{ env.VERSION }}-win-x64.zip
+            artifacts/DemReview-${{ env.VERSION }}-linux-x64.tar.gz
+            artifacts/SHA256SUMS.txt

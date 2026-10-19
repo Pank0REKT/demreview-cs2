@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using DemReview.Application;
 using DemReview.Application.Localization;
 using DemReview.Application.Parsing;
+using DemReview.Application.Updates;
 using DemReview.Desktop.Services;
 using Microsoft.Extensions.Logging;
 
@@ -10,7 +11,7 @@ namespace DemReview.Desktop.ViewModels;
 
 public sealed record LanguageOption(UiLanguage Language, string Name);
 
-/// <summary>Вкладка «Настройки»: язык интерфейса, кеш разобранных демок, каталог данных.</summary>
+/// <summary>Вкладка «Настройки»: язык интерфейса, кеш разобранных демок, каталоги, обновления.</summary>
 public partial class SettingsViewModel : ViewModelBase
 {
     private readonly LanguageService _language;
@@ -18,11 +19,16 @@ public partial class SettingsViewModel : ViewModelBase
     private readonly IPlatformService _platform;
     private readonly ILogger<SettingsViewModel> _logger;
 
-    public SettingsViewModel(LanguageService language, IMatchCache cache, IPlatformService platform, ILogger<SettingsViewModel> logger)
+    public SettingsViewModel(LanguageService language, IMatchCache cache, IPlatformService platform, IUpdateChecker updates, AppInfo app,
+        ISettingsService settings, ILogger<SettingsViewModel> logger)
     {
         _language = language;
         _cache = cache;
         _platform = platform;
+        _updates = updates;
+        _app = app;
+        _settings = settings;
+        CheckForUpdates = settings.Current.CheckForUpdates;
         _logger = logger;
         SelectedLanguage = Languages.First(l => l.Language == Loc.Language);
     }
@@ -47,7 +53,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     public string MapsDirectory => _platform.MapsDirectory;
 
-    public string Version => typeof(SettingsViewModel).Assembly.GetName().Version?.ToString(3) ?? "";
+    public string Version => _app.VersionText;
 
     partial void OnSelectedLanguageChanged(LanguageOption value)
     {
