@@ -8,6 +8,10 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <!-- Single-file: сжатие уменьшает .exe примерно вдвое -->
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <!-- Обычная сборка — только под ОС разработчика: иначе в bin копируются нативные библиотеки Skia
+         для всех платформ (~600 МБ). При публикации RID задаётся явно (-r win-x64 / linux-x64). -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
+    <SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
   </PropertyGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
@@ -29,6 +33,12 @@
     <PackageReference Include="Serilog.Sinks.File" />
   </ItemGroup>
   <!-- Отладочные символы нативных библиотек (SkiaSharp, HarfBuzz) в публикации не нужны -->
+  <Target Name="RemoveNativePdbsFromBuild" AfterTargets="Build">
+    <ItemGroup>
+      <_NativePdb Include="$(OutDir)libSkiaSharp.pdb;$(OutDir)libHarfBuzzSharp.pdb" />
+    </ItemGroup>
+    <Delete Files="@(_NativePdb)" />
+  </Target>
   <Target Name="RemoveNativePdbsFromPublish" AfterTargets="Publish">
     <ItemGroup>
       <_PublishedPdb Include="$(PublishDir)*.pdb" />
