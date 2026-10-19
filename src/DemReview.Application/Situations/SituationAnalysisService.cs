@@ -28,7 +28,7 @@ public sealed class SituationAnalysisService(IRoundContextService contexts, IRou
             situations.Add(Build(match, context, steamId, round, side, route, options));
         }
 
-        return new SituationAnalysis(steamId, situations, BuildTables(situations));
+        return new SituationAnalysis(steamId, situations, Tables(situations));
     }
 
     private static RoundSituation Build(MatchData match, IMatchContext context, ulong steamId, RoundInfo round, Side side,
@@ -108,7 +108,9 @@ public sealed class SituationAnalysisService(IRoundContextService contexts, IRou
 
     // ---------- Частотные таблицы ----------
 
-    private static List<FrequencyTable> BuildTables(IReadOnlyList<RoundSituation> rounds)
+    public IReadOnlyList<FrequencyTable> BuildTables(IReadOnlyList<RoundSituation> rounds) => Tables(rounds);
+
+    private static List<FrequencyTable> Tables(IReadOnlyList<RoundSituation> rounds)
     {
         static string SideBuy(RoundSituation s) => $"{Labels.Side(s.Side)} · {Labels.Buy(s.TeamBuy)}";
 

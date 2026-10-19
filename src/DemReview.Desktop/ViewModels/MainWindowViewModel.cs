@@ -50,6 +50,27 @@ public partial class MainWindowViewModel(
 
     public StatisticsViewModel Statistics { get; } = statistics;
 
+    public FilterViewModel Filter { get; } = CreateFilter(radar, statistics, logger);
+
+    /// <summary>Фильтры применяются к радару и статистике.</summary>
+    private static FilterViewModel CreateFilter(RadarViewModel radar, StatisticsViewModel statistics, ILogger logger)
+    {
+        var filter = new FilterViewModel();
+        filter.Changed += async f =>
+        {
+            try
+            {
+                statistics.SetFilter(f);
+                await radar.SetFilterAsync(f);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Ошибка применения фильтра");
+            }
+        };
+        return filter;
+    }
+
     public ObservableCollection<PlayerRowViewModel> Players { get; } = [];
 
     public bool IsIdle => !IsBusy;
@@ -177,6 +198,7 @@ public partial class MainWindowViewModel(
         CurrentPath = path;
         Radar.SetMatch(match);
         Statistics.SetMatch(match);
+        Filter.SetMatch(match);
 
         Players.Clear();
         foreach (var player in match.Players)

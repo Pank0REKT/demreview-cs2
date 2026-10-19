@@ -61,6 +61,42 @@
                     <TextBlock Classes="header" Text="Игроки" />
                     <TextBlock Classes="secondary" Text="{Binding MatchSummary}" TextWrapping="Wrap" IsVisible="{Binding HasMatch}" />
                 </StackPanel>
+
+                <!-- Фильтры -->
+                <Border DockPanel.Dock="Bottom" Margin="0,8,0,0" Padding="8" CornerRadius="4" IsVisible="{Binding HasMatch}"
+                        Background="{DynamicResource PanelBackgroundBrush}">
+                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8"
+                          DataContext="{Binding Filter}" x:DataType="vm:FilterViewModel">
+                        <TextBlock Grid.ColumnSpan="2" Classes="header" Text="Фильтры" />
+                        <TextBlock Grid.Row="1" Text="Раунд" VerticalAlignment="Center" />
+                        <ComboBox Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Rounds}"
+                                  SelectedItem="{Binding SelectedRound}" MaxDropDownHeight="400">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:FilterOption"><TextBlock Text="{Binding Label}" /></DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <TextBlock Grid.Row="2" Text="Сторона" VerticalAlignment="Center" />
+                        <ComboBox Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Sides}" SelectedItem="{Binding SelectedSide}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:FilterOption"><TextBlock Text="{Binding Label}" /></DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <TextBlock Grid.Row="3" Text="Закупка" VerticalAlignment="Center" />
+                        <ComboBox Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Buys}" SelectedItem="{Binding SelectedBuy}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:FilterOption"><TextBlock Text="{Binding Label}" /></DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <TextBlock Grid.Row="4" Text="Гранаты" VerticalAlignment="Center" />
+                        <ComboBox Grid.Row="4" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Grenades}" SelectedItem="{Binding SelectedGrenade}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:FilterOption"><TextBlock Text="{Binding Label}" /></DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <Button Grid.Row="5" Grid.ColumnSpan="2" Content="Сбросить фильтры" Command="{Binding ResetCommand}"
+                                IsEnabled="{Binding IsActive}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+                    </Grid>
+                </Border>
                 <Grid>
                     <ListBox ItemsSource="{Binding Players}" SelectedItem="{Binding SelectedPlayer}" IsVisible="{Binding HasMatch}">
                         <ListBox.ItemTemplate>
@@ -98,13 +134,39 @@
                 <TabControl IsVisible="{Binding HasMatch}">
                     <TabItem Header="Радар">
                         <Grid ColumnDefinitions="*,4,340" DataContext="{Binding Radar}" x:DataType="vm:RadarViewModel">
-                            <!-- Радар -->
+                            <!-- Радар и таймлайн -->
+                            <DockPanel>
+                            <Border DockPanel.Dock="Bottom" Padding="8,6" Margin="0,4,0,0" CornerRadius="4"
+                                    Background="{DynamicResource PanelBackgroundBrush}" DataContext="{Binding Timeline}"
+                                    x:DataType="vm:TimelineViewModel">
+                                <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="10">
+                                    <Button Content="{Binding PlayButtonText}" Command="{Binding PlayPauseCommand}" MinWidth="72" />
+                                    <Slider Grid.Column="1" Minimum="{Binding MinTick}" Maximum="{Binding MaxTick}"
+                                            Value="{Binding CurrentTick}" IsEnabled="{Binding IsEnabled}" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <TextBlock Text="Скорость" VerticalAlignment="Center" Classes="secondary" />
+                                        <ComboBox ItemsSource="{Binding Speeds}" SelectedItem="{Binding Speed}" IsEnabled="{Binding IsEnabled}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate x:DataType="x:Double">
+                                                    <TextBlock Text="{Binding StringFormat='×{0}'}" />
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Margin="0,4,0,0" TextWrapping="Wrap" FontSize="12">
+                                        <Run Text="{Binding TimeText}" FontWeight="SemiBold" />
+                                        <Run Text="  " />
+                                        <Run Text="{Binding ContextText}" />
+                                    </TextBlock>
+                                </Grid>
+                            </Border>
                             <Grid>
                                 <controls:RadarControl MapImage="{Binding MapImage}" Routes="{Binding Routes}"
                                                        HighlightedRounds="{Binding HighlightedRounds}"
                                                        ShowRoutes="{Binding ShowRoutes}" RadarToWorld="{Binding RadarToWorld}"
                                                        Grenades="{Binding Grenades}" HighlightedGrenades="{Binding HighlightedGrenades}"
-                                                       ShowGrenades="{Binding ShowGrenades}" />
+                                                       ShowGrenades="{Binding ShowGrenades}" Heatmap="{Binding Heatmap}"
+                                                       Deaths="{Binding Deaths}" Players="{Binding Players}" />
 
                                 <TextBlock Text="{Binding MapTitle}" Classes="header" Margin="12,8" IsHitTestVisible="False"
                                            HorizontalAlignment="Left" VerticalAlignment="Top" />
@@ -122,6 +184,7 @@
                                            IsHitTestVisible="False"
                                            Text="Колесо — масштаб · перетаскивание — сдвиг · двойной клик — сброс" />
                             </Grid>
+                            </DockPanel>
 
                             <GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="Transparent" />
 
@@ -131,18 +194,23 @@
                                     <TextBlock Classes="header" Text="Слои" />
                                     <WrapPanel>
                                         <CheckBox Content="Маршруты" IsChecked="{Binding ShowRoutes}" Margin="0,0,12,0" />
-                                        <CheckBox Content="T" IsChecked="{Binding ShowT}" Margin="0,0,12,0" />
-                                        <CheckBox Content="CT" IsChecked="{Binding ShowCT}" />
+                                        <CheckBox Content="Гранаты" IsChecked="{Binding ShowGrenades}" Margin="0,0,12,0" />
+                                        <CheckBox Content="Смерти" IsChecked="{Binding ShowDeaths}" />
                                     </WrapPanel>
-                                    <WrapPanel>
-                                        <CheckBox Content="Гранаты:" IsChecked="{Binding ShowGrenades}" Margin="0,0,8,0" />
-                                        <CheckBox Content="HE" IsChecked="{Binding ShowHe}" IsEnabled="{Binding ShowGrenades}" Margin="0,0,8,0" Foreground="#FF5050" />
-                                        <CheckBox Content="флеш" IsChecked="{Binding ShowFlash}" IsEnabled="{Binding ShowGrenades}" Margin="0,0,8,0" Foreground="#FAF078" />
-                                        <CheckBox Content="дым" IsChecked="{Binding ShowSmoke}" IsEnabled="{Binding ShowGrenades}" Margin="0,0,8,0" Foreground="#CDD4DE" />
-                                        <CheckBox Content="огонь" IsChecked="{Binding ShowFire}" IsEnabled="{Binding ShowGrenades}" Margin="0,0,8,0" Foreground="#FF8C1A" />
-                                        <CheckBox Content="ложн." IsChecked="{Binding ShowDecoy}" IsEnabled="{Binding ShowGrenades}" Foreground="#6ED76E" />
-                                    </WrapPanel>
-                                    <Button Content="Показать все раунды" Command="{Binding ClearSelectionCommand}" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <CheckBox Content="Тепловая карта:" IsChecked="{Binding ShowHeatmap}" />
+                                        <ComboBox ItemsSource="{x:Static vm:RadarViewModel.HeatmapModes}" SelectedItem="{Binding SelectedHeatmapMode}"
+                                                  IsEnabled="{Binding ShowHeatmap}" MinWidth="110">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:FilterOption">
+                                                    <TextBlock Text="{Binding Label}" />
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <TextBlock Classes="secondary" TextWrapping="Wrap"
+                                               Text="Раунд, сторона, закупка и тип гранаты — фильтры слева под списком игроков." />
+                                    <Button Content="Снять выделение" Command="{Binding ClearSelectionCommand}" />
                                 </StackPanel>
 
                                 <TabControl Padding="0">

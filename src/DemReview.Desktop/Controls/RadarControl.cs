@@ -11,6 +11,11 @@ namespace DemReview.Desktop.Controls;
 /// <param name="LowerLevel">Для многоуровневых карт: точка на нижнем уровне (рисуется пунктиром).</param>
 public sealed record RadarRoute(int Round, IReadOnlyList<Point> Points, IReadOnlyList<bool> LowerLevel, Color Color, bool Died);
 
+/// <summary>Игрок в текущий момент таймлайна.</summary>
+/// <param name="Yaw">Угол обзора в градусах игры (0 — восток, 90 — север).</param>
+/// <param name="IsSelected">Анализируемый игрок — рисуется крупнее, с направлением взгляда и подписью.</param>
+public sealed record RadarPlayerMarker(Point Position, float Yaw, Color Color, bool IsSelected, string Label);
+
 /// <summary>Вид отметки детонации гранаты.</summary>
 public enum RadarGrenadeKind { HighExplosive, Flash, Smoke, Fire, Decoy }
 
@@ -55,7 +60,8 @@ public sealed class RadarControl : Control
     static RadarControl()
     {
         AffectsRender<RadarControl>(MapImageProperty, RoutesProperty, HighlightedRoundsProperty, ShowRoutesProperty,
-            GrenadesProperty, HighlightedGrenadesProperty, ShowGrenadesProperty);
+            GrenadesProperty, HighlightedGrenadesProperty, ShowGrenadesProperty, HeatmapProperty, DeathsProperty,
+            PlayersProperty);
         RoutesProperty.Changed.AddClassHandler<RadarControl>((c, _) => c._geometryCache = null);
         ClipToBoundsProperty.OverrideDefaultValue<RadarControl>(true);
         FocusableProperty.OverrideDefaultValue<RadarControl>(true);
@@ -94,6 +100,36 @@ public sealed class RadarControl : Control
 
     public static readonly StyledProperty<bool> ShowGrenadesProperty =
         AvaloniaProperty.Register<RadarControl, bool>(nameof(ShowGrenades), true);
+
+    /// <summary>Тепловая карта (растягивается на весь радар 1024×1024).</summary>
+    public static readonly StyledProperty<Bitmap?> HeatmapProperty =
+        AvaloniaProperty.Register<RadarControl, Bitmap?>(nameof(Heatmap));
+
+    /// <summary>Места смертей игрока, пиксели радара.</summary>
+    public static readonly StyledProperty<IReadOnlyList<Point>?> DeathsProperty =
+        AvaloniaProperty.Register<RadarControl, IReadOnlyList<Point>?>(nameof(Deaths));
+
+    /// <summary>Игроки в текущий момент таймлайна (null — режим таймлайна выключен).</summary>
+    public static readonly StyledProperty<IReadOnlyList<RadarPlayerMarker>?> PlayersProperty =
+        AvaloniaProperty.Register<RadarControl, IReadOnlyList<RadarPlayerMarker>?>(nameof(Players));
+
+    public Bitmap? Heatmap
+    {
+        get => GetValue(HeatmapProperty);
+        set => SetValue(HeatmapProperty, value);
+    }
+
+    public IReadOnlyList<Point>? Deaths
+    {
+        get => GetValue(DeathsProperty);
+        set => SetValue(DeathsProperty, value);
+    }
+
+    public IReadOnlyList<RadarPlayerMarker>? Players
+    {
+        get => GetValue(PlayersProperty);
+        set => SetValue(PlayersProperty, value);
+    }
 
     public IReadOnlyList<RadarGrenade>? Grenades
     {
@@ -153,10 +189,17 @@ public sealed class RadarControl : Control
         using (context.PushTransform(RadarToScreen))
         {
             DrawBackground(context, scale);
+            if (Heatmap is { } heatmap)
+            {
+                using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.HighQuality }))
+                    context.DrawImage(heatmap, new Rect(heatmap.Size), new Rect(0, 0, RadarSize, RadarSize));
+            }
             if (ShowRoutes)
                 DrawRoutes(context, scale);
             if (ShowGrenades)
                 DrawGrenades(context, scale);
+            DrawDeaths(context, scale);
+            DrawPlayers(context, scale);
         }
 
         DrawCursorCoordinates(context);
@@ -270,6 +313,56 @@ public sealed class RadarControl : Control
                     context.DrawRectangle(null, new Pen(markBrush, 1.5 / scale), new Rect(to.X - s, to.Y - s, 2 * s, 2 * s));
                     break;
             }
+        }
+    }
+
+    private void DrawDeaths(DrawingContext context, double scale)
+    {
+        if (Deaths is not { Count: > 0 } deaths)
+            return;
+
+        var outline = new Pen(Brushes.Black, 4 / scale);
+        var pen = new Pen(new SolidColorBrush(Color.FromRgb(255, 60, 60)), 2.2 / scale);
+        var d = 6 / scale;
+        foreach (var p in deaths)
+        {
+            foreach (var current in new[] { outline, pen })
+            {
+                context.DrawLine(current, p + new Vector(-d, -d), p + new Vector(d, d));
+                context.DrawLine(current, p + new Vector(-d, d), p + new Vector(d, -d));
+            }
+        }
+    }
+
+    /// <summary>Игроки в момент таймлайна: кружок цвета стороны, у анализируемого — направление взгляда и подпись.</summary>
+    private void DrawPlayers(DrawingContext context, double scale)
+    {
+        if (Players is not { Count: > 0 } players)
+            return;
+
+        foreach (var player in players.OrderBy(p => p.IsSelected))
+        {
+            var brush = new SolidColorBrush(player.Color);
+            var radius = (player.IsSelected ? 7 : 5) / scale;
+
+            // Взгляд: игровой yaw отсчитывается против часовой от востока, ось Y радара направлена вниз.
+            var angle = player.Yaw * Math.PI / 180;
+            var direction = new Vector(Math.Cos(angle), -Math.Sin(angle));
+            var viewLength = (player.IsSelected ? 26 : 14) / scale;
+            context.DrawLine(new Pen(brush, (player.IsSelected ? 2.5 : 1.5) / scale), player.Position, player.Position + direction * viewLength);
+
+            context.DrawEllipse(brush, new Pen(player.IsSelected ? Brushes.White : Brushes.Black, (player.IsSelected ? 2.5 : 1.2) / scale),
+                player.Position, radius, radius);
+
+            if (!player.IsSelected || player.Label.Length == 0)
+                continue;
+
+            var text = new FormattedText(player.Label, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Typeface.Default,
+                13 / scale, Brushes.White);
+            var origin = player.Position + new Vector(radius + 3 / scale, -text.Height / 2);
+            context.FillRectangle(new SolidColorBrush(Color.FromArgb(170, 0, 0, 0)),
+                new Rect(origin.X - 2 / scale, origin.Y, text.Width + 4 / scale, text.Height));
+            context.DrawText(text, origin);
         }
     }
 

@@ -1,5 +1,6 @@
 using DemReview.Application.Context;
 using DemReview.Application.Grenades;
+using DemReview.Application.Heatmaps;
 using DemReview.Application.Maps;
 using DemReview.Application.Parsing;
 using DemReview.Application.Routes;
@@ -18,6 +19,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddSingleton<IGrenadeAnalysisService, GrenadeAnalysisService>();
         services.AddSingleton<IRoundContextService, RoundContextService>();
         services.AddSingleton<ISituationAnalysisService, SituationAnalysisService>();
+        services.AddSingleton<IHeatmapService, HeatmapService>();
         return services;
     }
 }

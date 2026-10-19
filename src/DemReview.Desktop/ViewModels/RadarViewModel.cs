@@ -1,40 +1,91 @@
 using System.Collections.ObjectModel;
+using System.Numerics;
 using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DemReview.Application;
+using DemReview.Application.Context;
+using DemReview.Application.Filters;
 using DemReview.Application.Grenades;
+using DemReview.Application.Heatmaps;
 using DemReview.Application.Maps;
 using DemReview.Application.Routes;
+using DemReview.Application.Situations;
 using DemReview.Desktop.Controls;
 using DemReview.Domain;
 using Microsoft.Extensions.Logging;
+using Point = Avalonia.Point;
 
 namespace DemReview.Desktop.ViewModels;
 
-/// <summary>Вкладка «Радар»: подложка карты, маршруты и гранаты выбранного игрока, частые маршруты, раскидки.</summary>
-public partial class RadarViewModel(
-    IRouteAnalysisService routeAnalysis,
-    IGrenadeAnalysisService grenadeAnalysis,
-    IMapConfigProvider mapConfigs,
-    IMapImageProvider mapImages,
-    IMapCoordinateConverter converter,
-    ISettingsService settings,
-    IPlatformService platform,
-    ILogger<RadarViewModel> logger) : ViewModelBase
+public enum HeatmapMode
 {
-    /// <summary>Радиус облака дыма и зоны огня, игровые units.</summary>
+    Positions,
+    Deaths,
+}
+
+/// <summary>
+/// Вкладка «Радар»: подложка карты, слои (маршруты, гранаты, смерти, тепловая карта) выбранного игрока
+/// с учётом фильтров, частые маршруты, раскидки и таймлайн раунда с воспроизведением.
+/// </summary>
+public partial class RadarViewModel : ViewModelBase
+{
+    /// <summary>Радиус облака дыма и зоны огня, игровые units; время действия, секунды.</summary>
     private const float SmokeRadius = 144;
     private const float FireRadius = 120;
+    private const float SmokeSeconds = 18;
+    private const float FireSeconds = 7;
+
+    private readonly IRouteAnalysisService _routeAnalysis;
+    private readonly IGrenadeAnalysisService _grenadeAnalysis;
+    private readonly IRoundContextService _contexts;
+    private readonly IHeatmapService _heatmaps;
+    private readonly IMapConfigProvider _mapConfigs;
+    private readonly IMapImageProvider _mapImages;
+    private readonly IMapCoordinateConverter _converter;
+    private readonly ISettingsService _settings;
+    private readonly IPlatformService _platform;
+    private readonly ILogger<RadarViewModel> _logger;
 
     private MatchData? _match;
+    private IMatchContext? _context;
     private MapConfig? _map;
+    private ulong? _steamId;
     private RouteAnalysis? _routes;
     private GrenadeAnalysis? _grenades;
+    private AnalysisFilter _filter = AnalysisFilter.None;
     private int _analysisVersion;
+    private int _heatmapVersion;
     private bool _updatingSelection;
+
+    public RadarViewModel(
+        IRouteAnalysisService routeAnalysis,
+        IGrenadeAnalysisService grenadeAnalysis,
+        IRoundContextService contexts,
+        IHeatmapService heatmaps,
+        IMapConfigProvider mapConfigs,
+        IMapImageProvider mapImages,
+        IMapCoordinateConverter converter,
+        ISettingsService settings,
+        IPlatformService platform,
+        ILogger<RadarViewModel> logger)
+    {
+        _routeAnalysis = routeAnalysis;
+        _grenadeAnalysis = grenadeAnalysis;
+        _contexts = contexts;
+        _heatmaps = heatmaps;
+        _mapConfigs = mapConfigs;
+        _mapImages = mapImages;
+        _converter = converter;
+        _settings = settings;
+        _platform = platform;
+        _logger = logger;
+        Timeline.TickChanged += _ => RebuildLayers();
+    }
+
+    public TimelineViewModel Timeline { get; } = new();
 
     [ObservableProperty]
     public partial Bitmap? MapImage { get; private set; }
@@ -53,6 +104,15 @@ public partial class RadarViewModel(
     public partial IReadOnlyList<RadarGrenade> Grenades { get; private set; } = [];
 
     [ObservableProperty]
+    public partial IReadOnlyList<Point> Deaths { get; private set; } = [];
+
+    [ObservableProperty]
+    public partial IReadOnlyList<RadarPlayerMarker>? Players { get; private set; }
+
+    [ObservableProperty]
+    public partial Bitmap? Heatmap { get; private set; }
+
+    [ObservableProperty]
     public partial IReadOnlySet<int> HighlightedRounds { get; private set; } = new HashSet<int>();
 
     [ObservableProperty]
@@ -68,25 +128,13 @@ public partial class RadarViewModel(
     public partial bool ShowGrenades { get; set; } = true;
 
     [ObservableProperty]
-    public partial bool ShowT { get; set; } = true;
+    public partial bool ShowDeaths { get; set; } = true;
 
     [ObservableProperty]
-    public partial bool ShowCT { get; set; } = true;
+    public partial bool ShowHeatmap { get; set; }
 
     [ObservableProperty]
-    public partial bool ShowHe { get; set; } = true;
-
-    [ObservableProperty]
-    public partial bool ShowFlash { get; set; } = true;
-
-    [ObservableProperty]
-    public partial bool ShowSmoke { get; set; } = true;
-
-    [ObservableProperty]
-    public partial bool ShowFire { get; set; } = true;
-
-    [ObservableProperty]
-    public partial bool ShowDecoy { get; set; } = true;
+    public partial FilterOption SelectedHeatmapMode { get; set; } = HeatmapModes[0];
 
     [ObservableProperty]
     public partial RouteRoundRow? SelectedRound { get; set; }
@@ -103,6 +151,12 @@ public partial class RadarViewModel(
     [ObservableProperty]
     public partial string FlashSummaryText { get; private set; } = "";
 
+    public static IReadOnlyList<FilterOption> HeatmapModes { get; } =
+    [
+        new("позиции", HeatmapMode.Positions),
+        new("смерти", HeatmapMode.Deaths),
+    ];
+
     public ObservableCollection<RouteRoundRow> RoundRows { get; } = [];
 
     public ObservableCollection<FrequentRouteRow> FrequentRoutes { get; } = [];
@@ -117,30 +171,28 @@ public partial class RadarViewModel(
 
     public bool HasMapHint => MapHint is not null;
 
-    partial void OnShowTChanged(bool value) => RebuildLayers();
-    partial void OnShowCTChanged(bool value) => RebuildLayers();
-    partial void OnShowHeChanged(bool value) => RebuildLayers();
-    partial void OnShowFlashChanged(bool value) => RebuildLayers();
-    partial void OnShowSmokeChanged(bool value) => RebuildLayers();
-    partial void OnShowFireChanged(bool value) => RebuildLayers();
-    partial void OnShowDecoyChanged(bool value) => RebuildLayers();
+    partial void OnShowHeatmapChanged(bool value) => _ = RebuildHeatmapAsync();
+    partial void OnShowDeathsChanged(bool value) => RebuildLayers();
+    partial void OnSelectedHeatmapModeChanged(FilterOption value) => _ = RebuildHeatmapAsync();
 
     partial void OnSelectedRoundChanged(RouteRoundRow? value) => OnSelectionChanged(value);
     partial void OnSelectedFrequentRouteChanged(FrequentRouteRow? value) => OnSelectionChanged(value);
     partial void OnSelectedClusterChanged(GrenadeClusterRow? value) => OnSelectionChanged(value);
     partial void OnSelectedThrowChanged(GrenadeThrowRow? value) => OnSelectionChanged(value);
 
-    /// <summary>Новая демка: конфиг карты и изображение подложки.</summary>
+    /// <summary>Новая демка: конфиг карты, изображение подложки, контекст матча.</summary>
     public void SetMatch(MatchData match)
     {
         _match = match;
-        _map = mapConfigs.Find(match.MapName);
+        var s = _settings.Current;
+        _context = _contexts.Create(match, new EconomyOptions(s.BuyEcoMaxEquipment, s.BuyFullMinEquipment));
+        _map = _mapConfigs.Find(match.MapName);
         var hints = new List<string>();
 
         if (_map is null)
         {
-            _map = converter.FitToPositions(match.MapName,
-                match.Tracks.Values.SelectMany(t => t.Samples).Select(s => s.Position));
+            _map = _converter.FitToPositions(match.MapName,
+                match.Tracks.Values.SelectMany(t => t.Samples).Select(sample => sample.Position));
             hints.Add($"Карта {match.MapName} не описана в maps.json — масштаб подобран по позициям игроков, подложки нет.");
             MapImage = null;
         }
@@ -152,11 +204,13 @@ public partial class RadarViewModel(
         var map = _map;
         RadarToWorld = p =>
         {
-            var world = converter.ToWorld(map, new System.Numerics.Vector2((float)p.X, (float)p.Y));
+            var world = _converter.ToWorld(map, new Vector2((float)p.X, (float)p.Y));
             return new Point(world.X, world.Y);
         };
         MapTitle = map.DisplayName;
         MapHint = hints.Count > 0 ? string.Join(Environment.NewLine, hints) : null;
+        _filter = AnalysisFilter.None;
+        _steamId = null;
         Clear();
     }
 
@@ -164,36 +218,54 @@ public partial class RadarViewModel(
     public async Task ShowPlayerAsync(ulong? steamId)
     {
         var version = ++_analysisVersion;
+        _steamId = steamId;
         if (_match is not { } match || steamId is not { } id)
         {
             Clear();
             return;
         }
 
-        var current = settings.Current;
+        var current = _settings.Current;
         var clusterOptions = new GrenadeClusterOptions(current.GrenadeClusterThrowDistance, current.GrenadeClusterLandDistance);
         var (routes, grenades) = await Task.Run(() =>
-            (routeAnalysis.Analyze(match, id), grenadeAnalysis.Analyze(match, id, clusterOptions)));
+            (_routeAnalysis.Analyze(match, id), _grenadeAnalysis.Analyze(match, id, clusterOptions)));
         if (version != _analysisVersion)
             return;
 
         _routes = routes;
         _grenades = grenades;
-        FillLists(routes, grenades);
+        FillLists();
+        UpdateTimelineRound();
         RebuildLayers();
+        await RebuildHeatmapAsync();
+    }
+
+    /// <summary>Фильтры изменились: пересобрать списки, слои и тепловую карту.</summary>
+    public async Task SetFilterAsync(AnalysisFilter filter)
+    {
+        _filter = filter;
+        FillLists();
+        UpdateTimelineRound();
+        RebuildLayers();
+        await RebuildHeatmapAsync();
     }
 
     [RelayCommand]
-    private void OpenMapsFolder() => platform.OpenFolder(platform.MapsDirectory);
+    private void OpenMapsFolder() => _platform.OpenFolder(_platform.MapsDirectory);
 
     [RelayCommand]
     private void ClearSelection() => OnSelectionChanged(null);
 
+    private bool IncludesRound(int round) =>
+        _context is not null && _steamId is { } id && _filter.IncludesRound(_context, id, round);
+
+    private bool IncludesGrenade(GrenadeThrow g) => IncludesRound(g.Round) && _filter.IncludesGrenade(g);
+
     private Bitmap? LoadImage(string mapName, List<string> hints)
     {
-        if (mapImages.FindImage(mapName) is not { } path)
+        if (_mapImages.FindImage(mapName) is not { } path)
         {
-            hints.Add($"Нет изображения карты. Положите {Path.GetFileName(mapImages.ExpectedPath(mapName))} в папку {platform.MapsDirectory}");
+            hints.Add($"Нет изображения карты. Положите {Path.GetFileName(_mapImages.ExpectedPath(mapName))} в папку {_platform.MapsDirectory}");
             return null;
         }
 
@@ -203,7 +275,7 @@ public partial class RadarViewModel(
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Не удалось загрузить изображение карты {Path}", path);
+            _logger.LogWarning(ex, "Не удалось загрузить изображение карты {Path}", path);
             hints.Add($"Не удалось загрузить {path}: {ex.Message}");
             return null;
         }
@@ -222,15 +294,23 @@ public partial class RadarViewModel(
         FlashSummaryText = "";
         Routes = [];
         Grenades = [];
+        Deaths = [];
+        Players = null;
+        Heatmap = null;
+        Timeline.SetRound(null, 64);
         OnSelectionChanged(null);
     }
 
-    private void FillLists(RouteAnalysis routes, GrenadeAnalysis grenades)
+    /// <summary>Списки правой панели с учётом фильтра. Частые маршруты и тайминги — по всем раундам игрока.</summary>
+    private void FillLists()
     {
+        if (_routes is not { } routes || _grenades is not { } grenades || _match is not { } match)
+            return;
+
         OnSelectionChanged(null);
 
         RoundRows.Clear();
-        foreach (var round in routes.Rounds)
+        foreach (var round in routes.Rounds.Where(r => IncludesRound(r.Round)))
             RoundRows.Add(new RouteRoundRow(round));
 
         FrequentRoutes.Clear();
@@ -242,12 +322,12 @@ public partial class RadarViewModel(
             ZoneTimings.Add(new ZoneTimingRow(timing));
 
         GrenadeClusters.Clear();
-        foreach (var cluster in grenades.Clusters)
+        foreach (var cluster in grenades.Clusters.Where(c => c.Throws.Any(IncludesGrenade)))
             GrenadeClusters.Add(new GrenadeClusterRow(cluster));
 
         GrenadeThrows.Clear();
-        foreach (var t in grenades.Throws)
-            GrenadeThrows.Add(new GrenadeThrowRow(t, grenades.LandZones.GetValueOrDefault(t.Id, ""), _match!));
+        foreach (var t in grenades.Throws.Where(IncludesGrenade))
+            GrenadeThrows.Add(new GrenadeThrowRow(t, grenades.LandZones.GetValueOrDefault(t.Id, ""), match));
 
         GrenadeSummary.Clear();
         foreach (var s in grenades.Summary)
@@ -261,58 +341,181 @@ public partial class RadarViewModel(
               $"Без ослеплённых противников: {f.WithoutEnemyVictims}.";
     }
 
-    private bool IsSideVisible(Side side) => side switch
+    /// <summary>Раунд таймлайна: раунд из фильтра, иначе выбранный в списке раундов.</summary>
+    private void UpdateTimelineRound()
     {
-        Side.T => ShowT,
-        Side.CT => ShowCT,
-        _ => ShowT && ShowCT,
-    };
+        var number = _filter.Round ?? SelectedRound?.Round;
+        var round = number is { } n && _match?.FindRound(n) is { } r && _steamId is not null ? r : null;
+        Timeline.SetRound(round, _match?.TickRate ?? 64);
+    }
 
-    private bool IsTypeVisible(GrenadeType type) => type switch
+    private Point ToRadar(Vector3 world)
     {
-        GrenadeType.HighExplosive => ShowHe,
-        GrenadeType.Flashbang => ShowFlash,
-        GrenadeType.Smoke => ShowSmoke,
-        GrenadeType.Molotov or GrenadeType.Incendiary => ShowFire,
-        GrenadeType.Decoy => ShowDecoy,
-        _ => true,
-    };
+        var v = _converter.ToRadar(_map!, world);
+        return new Point(v.X, v.Y);
+    }
 
+    /// <summary>Пересборка векторных слоёв. В режиме таймлайна — только раунд таймлайна до текущего тика.</summary>
     private void RebuildLayers()
     {
-        if (_map is not { } map)
+        if (_map is not { } map || _match is not { } match || _steamId is not { } steamId)
             return;
 
-        Point ToRadar(System.Numerics.Vector3 world)
-        {
-            var v = converter.ToRadar(map, world);
-            return new Point(v.X, v.Y);
-        }
+        var timelineRound = Timeline.Round;
+        var tick = timelineRound is null ? int.MaxValue : (int)Timeline.CurrentTick;
+        bool RoundVisible(int round) => timelineRound is { } r ? round == r.Number : IncludesRound(round);
 
         var tIndex = 0;
         var ctIndex = 0;
         Routes = _routes is null ? [] : _routes.Rounds
-            .Where(r => IsSideVisible(r.Side))
+            .Where(r => RoundVisible(r.Round))
             .Select(r =>
             {
                 var color = r.Side == Side.CT ? Palette.Ct(ctIndex++) : Palette.T(tIndex++);
-                var points = r.Path.Select(s => ToRadar(s.Position)).ToList();
-                var lower = r.Path.Select(s => converter.IsLowerLevel(map, s.Position)).ToList();
-                return new RadarRoute(r.Round, points, lower, color, r.Died);
+                var path = r.Path.Where(s => s.Tick <= tick).ToList();
+                return new RadarRoute(r.Round, path.Select(s => ToRadar(s.Position)).ToList(),
+                    path.Select(s => _converter.IsLowerLevel(map, s.Position)).ToList(), color, r.Died && path.Count == r.Path.Count);
             })
             .ToList();
 
         Grenades = _grenades is null ? [] : _grenades.Throws
-            .Where(g => IsSideVisible(g.ThrowerSide) && IsTypeVisible(g.Type))
+            .Where(g => RoundVisible(g.Round) && _filter.IncludesGrenade(g) && g.ThrowTick <= tick)
             .Select(g => new RadarGrenade(
                 g.Id,
                 g.Round,
                 KindOf(g.Type),
                 ToRadar(g.ThrowerPosition),
-                g.DetonatePosition is { } land ? ToRadar(land) : null,
+                g.DetonatePosition is { } land && g.DetonateTick <= tick && !EffectExpired(g, tick) ? ToRadar(land) : null,
                 (g.Type == GrenadeType.Smoke ? SmokeRadius : FireRadius) / map.Scale,
                 Palette.Grenade(g.Type)))
             .ToList();
+
+        Deaths = !ShowDeaths ? [] : match.Kills
+            .Where(k => k.VictimSteamId == steamId && RoundVisible(k.Round) && k.Tick <= tick)
+            .Select(k => ToRadar(k.VictimPosition))
+            .ToList();
+
+        if (timelineRound is null)
+        {
+            Players = null;
+            Timeline.ContextText = "";
+        }
+        else
+        {
+            Players = BuildMarkers(match, timelineRound.Number, tick, steamId);
+            var moment = _context!.At(steamId, timelineRound.Number, tick);
+            Timeline.ContextText = MomentText(moment);
+        }
+    }
+
+    /// <summary>В режиме таймлайна дым исчезает через ~18 с, огонь — через ~7 с.</summary>
+    private bool EffectExpired(GrenadeThrow g, int tick)
+    {
+        if (Timeline.Round is null || g.DetonateTick is not { } detonate)
+            return false;
+        var seconds = g.Type switch
+        {
+            GrenadeType.Smoke => SmokeSeconds,
+            GrenadeType.Molotov or GrenadeType.Incendiary => FireSeconds,
+            _ => 2f,
+        };
+        return tick > detonate + seconds * (_match?.TickRate ?? 64);
+    }
+
+    /// <summary>Маркеры живых игроков с интерполяцией между сэмплами — плавное движение при воспроизведении.</summary>
+    private List<RadarPlayerMarker> BuildMarkers(MatchData match, int round, int tick, ulong selected)
+    {
+        var markers = new List<RadarPlayerMarker>();
+        foreach (var player in match.Players)
+        {
+            var side = player.SideInRound(round);
+            if (side == Side.None || !_context!.IsAlive(player.SteamId, round, tick))
+                continue;
+
+            var samples = match.TrackOf(player.SteamId).Samples;
+            var index = LastAtOrBefore(samples, tick);
+            if (index < 0 || samples[index].Round != round)
+                continue;
+
+            var a = samples[index];
+            var (position, yaw) = (a.Position, a.Yaw);
+            if (index + 1 < samples.Count && samples[index + 1] is { } b && b.Round == round && b.Tick > a.Tick)
+            {
+                var t = Math.Clamp((tick - a.Tick) / (float)(b.Tick - a.Tick), 0, 1);
+                position = Vector3.Lerp(a.Position, b.Position, t);
+                yaw = LerpAngle(a.Yaw, b.Yaw, t);
+            }
+
+            var isSelected = player.SteamId == selected;
+            var color = isSelected ? Color.FromRgb(255, 255, 255)
+                : side == Side.CT ? Color.FromRgb(90, 170, 255) : Color.FromRgb(255, 170, 60);
+            markers.Add(new RadarPlayerMarker(ToRadar(position), yaw, color, isSelected,
+                isSelected ? $"{player.Name} · {a.Weapon} · {a.Health} HP" : ""));
+        }
+        return markers;
+    }
+
+    private static int LastAtOrBefore(IReadOnlyList<PlayerSample> samples, int tick)
+    {
+        int lo = 0, hi = samples.Count - 1, result = -1;
+        while (lo <= hi)
+        {
+            var mid = (lo + hi) / 2;
+            if (samples[mid].Tick <= tick)
+            {
+                result = mid;
+                lo = mid + 1;
+            }
+            else
+            {
+                hi = mid - 1;
+            }
+        }
+        return result;
+    }
+
+    private static float LerpAngle(float a, float b, float t)
+    {
+        var delta = ((b - a) % 360 + 540) % 360 - 180;
+        return a + delta * t;
+    }
+
+    private static string MomentText(MomentContext m)
+    {
+        var bomb = m.Bomb switch
+        {
+            BombState.Planted => $"бомба заложена на {m.BombSite}",
+            BombState.Defused => "бомба обезврежена",
+            BombState.Exploded => "бомба взорвалась",
+            _ => "бомба не заложена",
+        };
+        return $"{Labels.Side(m.Side)} · {m.Matchup} · {(m.PlayerAlive ? $"${m.Money}, экип. ${m.Equipment}" : "погиб")} · " +
+               $"закупка {Labels.Buy(m.TeamBuy)} против {Labels.Buy(m.EnemyBuy)} · {bomb} · счёт {m.ScoreUs}:{m.ScoreThem}";
+    }
+
+    /// <summary>Тепловая карта по раундам под фильтром: позиции игрока или места его смертей.</summary>
+    private async Task RebuildHeatmapAsync()
+    {
+        var version = ++_heatmapVersion;
+        if (!ShowHeatmap || _match is not { } match || _map is not { } map || _steamId is not { } steamId)
+        {
+            Heatmap = null;
+            return;
+        }
+
+        var deaths = SelectedHeatmapMode.Value is HeatmapMode.Deaths;
+        var rounds = match.Rounds.Select(r => r.Number).Where(IncludesRound).ToHashSet();
+        var data = await Task.Run(() =>
+        {
+            var points = deaths
+                ? match.Kills.Where(k => k.VictimSteamId == steamId && rounds.Contains(k.Round)).Select(k => k.VictimPosition)
+                : match.TrackOf(steamId).Samples.Where(s => rounds.Contains(s.Round)).Select(s => s.Position);
+            var radarPoints = points.Select(p => _converter.ToRadar(map, p));
+            return _heatmaps.Build(radarPoints, new HeatmapOptions(Size: 256, BlurRadius: deaths ? 6 : 3));
+        });
+
+        if (version == _heatmapVersion)
+            Heatmap = data.PointCount == 0 ? null : HeatmapRenderer.Render(data);
     }
 
     /// <summary>Выбор в одном списке снимает выбор в остальных и задаёт подсветку на радаре.</summary>
@@ -342,6 +545,13 @@ public partial class RadarViewModel(
             GrenadeThrowRow t => (new HashSet<int> { t.Throw.Round }, new HashSet<int> { t.Throw.Id }),
             _ => ((IReadOnlySet<int>)new HashSet<int>(), (IReadOnlySet<int>)new HashSet<int>()),
         };
+
+        // Выбор раунда в списке открывает его на таймлайне (если раунд не задан фильтром).
+        if (_filter.Round is null)
+        {
+            UpdateTimelineRound();
+            RebuildLayers();
+        }
     }
 
     private static RadarGrenadeKind KindOf(GrenadeType type) => type switch

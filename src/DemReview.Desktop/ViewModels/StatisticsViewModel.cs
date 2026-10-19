@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using DemReview.Application;
 using DemReview.Application.Context;
+using DemReview.Application.Filters;
 using DemReview.Application.Situations;
 using DemReview.Domain;
 
@@ -16,6 +17,9 @@ public partial class StatisticsViewModel(
     private MatchData? _match;
     private SituationAnalysis? _analysis;
     private int _version;
+    private IMatchContext? _context;
+    private ulong? _steamId;
+    private AnalysisFilter _filter = AnalysisFilter.None;
 
     [ObservableProperty]
     public partial FrequencyTable? SelectedTable { get; set; }
@@ -46,6 +50,8 @@ public partial class StatisticsViewModel(
     {
         _match = match;
         var context = contexts.Create(match, EconomyOptions());
+        _context = context;
+        _filter = AnalysisFilter.None;
         MatchRounds.Clear();
         foreach (var round in match.Rounds)
             MatchRounds.Add(new RoundRowViewModel(round, context.Economy(round.Number)));
@@ -68,17 +74,34 @@ public partial class StatisticsViewModel(
             return;
 
         _analysis = analysis;
+        _steamId = id;
         PlayerName = match.FindPlayer(id)?.Name ?? "";
+        ApplyFilter();
+        OnPropertyChanged(nameof(HasPlayer));
+    }
+
+    /// <summary>Фильтр (раунд, сторона, закупка) применяется к ситуациям и пересчитывает частотные таблицы.</summary>
+    public void SetFilter(AnalysisFilter filter)
+    {
+        _filter = filter;
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        if (_analysis is not { } analysis || _context is null || _steamId is not { } id)
+            return;
+
+        var rounds = analysis.Rounds.Where(r => _filter.IncludesRound(_context, id, r.Round)).ToList();
         SituationRows.Clear();
-        foreach (var round in analysis.Rounds)
+        foreach (var round in rounds)
             SituationRows.Add(new SituationRowViewModel(round));
 
         var previousTable = SelectedTable?.Name;
         Tables.Clear();
-        foreach (var table in analysis.Tables)
+        foreach (var table in situations.BuildTables(rounds))
             Tables.Add(table);
         SelectedTable = Tables.FirstOrDefault(t => t.Name == previousTable) ?? Tables.FirstOrDefault();
-        OnPropertyChanged(nameof(HasPlayer));
     }
 
     private EconomyOptions EconomyOptions() =>

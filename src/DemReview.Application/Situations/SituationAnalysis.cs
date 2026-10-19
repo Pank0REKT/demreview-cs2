@@ -78,4 +78,7 @@ public sealed record SituationOptions(
 public interface ISituationAnalysisService
 {
     SituationAnalysis Analyze(MatchData match, ulong steamId, SituationOptions? options = null);
+
+    /// <summary>Частотные таблицы по подмножеству раундов (например, после фильтра).</summary>
+    IReadOnlyList<FrequencyTable> BuildTables(IReadOnlyList<RoundSituation> rounds);
 }
