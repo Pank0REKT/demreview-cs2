@@ -112,8 +112,8 @@ DemReview никуда не отправляет ваши данные. Един
 Нужен [.NET 10 SDK](https://dotnet.microsoft.com/download).
 
 ```bash
-git clone https://github.com/Pank0REKT/demreview.git
-cd demreview
+git clone https://github.com/Pank0REKT/demreview-cs2.git
+cd demreview-cs2
 dotnet build DemReview.slnx
 dotnet test --solution DemReview.slnx
 dotnet run --project src/DemReview.Desktop -- "путь/к/демке.dem"

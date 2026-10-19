@@ -12,7 +12,7 @@
     <!-- Версия релиза; сборка в GitHub Actions передаёт её из тега (v1.2.3 → 1.2.3). -->
     <Version>0.1.0</Version>
     <!-- Адрес репозитория: ссылки в приложении и проверка новых релизов. -->
-    <RepositoryUrl>https://github.com/Pank0REKT/demreview</RepositoryUrl>
+    <RepositoryUrl>https://github.com/Pank0REKT/demreview-cs2</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <NeutralLanguage>ru</NeutralLanguage>
     <SatelliteResourceLanguages>ru;en</SatelliteResourceLanguages>
