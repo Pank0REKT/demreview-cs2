@@ -1,6 +1,7 @@
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DemReview.Application.Localization;
 using DemReview.Domain;
 
 namespace DemReview.Desktop.ViewModels;
@@ -52,11 +53,11 @@ public partial class TimelineViewModel : ViewModelBase
 
     public bool IsEnabled => Round is not null;
 
-    public string PlayButtonText => IsPlaying ? "Пауза" : "Пуск";
+    public string PlayButtonText => IsPlaying ? Loc.T("Пауза", "Pause") : Loc.T("Пуск", "Play");
 
     public string TimeText => Round is null
-        ? "Выберите раунд в фильтре или в списке раундов — появится таймлайн."
-        : $"Раунд {Round.Number} · {Texts.Time((float)((CurrentTick - MinTick) / _tickRate))} / {Texts.Time((float)((MaxTick - MinTick) / _tickRate))}";
+        ? Loc.T("Выберите раунд в фильтре или в списке раундов — появится таймлайн.", "Pick a round in the filter or in the round list to open the timeline.")
+        : $"{Loc.T("Раунд", "Round")} {Round.Number} · {Texts.Time((float)((CurrentTick - MinTick) / _tickRate))} / {Texts.Time((float)((MaxTick - MinTick) / _tickRate))}";
 
     partial void OnCurrentTickChanged(double value)
     {

@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using DemReview.Application;
 using DemReview.Application.Context;
 using DemReview.Application.Export;
+using DemReview.Application.Localization;
 using DemReview.Application.Patterns;
 using DemReview.Application.Situations;
 using DemReview.Desktop.Services;
@@ -53,9 +54,9 @@ public partial class ProfileViewModel(
 
     public static IReadOnlyList<FilterOption> SortModes { get; } =
     [
-        new("по частоте", "share"),
-        new("по уверенности", "confidence"),
-        new("по категории", "category"),
+        new("по частоте", "by frequency", "share"),
+        new("по уверенности", "by confidence", "confidence"),
+        new("по категории", "by category", "category"),
     ];
 
     public ObservableCollection<PatternRowViewModel> Patterns { get; } = [];
@@ -71,11 +72,14 @@ public partial class ProfileViewModel(
     public int Predictability => Profile?.PredictabilityPercent ?? 0;
 
     public string PredictabilityText => Profile is not { } p ? ""
-        : $"{p.PredictabilityPercent}% — {(p.PredictabilityPercent >= 70 ? "очень предсказуем" : p.PredictabilityPercent >= 50 ? "умеренно предсказуем" : "непредсказуем")}: " +
-          "как часто в похожих ситуациях (сторона + закупка) он выбирает один и тот же маршрут, позицию и стиль.";
+        : $"{p.PredictabilityPercent}% — " + (p.PredictabilityPercent >= 70 ? Loc.T("очень предсказуем", "very predictable")
+            : p.PredictabilityPercent >= 50 ? Loc.T("умеренно предсказуем", "moderately predictable") : Loc.T("непредсказуем", "unpredictable")) +
+          Loc.T(": как часто в похожих ситуациях (сторона + закупка) игрок выбирает один и тот же маршрут, позицию и стиль.",
+              ": how often the player picks the same route, position and style in similar situations (side + buy).");
 
     public string PatternsHeader => Profile is not { } p ? ""
-        : $"Паттерны: {p.Patterns.Count} (частота ≥ {p.Options.MinShare:P0}, примеров ≥ {p.Options.MinExamples}, раундов в анализе: {p.RoundsAnalyzed})";
+        : Loc.T($"Паттерны: {p.Patterns.Count} (частота ≥ {p.Options.MinShare:P0}, примеров ≥ {p.Options.MinExamples}, раундов в анализе: {p.RoundsAnalyzed})",
+            $"Patterns: {p.Patterns.Count} (frequency ≥ {p.Options.MinShare:P0}, examples ≥ {p.Options.MinExamples}, rounds analyzed: {p.RoundsAnalyzed})");
 
     partial void OnProfileChanged(PlayerProfile? value)
     {
@@ -153,7 +157,7 @@ public partial class ProfileViewModel(
         if (Profile is not { } profile || _match is not { } match)
             return;
 
-        var suggested = SafeFileName($"Профиль {profile.Name} {profile.MapName}") + ".md";
+        var suggested = SafeFileName(Loc.T($"Профиль {profile.Name} {profile.MapName}", $"Profile {profile.Name} {profile.MapName}")) + ".md";
         if (await fileDialog.PickProfileSavePathAsync(suggested) is not { } path)
             return;
 
@@ -162,13 +166,13 @@ public partial class ProfileViewModel(
             var format = exporter.FormatFor(path);
             var text = await Task.Run(() => exporter.Export(profile, match, format));
             await File.WriteAllTextAsync(path, text, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-            StatusText = $"Профиль сохранён: {path}";
+            StatusText = Loc.T($"Профиль сохранён: {path}", $"Profile saved: {path}");
             logger.LogInformation("Профиль {Name} экспортирован в {Path}", profile.Name, path);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             logger.LogWarning(ex, "Не удалось сохранить профиль в {Path}", path);
-            StatusText = $"Не удалось сохранить файл: {ex.Message}";
+            StatusText = Loc.T($"Не удалось сохранить файл: {ex.Message}", $"Could not save the file: {ex.Message}");
         }
     }
 
@@ -226,9 +230,11 @@ public sealed class PatternRowViewModel(Pattern pattern)
 
     public string Text => Pattern.Text;
 
-    public string Details =>
+    public string Details => Loc.T(
         $"{Category(Pattern.Category)} · {Pattern.Count} из {Pattern.Total} ({Pattern.Share:P0}) · уверенность: {ProfileExporter.ConfidenceName(Pattern.Confidence)} · " +
-        $"раунды: {string.Join(", ", Pattern.Rounds)}";
+        $"раунды: {string.Join(", ", Pattern.Rounds)}",
+        $"{Category(Pattern.Category)} · {Pattern.Count} of {Pattern.Total} ({Pattern.Share:P0}) · confidence: {ProfileExporter.ConfidenceName(Pattern.Confidence)} · " +
+        $"rounds: {string.Join(", ", Pattern.Rounds)}");
 
     public bool IsHighConfidence => Pattern.Confidence == Confidence.High;
 
@@ -236,14 +242,14 @@ public sealed class PatternRowViewModel(Pattern pattern)
 
     public static string Category(PatternCategory category) => category switch
     {
-        PatternCategory.Route => "маршрут",
-        PatternCategory.Position => "позиция",
-        PatternCategory.Timing => "тайминг",
-        PatternCategory.Aggression => "агрессия",
-        PatternCategory.Rotation => "ротация",
-        PatternCategory.Reaction => "реакция",
-        PatternCategory.Grenades => "гранаты",
-        _ => "смерти",
+        PatternCategory.Route => Loc.T("маршрут", "route"),
+        PatternCategory.Position => Loc.T("позиция", "position"),
+        PatternCategory.Timing => Loc.T("тайминг", "timing"),
+        PatternCategory.Aggression => Loc.T("агрессия", "aggression"),
+        PatternCategory.Rotation => Loc.T("ротация", "rotation"),
+        PatternCategory.Reaction => Loc.T("реакция", "reaction"),
+        PatternCategory.Grenades => Loc.T("гранаты", "grenades"),
+        _ => Loc.T("смерти", "deaths"),
     };
 }
 
@@ -251,7 +257,7 @@ public sealed class RoleRowViewModel(RoleAssessment role)
 {
     public string Header => $"{Labels.Side(role.Side)}: {ProfileExporter.RoleName(role.Role)}";
 
-    public string Confidence => $"уверенность: {ProfileExporter.ConfidenceName(role.Confidence)}";
+    public string Confidence => Loc.T($"уверенность: {ProfileExporter.ConfidenceName(role.Confidence)}", $"confidence: {ProfileExporter.ConfidenceName(role.Confidence)}");
 
     public string Reasons => string.Join(" · ", role.Reasons);
 }
@@ -264,7 +270,8 @@ public sealed class SideSummaryRowViewModel(SideMetrics m)
     public string Survival => $"{m.SurvivalShare:P0}";
     public string Wins => $"{m.RoundWinShare:P0}";
     public string Contact => m.MedianContactTime is { } c ? Labels.Time(c) : "—";
-    public string FirstDuel => $"{m.FirstDuelShare:P0} (выигр. {m.FirstDuelWinShare:P0})";
+    public string FirstDuel => $"{m.FirstDuelShare:P0} ({Loc.T("выигр.", "won")} {m.FirstDuelWinShare:P0})";
+    public string Damage => $"{m.DamagePerRound:F0}";
     public string Grenades => $"{m.GrenadesPerRound:F1}";
     public string Style => $"{m.AggressiveShare:P0} / {m.PassiveShare:P0}";
     public string Distance => $"{m.MedianTeammateDistance:F0}";

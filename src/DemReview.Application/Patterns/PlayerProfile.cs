@@ -64,6 +64,7 @@ public sealed record RoleAssessment(Side Side, PlayerRole Role, Confidence Confi
 /// <param name="MedianContactTime">Медиана времени первого контакта, секунды (только раунды с контактом).</param>
 /// <param name="FirstDuelShare">Доля раундов, где игрок участвовал в первой дуэли.</param>
 /// <param name="MedianTeammateDistance">Медианное расстояние до ближайшего живого союзника на 10–40 с раунда, units.</param>
+/// <param name="DamagePerRound">Средний фактический урон по противникам за раунд (ADR).</param>
 /// <param name="AnchorShare">Доля раундов, где игрок большую часть первых 40 с держал одну зону (не спавн).</param>
 public sealed record SideMetrics(
     Side Side,
@@ -78,6 +79,7 @@ public sealed record SideMetrics(
     double FirstDuelWinShare,
     float MedianTeammateDistance,
     double GrenadesPerRound,
+    double DamagePerRound,
     double AnchorShare,
     double AggressiveShare,
     double PassiveShare);

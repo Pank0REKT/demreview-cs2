@@ -1,6 +1,7 @@
 using System.Numerics;
 using DemReview.Application.Context;
 using DemReview.Application.Grenades;
+using DemReview.Application.Localization;
 using DemReview.Application.Maps;
 using DemReview.Application.Routes;
 using DemReview.Application.Situations;
@@ -73,26 +74,37 @@ public sealed class PlayerPatternService(
 
     // ---------- Маршруты и позиции ----------
 
+    /// <summary>Начало формулировки: «На T при закупке «эко»» / «On T (eco)».</summary>
+    private static string On(Side side, string? qualifierRu = null, string? qualifierEn = null) =>
+        Loc.T($"На {Labels.Side(side)}{(qualifierRu is null ? "" : $" {qualifierRu}")}",
+            $"On {Labels.Side(side)}{(qualifierEn is null ? "" : $" ({qualifierEn})")}");
+
+    private static string OnBuy(Side side, BuyType buy) => On(side, $"при закупке «{Labels.Buy(buy)}»", Labels.Buy(buy));
+
     private static void RoutePatterns(ProfileData d, Side side, List<Pattern> output)
     {
         var rounds = d.SideRounds(side).Where(r => r.RouteKey.Length > 0).ToList();
+        var on = On(side);
         foreach (var group in rounds.GroupBy(r => r.RouteKey))
         {
-            output.Add(d.Make(PatternCategory.Route, side, $"{Labels.Side(side)}", $"маршрут {group.Key}",
-                $"На {Labels.Side(side)} в {{0}} из {{1}} раундов идёт {group.Key}", group.Select(r => r.Round), rounds.Count));
+            output.Add(d.Make(PatternCategory.Route, side, $"{Labels.Side(side)}", Loc.T($"маршрут {group.Key}", $"route {group.Key}"),
+                Loc.T($"{on} в {{0}} из {{1}} раундов идёт {group.Key}", $"{on}: in {{0}} of {{1}} rounds takes {group.Key}"),
+                group.Select(r => r.Round), rounds.Count));
         }
 
         // По типу закупки — только если условие даёт заметно более устойчивое поведение.
         foreach (var byBuy in rounds.GroupBy(r => r.TeamBuy))
         {
             var buyRounds = byBuy.ToList();
+            var onBuy = OnBuy(side, byBuy.Key);
             foreach (var group in buyRounds.GroupBy(r => r.RouteKey))
             {
                 var overall = (double)rounds.Count(r => r.RouteKey == group.Key) / rounds.Count;
                 if ((double)group.Count() / buyRounds.Count < overall + 0.1)
                     continue;
-                output.Add(d.Make(PatternCategory.Route, side, $"{Labels.Side(side)} · {Labels.Buy(byBuy.Key)}", $"маршрут {group.Key}",
-                    $"На {Labels.Side(side)} при закупке «{Labels.Buy(byBuy.Key)}» в {{0}} из {{1}} раундов идёт {group.Key}",
+                output.Add(d.Make(PatternCategory.Route, side, $"{Labels.Side(side)} · {Labels.Buy(byBuy.Key)}",
+                    Loc.T($"маршрут {group.Key}", $"route {group.Key}"),
+                    Loc.T($"{onBuy} в {{0}} из {{1}} раундов идёт {group.Key}", $"{onBuy}: in {{0}} of {{1}} rounds takes {group.Key}"),
                     group.Select(r => r.Round), buyRounds.Count));
             }
         }
@@ -101,19 +113,22 @@ public sealed class PlayerPatternService(
     private static void PositionPatterns(ProfileData d, Side side, List<Pattern> output)
     {
         var rounds = d.SideRounds(side);
+        var on = On(side);
         var anchors = rounds.Select(r => (r.Round, Zone: d.AnchorZone(r.Round))).Where(x => x.Zone is not null).ToList();
         foreach (var group in anchors.GroupBy(x => x.Zone!))
         {
-            output.Add(d.Make(PatternCategory.Position, side, Labels.Side(side), $"держит {group.Key}",
-                $"На {Labels.Side(side)} в {{0}} из {{1}} раундов в начале раунда занимает {group.Key}",
+            output.Add(d.Make(PatternCategory.Position, side, Labels.Side(side), Loc.T($"держит {group.Key}", $"holds {group.Key}"),
+                Loc.T($"{on} в {{0}} из {{1}} раундов в начале раунда занимает {group.Key}",
+                    $"{on}: in {{0}} of {{1}} rounds sets up at {group.Key} early in the round"),
                 group.Select(x => x.Round), rounds.Count));
         }
 
         var finals = rounds.Where(r => r.FinalZone.Length > 0).ToList();
         foreach (var group in finals.GroupBy(r => r.FinalZone))
         {
-            output.Add(d.Make(PatternCategory.Position, side, Labels.Side(side), $"итоговая позиция {group.Key}",
-                $"На {Labels.Side(side)} в {{0}} из {{1}} раундов заканчивает раунд в {group.Key}",
+            output.Add(d.Make(PatternCategory.Position, side, Labels.Side(side),
+                Loc.T($"итоговая позиция {group.Key}", $"final position {group.Key}"),
+                Loc.T($"{on} в {{0}} из {{1}} раундов заканчивает раунд в {group.Key}", $"{on}: in {{0}} of {{1}} rounds ends the round in {group.Key}"),
                 group.Select(r => r.Round), finals.Count));
         }
     }
@@ -121,6 +136,7 @@ public sealed class PlayerPatternService(
     private static void TimingPatterns(ProfileData d, Side side, List<Pattern> output)
     {
         var rounds = d.SideRounds(side);
+        var on = On(side);
         var visits = d.Routes.Rounds
             .Where(r => r.Side == side)
             .SelectMany(r => r.Zones
@@ -136,10 +152,10 @@ public sealed class PlayerPatternService(
             if (times.Count < 2 || times[^1] - times[0] > 15 || PatternStats.Median(times) < 3)
                 continue;
 
-            var median = PatternStats.Median(times);
-            output.Add(d.Make(PatternCategory.Timing, side, Labels.Side(side), $"выход в {zone.Key}",
-                $"На {Labels.Side(side)} в {{0}} из {{1}} раундов выходит в {zone.Key} на ~{Labels.Time(median)} " +
-                $"(разброс {Labels.Time(times[0])}–{Labels.Time(times[^1])})",
+            var (median, from, to) = (Labels.Time(PatternStats.Median(times)), Labels.Time(times[0]), Labels.Time(times[^1]));
+            output.Add(d.Make(PatternCategory.Timing, side, Labels.Side(side), Loc.T($"выход в {zone.Key}", $"reaches {zone.Key}"),
+                Loc.T($"{on} в {{0}} из {{1}} раундов выходит в {zone.Key} на ~{median} (разброс {from}–{to})",
+                    $"{on}: in {{0}} of {{1}} rounds reaches {zone.Key} at ~{median} (range {from}–{to})"),
                 zone.Select(v => v.Round), rounds.Count));
         }
 
@@ -149,8 +165,9 @@ public sealed class PlayerPatternService(
             var times = contacts.Select(r => r.FirstContactTime!.Value).Order().ToList();
             var median = PatternStats.Median(times);
             var near = contacts.Where(r => Math.Abs(r.FirstContactTime!.Value - median) <= 10).ToList();
-            output.Add(d.Make(PatternCategory.Timing, side, Labels.Side(side), "время первого боя",
-                $"На {Labels.Side(side)} в {{0}} из {{1}} раундов вступает в первый бой на ~{Labels.Time(median)} (±10 с)",
+            output.Add(d.Make(PatternCategory.Timing, side, Labels.Side(side), Loc.T("время первого боя", "first fight time"),
+                Loc.T($"{on} в {{0}} из {{1}} раундов вступает в первый бой на ~{Labels.Time(median)} (±10 с)",
+                    $"{on}: in {{0}} of {{1}} rounds takes the first fight at ~{Labels.Time(median)} (±10 s)"),
                 near.Select(r => r.Round), rounds.Count));
         }
     }
@@ -158,33 +175,39 @@ public sealed class PlayerPatternService(
     private static void AggressionPatterns(ProfileData d, Side side, List<Pattern> output)
     {
         var rounds = d.SideRounds(side);
-        void Add(string condition, string conditionText, IReadOnlyList<RoundSituation> subset)
+        void Add(string condition, string on, IReadOnlyList<RoundSituation> subset)
         {
             foreach (var group in subset.GroupBy(r => r.Aggression))
             {
                 output.Add(d.Make(PatternCategory.Aggression, side, condition, Labels.Aggression(group.Key),
-                    $"На {Labels.Side(side)}{conditionText} в {{0}} из {{1}} раундов играет {AggressionText(group.Key)}",
+                    Loc.T($"{on} в {{0}} из {{1}} раундов играет {AggressionText(group.Key)}",
+                        $"{on}: in {{0}} of {{1}} rounds plays {AggressionText(group.Key)}"),
                     group.Select(r => r.Round), subset.Count));
             }
         }
 
-        Add(Labels.Side(side), "", rounds);
+        Add(Labels.Side(side), On(side), rounds);
         foreach (var byBuy in rounds.GroupBy(r => r.TeamBuy))
-            Add($"{Labels.Side(side)} · {Labels.Buy(byBuy.Key)}", $" при закупке «{Labels.Buy(byBuy.Key)}»", byBuy.ToList());
+            Add($"{Labels.Side(side)} · {Labels.Buy(byBuy.Key)}", OnBuy(side, byBuy.Key), byBuy.ToList());
         foreach (var byScore in rounds.GroupBy(r => r.Score))
-            Add($"{Labels.Side(side)} · {Labels.Score(byScore.Key)}", ScoreText(byScore.Key), byScore.ToList());
+            Add($"{Labels.Side(side)} · {Labels.Score(byScore.Key)}", OnScore(side, byScore.Key), byScore.ToList());
 
+        var on = On(side);
         var duels = rounds.Where(r => r.FirstDuel != FirstDuel.NotInvolved).ToList();
-        output.Add(d.Make(PatternCategory.Aggression, side, Labels.Side(side), "участвует в первой дуэли",
-            $"На {Labels.Side(side)} в {{0}} из {{1}} раундов участвует в первой дуэли раунда", duels.Select(r => r.Round), rounds.Count));
+        output.Add(d.Make(PatternCategory.Aggression, side, Labels.Side(side), Loc.T("участвует в первой дуэли", "takes the opening duel"),
+            Loc.T($"{on} в {{0}} из {{1}} раундов участвует в первой дуэли раунда", $"{on}: takes the opening duel in {{0}} of {{1}} rounds"),
+            duels.Select(r => r.Round), rounds.Count));
         if (duels.Count > 0)
         {
             var won = duels.Where(r => r.FirstDuel == FirstDuel.Won);
             var lost = duels.Where(r => r.FirstDuel == FirstDuel.Lost);
-            output.Add(d.Make(PatternCategory.Aggression, side, $"{Labels.Side(side)} · первая дуэль", "выигрывает",
-                $"На {Labels.Side(side)} выигрывает первую дуэль раунда в {{0}} из {{1}} случаев", won.Select(r => r.Round), duels.Count));
-            output.Add(d.Make(PatternCategory.Aggression, side, $"{Labels.Side(side)} · первая дуэль", "проигрывает",
-                $"На {Labels.Side(side)} проигрывает первую дуэль раунда в {{0}} из {{1}} случаев", lost.Select(r => r.Round), duels.Count));
+            var condition = Loc.T($"{Labels.Side(side)} · первая дуэль", $"{Labels.Side(side)} · opening duel");
+            output.Add(d.Make(PatternCategory.Aggression, side, condition, Loc.T("выигрывает", "wins"),
+                Loc.T($"{on} выигрывает первую дуэль раунда в {{0}} из {{1}} случаев", $"{on}: wins the opening duel in {{0}} of {{1}} cases"),
+                won.Select(r => r.Round), duels.Count));
+            output.Add(d.Make(PatternCategory.Aggression, side, condition, Loc.T("проигрывает", "loses"),
+                Loc.T($"{on} проигрывает первую дуэль раунда в {{0}} из {{1}} случаев", $"{on}: loses the opening duel in {{0}} of {{1}} cases"),
+                lost.Select(r => r.Round), duels.Count));
         }
     }
 
@@ -227,9 +250,10 @@ public sealed class PlayerPatternService(
                 continue;
             var from = MostCommon(left.Select(l => l.From));
             var via = MostCommon(left.Select(l => l.Via));
-            var time = PatternStats.Median(left.Select(l => l.Time));
-            output.Add(d.Make(PatternCategory.Rotation, Side.CT, $"CT · {signal}", $"уходит с {from}",
-                $"На CT в {{0}} из {{1}} раундов при сигнале «{signal}» уходит с {from}{(via.Length > 0 ? $" через {via}" : "")} на ~{Labels.Time(time)}",
+            var time = Labels.Time(PatternStats.Median(left.Select(l => l.Time)));
+            output.Add(d.Make(PatternCategory.Rotation, Side.CT, $"CT · {signal}", Loc.T($"уходит с {from}", $"leaves {from}"),
+                Loc.T($"На CT в {{0}} из {{1}} раундов при сигнале «{signal}» уходит с {from}{(via.Length > 0 ? $" через {via}" : "")} на ~{time}",
+                    $"On CT: in {{0}} of {{1}} rounds, on \"{signal}\", leaves {from}{(via.Length > 0 ? $" via {via}" : "")} at ~{time}"),
                 left.Select(l => l.Round), occurred));
         }
     }
@@ -305,31 +329,57 @@ public sealed class PlayerPatternService(
         }
 
         var s = Labels.Side(side);
-        output.Add(d.Make(PatternCategory.Reaction, side, $"{s} · смерть тиммейта", "идёт на размен",
-            $"На {s} после первой смерти в команде в {{0}} из {{1}} раундов в течение 8 с вступает в бой (размен)", trade, tradeTotal));
-        output.Add(d.Make(PatternCategory.Reaction, side, $"{s} · смерть тиммейта", "не меняется",
-            $"На {s} после первой смерти в команде в {{0}} из {{1}} раундов не вступает в бой в ближайшие 8 с",
-            rounds.Select(r => r.Round).Where(r => !trade.Contains(r) && d.FirstTeamDeath(r, side) is { } td && d.Context.IsAlive(d.SteamId, r, td.Tick)), tradeTotal));
-        output.Add(d.Make(PatternCategory.Reaction, side, $"{s} · преимущество", "ищет бой",
-            $"На {s} в численном преимуществе после первого фрага в {{0}} из {{1}} раундов сразу (≤10 с) ищет бой", advantage.Contact, advantage.Total));
-        output.Add(d.Make(PatternCategory.Reaction, side, $"{s} · преимущество", "выжидает",
-            $"На {s} в численном преимуществе после первого фрага в {{0}} из {{1}} раундов выжидает", advantage.Calm, advantage.Total));
-        output.Add(d.Make(PatternCategory.Reaction, side, $"{s} · меньшинство", "ищет бой",
-            $"На {s} в численном меньшинстве после первого фрага в {{0}} из {{1}} раундов сразу ищет бой", disadvantage.Contact, disadvantage.Total));
-        output.Add(d.Make(PatternCategory.Reaction, side, $"{s} · меньшинство", "выжидает",
-            $"На {s} в численном меньшинстве после первого фрага в {{0}} из {{1}} раундов выжидает", disadvantage.Calm, disadvantage.Total));
-        output.Add(d.Make(PatternCategory.Reaction, side, $"{s} · клатч", "играет на фраги",
-            $"На {s} в клатчах в {{0}} из {{1}} раундов играет на фраги", clutch.Hunt, clutch.Total));
-        output.Add(d.Make(PatternCategory.Reaction, side, $"{s} · клатч", "сохраняется",
-            $"На {s} в клатчах в {{0}} из {{1}} раундов сохраняется без боя", clutch.Save, clutch.Total));
+        var on = On(side);
+        var afterDeath = Loc.T($"{s} · смерть тиммейта", $"{s} · teammate death");
+        output.Add(d.Make(PatternCategory.Reaction, side, afterDeath, Loc.T("идёт на размен", "goes for the trade"),
+            Loc.T($"{on} после первой смерти в команде в {{0}} из {{1}} раундов в течение 8 с вступает в бой (размен)",
+                $"{on}: after the first teammate death, joins the fight within 8 s (trade) in {{0}} of {{1}} rounds"),
+            trade, tradeTotal));
+        output.Add(d.Make(PatternCategory.Reaction, side, afterDeath, Loc.T("не меняется", "does not trade"),
+            Loc.T($"{on} после первой смерти в команде в {{0}} из {{1}} раундов не вступает в бой в ближайшие 8 с",
+                $"{on}: after the first teammate death, stays out of the fight for 8 s in {{0}} of {{1}} rounds"),
+            rounds.Select(r => r.Round).Where(r => !trade.Contains(r) && d.FirstTeamDeath(r, side) is { } td && d.Context.IsAlive(d.SteamId, r, td.Tick)),
+            tradeTotal));
+
+        var seeks = Loc.T("ищет бой", "seeks a fight");
+        var waits = Loc.T("выжидает", "waits");
+        var ahead = Loc.T($"{s} · преимущество", $"{s} · man advantage");
+        output.Add(d.Make(PatternCategory.Reaction, side, ahead, seeks,
+            Loc.T($"{on} в численном преимуществе после первого фрага в {{0}} из {{1}} раундов сразу (≤10 с) ищет бой",
+                $"{on}: up a player after the opening kill, seeks a fight right away (≤10 s) in {{0}} of {{1}} rounds"),
+            advantage.Contact, advantage.Total));
+        output.Add(d.Make(PatternCategory.Reaction, side, ahead, waits,
+            Loc.T($"{on} в численном преимуществе после первого фрага в {{0}} из {{1}} раундов выжидает",
+                $"{on}: up a player after the opening kill, waits in {{0}} of {{1}} rounds"),
+            advantage.Calm, advantage.Total));
+        var behind = Loc.T($"{s} · меньшинство", $"{s} · man disadvantage");
+        output.Add(d.Make(PatternCategory.Reaction, side, behind, seeks,
+            Loc.T($"{on} в численном меньшинстве после первого фрага в {{0}} из {{1}} раундов сразу ищет бой",
+                $"{on}: down a player after the opening kill, seeks a fight right away in {{0}} of {{1}} rounds"),
+            disadvantage.Contact, disadvantage.Total));
+        output.Add(d.Make(PatternCategory.Reaction, side, behind, waits,
+            Loc.T($"{on} в численном меньшинстве после первого фрага в {{0}} из {{1}} раундов выжидает",
+                $"{on}: down a player after the opening kill, waits in {{0}} of {{1}} rounds"),
+            disadvantage.Calm, disadvantage.Total));
+        var clutchCondition = Loc.T($"{s} · клатч", $"{s} · clutch");
+        output.Add(d.Make(PatternCategory.Reaction, side, clutchCondition, Loc.T("играет на фраги", "plays for kills"),
+            Loc.T($"{on} в клатчах в {{0}} из {{1}} раундов играет на фраги", $"{on}: in clutches plays for kills in {{0}} of {{1}} rounds"),
+            clutch.Hunt, clutch.Total));
+        output.Add(d.Make(PatternCategory.Reaction, side, clutchCondition, Loc.T("сохраняется", "saves"),
+            Loc.T($"{on} в клатчах в {{0}} из {{1}} раундов сохраняется без боя", $"{on}: in clutches saves without a fight in {{0}} of {{1}} rounds"),
+            clutch.Save, clutch.Total));
 
         foreach (var group in postPlant.GroupBy(p => p.Zone))
         {
-            output.Add(d.Make(PatternCategory.Reaction, side, "T · пост-плант", $"позиция {group.Key}",
-                $"На T после закладки в {{0}} из {{1}} раундов занимает {group.Key}", group.Select(p => p.Round), postPlant.Count));
+            output.Add(d.Make(PatternCategory.Reaction, side, Loc.T("T · пост-плант", "T · post-plant"),
+                Loc.T($"позиция {group.Key}", $"position {group.Key}"),
+                Loc.T($"На T после закладки в {{0}} из {{1}} раундов занимает {group.Key}", $"On T: after the plant takes {group.Key} in {{0}} of {{1}} rounds"),
+                group.Select(p => p.Round), postPlant.Count));
         }
-        output.Add(d.Make(PatternCategory.Reaction, side, "CT · пост-плант", "участвует в ретейке",
-            $"На CT после закладки в {{0}} из {{1}} раундов участвует в ретейке (бой в течение 25 с)", retake.Contact, retake.Total));
+        output.Add(d.Make(PatternCategory.Reaction, side, Loc.T("CT · пост-плант", "CT · post-plant"), Loc.T("участвует в ретейке", "joins the retake"),
+            Loc.T("На CT после закладки в {0} из {1} раундов участвует в ретейке (бой в течение 25 с)",
+                "On CT: after the plant joins the retake (fights within 25 s) in {0} of {1} rounds"),
+            retake.Contact, retake.Total));
     }
 
     // ---------- Гранаты ----------
@@ -338,14 +388,15 @@ public sealed class PlayerPatternService(
     {
         var sideRounds = d.SideRounds(side).Count;
         var s = Labels.Side(side);
+        var on = On(side);
 
         foreach (var cluster in d.Grenades.Clusters.Where(c => c.Side == side))
         {
-            var rounds = cluster.Rounds;
-            output.Add(d.Make(PatternCategory.Grenades, side, s, $"{GrenadeName(cluster.Type)} {cluster.FromZone} → {cluster.ToZone}",
-                $"На {s} в {{0}} из {{1}} раундов бросает {GrenadeName(cluster.Type).ToLowerInvariant()} из {Zone(cluster.FromZone)} " +
-                $"в {Zone(cluster.ToZone)} на ~{Labels.Time(cluster.MedianThrowTime)}",
-                rounds, sideRounds, cluster.Throws.Select(t => t.Id)));
+            var (from, to, time) = (Zone(cluster.FromZone), Zone(cluster.ToZone), Labels.Time(cluster.MedianThrowTime));
+            output.Add(d.Make(PatternCategory.Grenades, side, s, $"{Labels.Grenade(cluster.Type)} {cluster.FromZone} → {cluster.ToZone}",
+                Loc.T($"{on} в {{0}} из {{1}} раундов бросает {GrenadeName(cluster.Type).ToLowerInvariant()} из {from} в {to} на ~{time}",
+                    $"{on}: in {{0}} of {{1}} rounds throws {GrenadeName(cluster.Type)} from {from} to {to} at ~{time}"),
+                cluster.Rounds, sideRounds, cluster.Throws.Select(t => t.Id)));
         }
 
         var throws = d.Grenades.Throws.Where(t => t.ThrowerSide == side).ToList();
@@ -354,8 +405,9 @@ public sealed class PlayerPatternService(
             if (side == Side.T)
             {
                 var beforeExit = throws.Where(t => d.TeamFirstContactTick(t.Round, side) is not { } c || t.ThrowTick <= c).ToList();
-                output.Add(d.Make(PatternCategory.Grenades, side, "T · гранаты", "до выхода",
-                    "На T бросает гранаты перед выходом (до первого контакта команды): {0} из {1} гранат",
+                output.Add(d.Make(PatternCategory.Grenades, side, Loc.T("T · гранаты", "T · grenades"), Loc.T("до выхода", "before the take"),
+                    Loc.T("На T бросает гранаты перед выходом (до первого контакта команды): {0} из {1} гранат",
+                        "On T: throws grenades before the take (before the first team contact): {0} of {1} grenades"),
                     beforeExit.Select(t => t.Round), throws.Count, beforeExit.Select(t => t.Id), countItems: beforeExit.Count));
             }
             else
@@ -365,11 +417,14 @@ public sealed class PlayerPatternService(
                 var planted = throws.Where(t => plants.ContainsKey(t.Round)).ToList();
                 var retake = planted.Where(t => t.ThrowTick > plants[t.Round]).ToList();
                 var hold = planted.Except(retake).ToList();
-                output.Add(d.Make(PatternCategory.Grenades, side, "CT · раунды с закладкой", "гранаты в ретейке",
-                    "На CT в раундах с закладкой бросает гранаты в ретейке (после закладки): {0} из {1} гранат",
+                var condition = Loc.T("CT · раунды с закладкой", "CT · rounds with a plant");
+                output.Add(d.Make(PatternCategory.Grenades, side, condition, Loc.T("гранаты в ретейке", "grenades in the retake"),
+                    Loc.T("На CT в раундах с закладкой бросает гранаты в ретейке (после закладки): {0} из {1} гранат",
+                        "On CT (rounds with a plant): throws grenades in the retake (after the plant): {0} of {1} grenades"),
                     retake.Select(t => t.Round), planted.Count, retake.Select(t => t.Id), countItems: retake.Count));
-                output.Add(d.Make(PatternCategory.Grenades, side, "CT · раунды с закладкой", "гранаты в защите",
-                    "На CT в раундах с закладкой бросает гранаты до закладки (защита точки): {0} из {1} гранат",
+                output.Add(d.Make(PatternCategory.Grenades, side, condition, Loc.T("гранаты в защите", "grenades on defense"),
+                    Loc.T("На CT в раундах с закладкой бросает гранаты до закладки (защита точки): {0} из {1} гранат",
+                        "On CT (rounds with a plant): throws grenades before the plant (site defense): {0} of {1} grenades"),
                     hold.Select(t => t.Round), planted.Count, hold.Select(t => t.Id), countItems: hold.Count));
             }
         }
@@ -381,11 +436,14 @@ public sealed class PlayerPatternService(
             var self = flashes.Where(f => d.HasContactBetween(f.Round, f.DetonateTick!.Value, f.DetonateTick.Value + window)).ToList();
             var mate = flashes.Except(self)
                 .Where(f => d.TeamContactBetween(f.Round, side, f.DetonateTick!.Value, f.DetonateTick.Value + window)).ToList();
-            output.Add(d.Make(PatternCategory.Grenades, side, $"{s} · флешки", "под себя",
-                $"На {s} флешки бросает под себя (сам вступает в бой в течение 3 с): {{0}} из {{1}}",
+            var condition = Loc.T($"{s} · флешки", $"{s} · flashes");
+            output.Add(d.Make(PatternCategory.Grenades, side, condition, Loc.T("под себя", "for own peek"),
+                Loc.T($"{on} флешки бросает под себя (сам вступает в бой в течение 3 с): {{0}} из {{1}}",
+                    $"{on}: flashes for own peek (fights within 3 s): {{0}} of {{1}}"),
                 self.Select(f => f.Round), flashes.Count, self.Select(f => f.Id), countItems: self.Count));
-            output.Add(d.Make(PatternCategory.Grenades, side, $"{s} · флешки", "под тиммейта",
-                $"На {s} флешки бросает под тиммейта (в бой вступает союзник): {{0}} из {{1}}",
+            output.Add(d.Make(PatternCategory.Grenades, side, condition, Loc.T("под тиммейта", "for a teammate"),
+                Loc.T($"{on} флешки бросает под тиммейта (в бой вступает союзник): {{0}} из {{1}}",
+                    $"{on}: flashes for a teammate (a teammate takes the fight): {{0}} of {{1}}"),
                 mate.Select(f => f.Round), flashes.Count, mate.Select(f => f.Id), countItems: mate.Count));
         }
     }
@@ -397,12 +455,16 @@ public sealed class PlayerPatternService(
     {
         var routesBySide = d.Routes.Rounds.Where(r => r.Side == side).ToList();
         var deaths = routesBySide.Where(r => r.Died && r.Zones.Count > 0).Select(r => (r.Round, Zone: r.Zones[^1].Zone)).ToList();
+        var on = On(side);
 
         foreach (var group in deaths.GroupBy(x => x.Zone))
         {
             var visited = routesBySide.Count(r => r.ZoneNames.Contains(group.Key));
-            output.Add(d.Make(PatternCategory.Deaths, side, $"{Labels.Side(side)} · заходит в {group.Key}", $"погибает в {group.Key}",
-                $"На {Labels.Side(side)} погибает в {group.Key} в {{0}} из {{1}} раундов, когда туда заходит",
+            output.Add(d.Make(PatternCategory.Deaths, side,
+                Loc.T($"{Labels.Side(side)} · заходит в {group.Key}", $"{Labels.Side(side)} · enters {group.Key}"),
+                Loc.T($"погибает в {group.Key}", $"dies in {group.Key}"),
+                Loc.T($"{on} погибает в {group.Key} в {{0}} из {{1}} раундов, когда туда заходит",
+                    $"{on}: dies in {group.Key} in {{0}} of {{1}} rounds when entering it"),
                 group.Select(x => x.Round), visited));
         }
     }
@@ -414,16 +476,25 @@ public sealed class PlayerPatternService(
         var team = d.Teammates(me.Side).Select(id => d.Metrics(id, me.Side)).Where(m => m.Rounds > 0).Append(me).ToList();
         bool IsMax(Func<SideMetrics, double> f) => team.All(m => f(me) >= f(m));
         int Rank(Func<SideMetrics, double> f) => team.Count(m => f(m) > f(me)) + 1;
+        var culture = Loc.Culture;
+        string F(FormattableString s) => s.ToString(culture);
 
         var reasons = new List<string>
         {
-            $"первая дуэль раунда: {me.FirstDuelShare:P0} раундов (место {Rank(m => m.FirstDuelShare)} в команде)",
-            me.MedianContactTime is { } c ? $"первый контакт ~{Labels.Time(c)}" : "контактов почти нет",
-            $"до ближайшего союзника ~{me.MedianTeammateDistance:F0} units (место {Rank(m => m.MedianTeammateDistance)})",
-            $"гранат за раунд: {me.GrenadesPerRound:F1} (место {Rank(m => m.GrenadesPerRound)})",
+            Loc.T(F($"первая дуэль раунда: {me.FirstDuelShare:P0} раундов (место {Rank(m => m.FirstDuelShare)} в команде)"),
+                F($"opening duel: {me.FirstDuelShare:P0} of rounds (rank {Rank(m => m.FirstDuelShare)} in team)")),
+            me.MedianContactTime is { } c
+                ? Loc.T($"первый контакт ~{Labels.Time(c)}", $"first contact ~{Labels.Time(c)}")
+                : Loc.T("контактов почти нет", "almost no contact"),
+            Loc.T(F($"до ближайшего союзника ~{me.MedianTeammateDistance:F0} units (место {Rank(m => m.MedianTeammateDistance)})"),
+                F($"nearest teammate ~{me.MedianTeammateDistance:F0} units away (rank {Rank(m => m.MedianTeammateDistance)})")),
+            Loc.T(F($"гранат за раунд: {me.GrenadesPerRound:F1} (место {Rank(m => m.GrenadesPerRound)})"),
+                F($"grenades per round: {me.GrenadesPerRound:F1} (rank {Rank(m => m.GrenadesPerRound)})")),
+            Loc.T(F($"урон за раунд: {me.DamagePerRound:F0} (место {Rank(m => m.DamagePerRound)})"),
+                F($"damage per round: {me.DamagePerRound:F0} (rank {Rank(m => m.DamagePerRound)})")),
         };
         if (me.Side == Side.CT)
-            reasons.Add($"держит одну позицию в {me.AnchorShare:P0} раундов");
+            reasons.Add(Loc.T(F($"держит одну позицию в {me.AnchorShare:P0} раундов"), F($"holds one position in {me.AnchorShare:P0} of rounds")));
 
         PlayerRole role;
         if (IsMax(m => m.FirstDuelShare) && me.FirstDuelShare >= 0.25)
@@ -482,26 +553,27 @@ public sealed class PlayerPatternService(
 
     private static string AggressionText(Aggression a) => a switch
     {
-        Aggression.Aggressive => "агрессивно (первый бой в начале раунда)",
-        Aggression.Passive => "пассивно (бой поздно или без боя)",
-        _ => "сдержанно (первый бой в середине раунда)",
+        Aggression.Aggressive => Loc.T("агрессивно (первый бой в начале раунда)", "aggressively (first fight early in the round)"),
+        Aggression.Passive => Loc.T("пассивно (бой поздно или без боя)", "passively (late fight or no fight)"),
+        _ => Loc.T("сдержанно (первый бой в середине раунда)", "with restraint (first fight mid-round)"),
     };
 
-    private static string ScoreText(ScoreState s) => s switch
+    private static string OnScore(Side side, ScoreState s) => s switch
     {
-        ScoreState.Leading => " когда команда ведёт в счёте",
-        ScoreState.Trailing => " когда команда отстаёт в счёте",
-        _ => " при равном счёте",
+        ScoreState.Leading => On(side, "когда команда ведёт в счёте", "team leading"),
+        ScoreState.Trailing => On(side, "когда команда отстаёт в счёте", "team trailing"),
+        _ => On(side, "при равном счёте", "score tied"),
     };
 
+    /// <summary>Название гранаты в винительном падеже («бросает флешку») / с артиклем («throws a flashbang»).</summary>
     private static string GrenadeName(GrenadeType type) => type switch
     {
-        GrenadeType.HighExplosive => "HE",
-        GrenadeType.Flashbang => "Флешку",
-        GrenadeType.Smoke => "Дым",
-        GrenadeType.Molotov => "Молотов",
-        GrenadeType.Incendiary => "Зажигательную",
-        _ => "Ложную",
+        GrenadeType.HighExplosive => Loc.T("HE", "an HE"),
+        GrenadeType.Flashbang => Loc.T("Флешку", "a flashbang"),
+        GrenadeType.Smoke => Loc.T("Дым", "a smoke"),
+        GrenadeType.Molotov => Loc.T("Молотов", "a molotov"),
+        GrenadeType.Incendiary => Loc.T("Зажигательную", "an incendiary"),
+        _ => Loc.T("Ложную", "a decoy"),
     };
 
     /// <summary>Предрасчитанные данные игрока и матча для генераторов паттернов.</summary>
@@ -609,14 +681,15 @@ public sealed class PlayerPatternService(
             var events = new List<(string, float)>();
 
             if (Match.Bombs.FirstOrDefault(b => b.Round == round && b.Type == BombEventType.Planted) is { } plant)
-                events.Add(($"закладка на {plant.Site}", Time(plant.Tick)));
+                events.Add((Loc.T($"закладка на {plant.Site}", $"plant on {plant.Site}"), Time(plant.Tick)));
             if (FirstTeamDeath(round, side) is { } death)
             {
                 var zone = Zones.Locate(death.VictimPosition);
-                events.Add(($"смерть тиммейта{(zone.Length > 0 ? $" ({zone})" : "")}", Time(death.Tick)));
+                var where = zone.Length > 0 ? $" ({zone})" : "";
+                events.Add((Loc.T($"смерть тиммейта{where}", $"teammate death{where}"), Time(death.Tick)));
             }
             if (TeamFirstContactTick(round, side) is { } contact)
-                events.Add(("контакт команды", Time(contact)));
+                events.Add((Loc.T("контакт команды", "team contact"), Time(contact)));
 
             return events.OrderBy(e => e.Item2);
         }
@@ -690,6 +763,7 @@ public sealed class PlayerPatternService(
                 duels == 0 ? 0 : rounds.Count(r => r.FirstDuel == FirstDuel.Won) / (double)duels,
                 MedianTeammateDistance(player, rounds.Select(r => r.Round), side),
                 rounds.Sum(r => r.GrenadeCount) / (double)n,
+                rounds.Sum(r => r.Damage) / (double)n,
                 rounds.Count(r => AnchorZone(player, r.Round) is not null) / (double)n,
                 rounds.Count(r => r.Aggression == Aggression.Aggressive) / (double)n,
                 rounds.Count(r => r.Aggression == Aggression.Passive) / (double)n);

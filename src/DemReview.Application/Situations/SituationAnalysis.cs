@@ -29,6 +29,7 @@ public enum FirstDuel
 /// <param name="FinalZone">Последняя зона, где был игрок (место смерти или позиция в конце раунда).</param>
 /// <param name="FirstContactTime">Секунды до первого урона/убийства с участием игрока; null — контакта не было.</param>
 /// <param name="MatchupAtFirstContact">Численность в момент первого контакта, например «5v4».</param>
+/// <param name="Damage">Фактический урон по противникам за раунд.</param>
 public sealed record RoundSituation(
     int Round,
     Side Side,
@@ -52,6 +53,7 @@ public sealed record RoundSituation(
     FirstDuel FirstDuel,
     // Итог
     int Kills,
+    int Damage,
     bool Died,
     bool RoundWon)
 {

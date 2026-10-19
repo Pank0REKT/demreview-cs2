@@ -16,8 +16,11 @@ namespace DemReview.Infrastructure.Storage;
 /// </summary>
 public sealed class SqliteMatchCache : IMatchCache
 {
-    /// <summary>Версия формата сериализованного MatchData. Увеличивать при изменении доменной модели или парсера.</summary>
-    public const int FormatVersion = 1;
+    /// <summary>
+    /// Версия формата сериализованного MatchData. Увеличивать при изменении доменной модели или парсера.
+    /// 2 — безымянные команды хранятся пустой строкой (подпись зависит от языка интерфейса).
+    /// </summary>
+    public const int FormatVersion = 2;
 
     /// <summary>Версия схемы БД (PRAGMA user_version).</summary>
     private const int SchemaVersion = 1;
@@ -131,6 +134,47 @@ public sealed class SqliteMatchCache : IMatchCache
         catch (Exception ex) when (ex is SqliteException or DbUpdateException or IOException)
         {
             _logger.LogWarning(ex, "Не удалось сохранить демку в SQLite: {Path}", key.FullPath);
+        }
+    }
+
+    public MatchCacheInfo GetInfo()
+    {
+        try
+        {
+            lock (_lock)
+            {
+                EnsureDatabase();
+                using var db = new DemReviewDbContext(_options);
+                var entries = db.Matches.Count();
+                var size = File.Exists(DatabasePath) ? new FileInfo(DatabasePath).Length : 0;
+                return new MatchCacheInfo(entries, size, DatabasePath);
+            }
+        }
+        catch (Exception ex) when (ex is SqliteException or IOException)
+        {
+            _logger.LogWarning(ex, "Не удалось прочитать сведения о кеше {Path}", DatabasePath);
+            return new MatchCacheInfo(0, 0, DatabasePath);
+        }
+    }
+
+    /// <summary>Удаляет файл базы целиком (а не только строки) — место на диске освобождается сразу.</summary>
+    public void Clear()
+    {
+        _memory.Clear();
+        lock (_lock)
+        {
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(DatabasePath)!);
+                Recreate("очистка пользователем");
+                _initialized = true;
+            }
+            catch (Exception ex) when (ex is SqliteException or IOException or UnauthorizedAccessException)
+            {
+                _logger.LogWarning(ex, "Не удалось очистить кеш {Path}", DatabasePath);
+                _initialized = false;
+                throw;
+            }
         }
     }
 

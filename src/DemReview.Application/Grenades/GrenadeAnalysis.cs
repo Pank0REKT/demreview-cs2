@@ -1,4 +1,5 @@
 using System.Numerics;
+using DemReview.Application.Damage;
 using DemReview.Domain;
 
 namespace DemReview.Application.Grenades;
@@ -41,7 +42,8 @@ public sealed record GrenadeAnalysis(
     IReadOnlyList<GrenadeCluster> Clusters,
     IReadOnlyList<GrenadeTypeSummary> Summary,
     FlashSummary Flashes,
-    IReadOnlyDictionary<int, string> LandZones);
+    IReadOnlyDictionary<int, string> LandZones,
+    IReadOnlyDictionary<int, GrenadeDamage> Damage);
 
 /// <summary>Параметры кластеризации раскидок (единицы — игровые units).</summary>
 /// <param name="ThrowDistance">Максимальное расстояние между точками броска в одной раскидке.</param>

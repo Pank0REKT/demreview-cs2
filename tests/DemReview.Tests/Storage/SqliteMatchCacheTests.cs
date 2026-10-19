@@ -44,6 +44,28 @@ public sealed class SqliteMatchCacheTests : IDisposable
             .Build();
 
     [Fact]
+    public void Clear_removes_all_entries_from_memory_and_disk()
+    {
+        var cache = NewCache();
+        cache.Store(Key(), Match());
+        cache.Store(Key(length: 200), Match());
+        Assert.Equal(1, cache.GetInfo().Entries); // тот же путь — одна запись
+        cache.Store(new DemoFileKey(Path.Combine("C:", "другая.dem"), 1, DateTime.UnixEpoch, 16), Match());
+        Assert.Equal(2, cache.GetInfo().Entries);
+        Assert.True(cache.GetInfo().SizeBytes > 0);
+
+        cache.Clear();
+
+        Assert.Equal(0, cache.GetInfo().Entries);
+        Assert.False(cache.TryGet(Key(length: 200), out _));
+        Assert.False(NewCache().TryGet(Key(length: 200), out _));
+
+        // После очистки кеш продолжает работать.
+        cache.Store(Key(), Match());
+        Assert.True(NewCache().TryGet(Key(), out _));
+    }
+
+    [Fact]
     public void Match_survives_restart_through_sqlite()
     {
         var original = Match();

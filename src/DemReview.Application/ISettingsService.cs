@@ -3,6 +3,9 @@ namespace DemReview.Application;
 /// <summary>Пользовательские настройки приложения.</summary>
 public sealed record AppSettings
 {
+    /// <summary>Язык интерфейса: «ru» или «en»; null — ещё не выбран (спросить при запуске).</summary>
+    public string? Language { get; init; }
+
     /// <summary>Шаг выборки позиций, тиков.</summary>
     public int SampleTickStep { get; init; } = 16;
 

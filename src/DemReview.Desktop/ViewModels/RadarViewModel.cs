@@ -7,9 +7,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DemReview.Application;
 using DemReview.Application.Context;
+using DemReview.Application.Damage;
 using DemReview.Application.Filters;
 using DemReview.Application.Grenades;
 using DemReview.Application.Heatmaps;
+using DemReview.Application.Localization;
 using DemReview.Application.Maps;
 using DemReview.Application.Patterns;
 using DemReview.Application.Routes;
@@ -29,7 +31,7 @@ public enum HeatmapMode
 
 /// <summary>
 /// Вкладка «Радар»: подложка карты, слои (маршруты, гранаты, смерти, тепловая карта) выбранного игрока
-/// с учётом фильтров, частые маршруты, раскидки и таймлайн раунда с воспроизведением.
+/// с учётом фильтров, частые маршруты, раскидки и таймлайн раунда с воспроизведением, киллфидом и уроном.
 /// </summary>
 public partial class RadarViewModel : ViewModelBase
 {
@@ -38,6 +40,13 @@ public partial class RadarViewModel : ViewModelBase
     private const float FireRadius = 120;
     private const float SmokeSeconds = 18;
     private const float FireSeconds = 7;
+
+    /// <summary>Сколько секунд игрового времени убийство остаётся в киллфиде и сколько строк в нём максимум.</summary>
+    private const float KillFeedSeconds = 7;
+    private const int KillFeedMaxEntries = 6;
+
+    /// <summary>Сколько секунд после попадания виден урон; попадания с меньшим интервалом суммируются.</summary>
+    private const float DamagePopupSeconds = 1.5f;
 
     private readonly IRouteAnalysisService _routeAnalysis;
     private readonly IGrenadeAnalysisService _grenadeAnalysis;
@@ -56,11 +65,13 @@ public partial class RadarViewModel : ViewModelBase
     private ulong? _steamId;
     private RouteAnalysis? _routes;
     private GrenadeAnalysis? _grenades;
+    private IReadOnlyList<DamageHit> _hits = [];
     private AnalysisFilter _filter = AnalysisFilter.None;
     private int _analysisVersion;
     private int _heatmapVersion;
     private bool _updatingSelection;
     private IReadOnlySet<int>? _focusRounds;
+    private string _killFeedKey = "";
 
     public RadarViewModel(
         IRouteAnalysisService routeAnalysis,
@@ -112,6 +123,14 @@ public partial class RadarViewModel : ViewModelBase
     public partial IReadOnlyList<RadarPlayerMarker>? Players { get; private set; }
 
     [ObservableProperty]
+    public partial IReadOnlyList<RadarDamageText>? DamageTexts { get; private set; }
+
+    /// <summary>Киллфид момента таймлайна: последние убийства раунда, убийства и смерть игрока выделены.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasKillFeed))]
+    public partial IReadOnlyList<KillFeedEntry> KillFeed { get; private set; } = [];
+
+    [ObservableProperty]
     public partial Bitmap? Heatmap { get; private set; }
 
     [ObservableProperty]
@@ -155,8 +174,8 @@ public partial class RadarViewModel : ViewModelBase
 
     public static IReadOnlyList<FilterOption> HeatmapModes { get; } =
     [
-        new("позиции", HeatmapMode.Positions),
-        new("смерти", HeatmapMode.Deaths),
+        new("позиции", "positions", HeatmapMode.Positions),
+        new("смерти", "deaths", HeatmapMode.Deaths),
     ];
 
     public ObservableCollection<RouteRoundRow> RoundRows { get; } = [];
@@ -173,6 +192,8 @@ public partial class RadarViewModel : ViewModelBase
 
     public bool HasMapHint => MapHint is not null;
 
+    public bool HasKillFeed => KillFeed.Count > 0;
+
     partial void OnShowHeatmapChanged(bool value) => _ = RebuildHeatmapAsync();
     partial void OnShowDeathsChanged(bool value) => RebuildLayers();
     partial void OnSelectedHeatmapModeChanged(FilterOption value) => _ = RebuildHeatmapAsync();
@@ -188,6 +209,7 @@ public partial class RadarViewModel : ViewModelBase
         _match = match;
         var s = _settings.Current;
         _context = _contexts.Create(match, new EconomyOptions(s.BuyEcoMaxEquipment, s.BuyFullMinEquipment));
+        _hits = DamageAnalysis.EffectiveHits(match);
         _map = _mapConfigs.Find(match.MapName);
         var hints = new List<string>();
 
@@ -195,7 +217,8 @@ public partial class RadarViewModel : ViewModelBase
         {
             _map = _converter.FitToPositions(match.MapName,
                 match.Tracks.Values.SelectMany(t => t.Samples).Select(sample => sample.Position));
-            hints.Add($"Карта {match.MapName} не описана в maps.json — масштаб подобран по позициям игроков, подложки нет.");
+            hints.Add(Loc.T($"Карта {match.MapName} не описана в maps.json — масштаб подобран по позициям игроков, подложки нет.",
+                $"Map {match.MapName} is not described in maps.json — the scale is fitted to player positions, no background image."));
             MapImage = null;
         }
         else
@@ -274,7 +297,8 @@ public partial class RadarViewModel : ViewModelBase
     public void FocusPattern(Pattern pattern)
     {
         _focusRounds = pattern.Rounds.ToHashSet();
-        FocusText = $"Раунды-примеры: {string.Join(", ", pattern.Rounds)} — {pattern.Text}";
+        FocusText = Loc.T($"Раунды-примеры: {string.Join(", ", pattern.Rounds)} — {pattern.Text}",
+            $"Example rounds: {string.Join(", ", pattern.Rounds)} — {pattern.Text}");
         OnSelectionChanged(null);
         HighlightedRounds = _focusRounds;
         HighlightedGrenades = pattern.GrenadeIds.ToHashSet();
@@ -301,7 +325,9 @@ public partial class RadarViewModel : ViewModelBase
     {
         if (_mapImages.FindImage(mapName) is not { } path)
         {
-            hints.Add($"Нет изображения карты. Положите {Path.GetFileName(_mapImages.ExpectedPath(mapName))} в папку {_platform.MapsDirectory}");
+            var file = Path.GetFileName(_mapImages.ExpectedPath(mapName));
+            hints.Add(Loc.T($"Нет изображения карты. Положите {file} в папку {_platform.MapsDirectory}",
+                $"No map image. Put {file} into {_platform.MapsDirectory}"));
             return null;
         }
 
@@ -312,7 +338,7 @@ public partial class RadarViewModel : ViewModelBase
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Не удалось загрузить изображение карты {Path}", path);
-            hints.Add($"Не удалось загрузить {path}: {ex.Message}");
+            hints.Add(Loc.T($"Не удалось загрузить {path}: {ex.Message}", $"Could not load {path}: {ex.Message}"));
             return null;
         }
     }
@@ -332,6 +358,8 @@ public partial class RadarViewModel : ViewModelBase
         Grenades = [];
         Deaths = [];
         Players = null;
+        DamageTexts = null;
+        SetKillFeed([]);
         Heatmap = null;
         Timeline.SetRound(null, 64);
         OnSelectionChanged(null);
@@ -359,22 +387,29 @@ public partial class RadarViewModel : ViewModelBase
 
         GrenadeClusters.Clear();
         foreach (var cluster in grenades.Clusters.Where(c => c.Throws.Any(IncludesGrenade)))
-            GrenadeClusters.Add(new GrenadeClusterRow(cluster));
+            GrenadeClusters.Add(new GrenadeClusterRow(cluster, grenades.Damage));
 
         GrenadeThrows.Clear();
         foreach (var t in grenades.Throws.Where(IncludesGrenade))
-            GrenadeThrows.Add(new GrenadeThrowRow(t, grenades.LandZones.GetValueOrDefault(t.Id, ""), match));
+            GrenadeThrows.Add(new GrenadeThrowRow(t, grenades.LandZones.GetValueOrDefault(t.Id, ""), grenades.Damage.GetValueOrDefault(t.Id), match));
 
         GrenadeSummary.Clear();
         foreach (var s in grenades.Summary)
             GrenadeSummary.Add(new GrenadeSummaryRow(s));
 
         var f = grenades.Flashes;
-        FlashSummaryText = f.Thrown == 0
-            ? "Флешек не бросал."
-            : $"Флешек: {f.Thrown}. Ослепил противников: {f.EnemiesBlinded} ({f.EnemyBlindSeconds:F1} с), " +
-              $"союзников: {f.TeammatesBlinded} ({f.TeammateBlindSeconds:F1} с), себя: {f.SelfBlinded}. " +
-              $"Без ослеплённых противников: {f.WithoutEnemyVictims}.";
+        var damage = grenades.Damage.Values.ToList();
+        FlashSummaryText = (f.Thrown == 0
+            ? Loc.T("Флешек не бросал.", "No flashbangs thrown.")
+            : Loc.T($"Флешек: {f.Thrown}. Ослепил противников: {f.EnemiesBlinded} ({f.EnemyBlindSeconds:F1} с), " +
+                    $"союзников: {f.TeammatesBlinded} ({f.TeammateBlindSeconds:F1} с), себя: {f.SelfBlinded}. " +
+                    $"Без ослеплённых противников: {f.WithoutEnemyVictims}.",
+                $"Flashbangs: {f.Thrown}. Enemies blinded: {f.EnemiesBlinded} ({f.EnemyBlindSeconds:F1} s), " +
+                $"teammates: {f.TeammatesBlinded} ({f.TeammateBlindSeconds:F1} s), self: {f.SelfBlinded}. " +
+                $"Without blinded enemies: {f.WithoutEnemyVictims}.")) +
+            (damage.Count == 0 ? "" : " " + Loc.T(
+                $"Урон гранатами (HE и огонь): {damage.Sum(d => d.EnemyDamage)} по противникам, {damage.Sum(d => d.TeamDamage)} по своим.",
+                $"Grenade damage (HE and fire): {damage.Sum(d => d.EnemyDamage)} to enemies, {damage.Sum(d => d.TeamDamage)} to teammates."));
     }
 
     /// <summary>Раунд таймлайна: раунд из фильтра, иначе выбранный в списке раундов.</summary>
@@ -417,16 +452,22 @@ public partial class RadarViewModel : ViewModelBase
             })
             .ToList();
 
+        var grenadeDamage = _grenades?.Damage;
         Grenades = _grenades is null ? [] : _grenades.Throws
             .Where(g => RoundVisible(g.Round) && _filter.IncludesGrenade(g) && g.ThrowTick <= tick)
-            .Select(g => new RadarGrenade(
-                g.Id,
-                g.Round,
-                KindOf(g.Type),
-                ToRadar(g.ThrowerPosition),
-                g.DetonatePosition is { } land && g.DetonateTick <= tick && !EffectExpired(g, tick) ? ToRadar(land) : null,
-                (g.Type == GrenadeType.Smoke ? SmokeRadius : FireRadius) / map.Scale,
-                Palette.Grenade(g.Type)))
+            .Select(g =>
+            {
+                var landed = g.DetonatePosition is { } land && g.DetonateTick <= tick && !EffectExpired(g, tick) ? ToRadar(land) : (Point?)null;
+                return new RadarGrenade(
+                    g.Id,
+                    g.Round,
+                    KindOf(g.Type),
+                    ToRadar(g.ThrowerPosition),
+                    landed,
+                    (g.Type == GrenadeType.Smoke ? SmokeRadius : FireRadius) / map.Scale,
+                    Palette.Grenade(g.Type),
+                    landed is null ? null : GrenadeDamageLabel(grenadeDamage?.GetValueOrDefault(g.Id), tick));
+            })
             .ToList();
 
         Deaths = !ShowDeaths ? [] : match.Kills
@@ -437,14 +478,38 @@ public partial class RadarViewModel : ViewModelBase
         if (timelineRound is null)
         {
             Players = null;
+            DamageTexts = null;
+            SetKillFeed([]);
             Timeline.ContextText = "";
         }
         else
         {
             Players = BuildMarkers(match, timelineRound.Number, tick, steamId);
+            DamageTexts = BuildDamageTexts(match, timelineRound.Number, tick, steamId);
+            SetKillFeed(BuildKillFeed(match, timelineRound.Number, tick, steamId));
             var moment = _context!.At(steamId, timelineRound.Number, tick);
-            Timeline.ContextText = MomentText(moment);
+            Timeline.ContextText = MomentText(moment, DamageSoFar(timelineRound.Number, tick, steamId));
         }
+    }
+
+    /// <summary>
+    /// Подпись урона гранаты у места взрыва. В режиме таймлайна — только урон, уже нанесённый к текущему тику
+    /// (огонь наносит урон постепенно).
+    /// </summary>
+    private static string? GrenadeDamageLabel(GrenadeDamage? damage, int tick)
+    {
+        if (damage is null)
+            return null;
+        var hits = damage.Hits.Where(h => h.Tick <= tick).ToList();
+        var enemy = hits.Where(h => !h.IsTeammate).Sum(h => h.Damage);
+        var team = hits.Where(h => h.IsTeammate).Sum(h => h.Damage);
+        if (enemy == 0 && team == 0)
+            return null;
+        var victims = hits.Where(h => !h.IsTeammate).Select(h => h.VictimSteamId).Distinct().Count();
+        var text = enemy > 0 ? $"−{enemy}{(victims > 1 ? $" ×{victims}" : "")}" : "";
+        if (team > 0)
+            text += (text.Length > 0 ? " · " : "") + Loc.T($"своим −{team}", $"team −{team}");
+        return text;
     }
 
     /// <summary>В режиме таймлайна дым исчезает через ~18 с, огонь — через ~7 с.</summary>
@@ -461,37 +526,156 @@ public partial class RadarViewModel : ViewModelBase
         return tick > detonate + seconds * (_match?.TickRate ?? 64);
     }
 
-    /// <summary>Маркеры живых игроков с интерполяцией между сэмплами — плавное движение при воспроизведении.</summary>
+    /// <summary>
+    /// Маркеры игроков: живые — с интерполяцией между сэмплами (плавное движение при воспроизведении),
+    /// погибшие в раунде — крестиком на месте смерти. У каждого — подсказка для наведения мышью.
+    /// </summary>
     private List<RadarPlayerMarker> BuildMarkers(MatchData match, int round, int tick, ulong selected)
     {
         var markers = new List<RadarPlayerMarker>();
+        var deaths = match.Kills.Where(k => k.Round == round && k.Tick <= tick).ToList();
         foreach (var player in match.Players)
         {
             var side = player.SideInRound(round);
-            if (side == Side.None || !_context!.IsAlive(player.SteamId, round, tick))
+            if (side == Side.None)
                 continue;
+
+            var isSelected = player.SteamId == selected;
+            var color = isSelected ? Color.FromRgb(255, 255, 255) : Palette.Side(side);
+
+            if (!_context!.IsAlive(player.SteamId, round, tick))
+            {
+                if (deaths.LastOrDefault(k => k.VictimSteamId == player.SteamId) is { } death)
+                {
+                    var killer = death.AttackerSteamId is { } a && a != player.SteamId ? match.FindPlayer(a)?.Name : null;
+                    var how = killer is null ? Texts.Weapon(death.Weapon) : $"{killer}, {Texts.Weapon(death.Weapon)}";
+                    markers.Add(new RadarPlayerMarker(ToRadar(death.VictimPosition), 0, color, isSelected, "", player.Name,
+                        Loc.T($"{player.Name} — погиб ({how})", $"{player.Name} — killed ({how})"), IsDead: true));
+                }
+                continue;
+            }
 
             var samples = match.TrackOf(player.SteamId).Samples;
             var index = LastAtOrBefore(samples, tick);
             if (index < 0 || samples[index].Round != round)
                 continue;
 
-            var a = samples[index];
-            var (position, yaw) = (a.Position, a.Yaw);
-            if (index + 1 < samples.Count && samples[index + 1] is { } b && b.Round == round && b.Tick > a.Tick)
-            {
-                var t = Math.Clamp((tick - a.Tick) / (float)(b.Tick - a.Tick), 0, 1);
-                position = Vector3.Lerp(a.Position, b.Position, t);
-                yaw = LerpAngle(a.Yaw, b.Yaw, t);
-            }
-
-            var isSelected = player.SteamId == selected;
-            var color = isSelected ? Color.FromRgb(255, 255, 255)
-                : side == Side.CT ? Color.FromRgb(90, 170, 255) : Color.FromRgb(255, 170, 60);
-            markers.Add(new RadarPlayerMarker(ToRadar(position), yaw, color, isSelected,
-                isSelected ? $"{player.Name} · {a.Weapon} · {a.Health} HP" : ""));
+            var sample = samples[index];
+            var (position, yaw) = Interpolate(samples, index, round, tick);
+            var label = $"{player.Name} · {Texts.Weapon(sample.Weapon)} · {sample.Health} HP";
+            markers.Add(new RadarPlayerMarker(ToRadar(position), yaw, color, isSelected, isSelected ? label : "", player.Name,
+                $"{label} · ${sample.Money}", IsDead: false));
         }
         return markers;
+    }
+
+    /// <summary>Позиция и взгляд игрока в тике: интерполяция между соседними сэмплами раунда.</summary>
+    private static (Vector3 Position, float Yaw) Interpolate(IReadOnlyList<PlayerSample> samples, int index, int round, int tick)
+    {
+        var a = samples[index];
+        if (index + 1 < samples.Count && samples[index + 1] is { } b && b.Round == round && b.Tick > a.Tick)
+        {
+            var t = Math.Clamp((tick - a.Tick) / (float)(b.Tick - a.Tick), 0, 1);
+            return (Vector3.Lerp(a.Position, b.Position, t), LerpAngle(a.Yaw, b.Yaw, t));
+        }
+        return (a.Position, a.Yaw);
+    }
+
+    private static Vector3? PositionAt(MatchData match, ulong steamId, int round, int tick)
+    {
+        var samples = match.TrackOf(steamId).Samples;
+        var index = LastAtOrBefore(samples, tick);
+        return index >= 0 && samples[index].Round == round ? Interpolate(samples, index, round, tick).Position : null;
+    }
+
+    /// <summary>
+    /// Урон с участием игрока за последние ~1,5 с: число над жертвой («−27»), серия попаданий по одной цели
+    /// суммируется. Нанесённый — жёлтый (по союзнику — оранжевый), полученный — красный.
+    /// </summary>
+    private List<RadarDamageText> BuildDamageTexts(MatchData match, int round, int tick, ulong selected)
+    {
+        var window = (int)(DamagePopupSeconds * match.TickRate);
+        var texts = new List<RadarDamageText>();
+        var pairs = _hits
+            .Where(h => h.Round == round && h.Tick <= tick && h.Damage > 0 &&
+                        (h.AttackerSteamId == selected || h.VictimSteamId == selected))
+            .GroupBy(h => (h.AttackerSteamId, h.VictimSteamId));
+
+        foreach (var pair in pairs)
+        {
+            var hits = pair.OrderBy(h => h.Tick).ToList();
+            var last = hits[^1];
+            if (tick - last.Tick > window)
+                continue;
+
+            // Серия: попадания с интервалом не больше окна.
+            var sum = last.Damage;
+            for (var i = hits.Count - 2; i >= 0 && hits[i + 1].Tick - hits[i].Tick <= window; i--)
+                sum += hits[i].Damage;
+
+            var victimKill = match.Kills.FirstOrDefault(k => k.Round == round && k.VictimSteamId == last.VictimSteamId && k.Tick <= tick);
+            if ((victimKill?.VictimPosition ?? PositionAt(match, last.VictimSteamId, round, tick)) is not { } position)
+                continue;
+
+            var age = (tick - last.Tick) / (double)window;
+            var dealt = last.AttackerSteamId == selected && last.VictimSteamId != selected;
+            var color = !dealt ? Color.FromRgb(255, 85, 85)
+                : last.IsTeammate ? Color.FromRgb(255, 150, 50)
+                : Color.FromRgb(255, 220, 70);
+            texts.Add(new RadarDamageText(ToRadar(position), $"−{sum}", color, age));
+        }
+        return texts;
+    }
+
+    /// <summary>Урон игрока в раунде к текущему тику: нанесённый противникам и полученный.</summary>
+    private (int Dealt, int Taken) DamageSoFar(int round, int tick, ulong selected)
+    {
+        var hits = _hits.Where(h => h.Round == round && h.Tick <= tick).ToList();
+        return (hits.Where(h => h.AttackerSteamId == selected && !h.IsTeammate).Sum(h => h.Damage),
+            hits.Where(h => h.VictimSteamId == selected).Sum(h => h.Damage));
+    }
+
+    /// <summary>Киллфид как в игре: убийства за последние ~7 с, новые внизу.</summary>
+    private static List<KillFeedEntry> BuildKillFeed(MatchData match, int round, int tick, ulong selected)
+    {
+        var window = (int)(KillFeedSeconds * match.TickRate);
+        PlayerInfo? Player(ulong? id) => id is { } v ? match.FindPlayer(v) : null;
+        IBrush Brush(PlayerInfo? p) => new SolidColorBrush(p is null ? Colors.White : Palette.Side(p.SideInRound(round)));
+
+        return match.Kills
+            .Where(k => k.Round == round && k.Tick <= tick && tick - k.Tick <= window)
+            .OrderBy(k => k.Tick)
+            .TakeLast(KillFeedMaxEntries)
+            .Select(k =>
+            {
+                var attacker = k.AttackerSteamId != k.VictimSteamId ? Player(k.AttackerSteamId) : null;
+                var assister = Player(k.AssisterSteamId);
+                var victim = Player(k.VictimSteamId);
+                return new KillFeedEntry(
+                    k.Tick,
+                    attacker?.Name ?? "",
+                    Brush(attacker),
+                    assister is null ? "" : $"+ {assister.Name}",
+                    Brush(assister),
+                    Texts.Weapon(k.Weapon),
+                    k.Headshot,
+                    victim?.Name ?? "?",
+                    Brush(victim),
+                    k.AttackerSteamId == selected && k.VictimSteamId != selected,
+                    k.VictimSteamId == selected,
+                    k.AssisterSteamId == selected);
+            })
+            .ToList();
+    }
+
+    /// <summary>Обновлять список только при изменении состава — иначе шаблоны пересоздаются каждый кадр.</summary>
+    private void SetKillFeed(List<KillFeedEntry> entries)
+    {
+        var key = string.Join(",", entries.Select(e => $"{e.Tick}:{e.Victim}"));
+        if (key == _killFeedKey)
+            return;
+        _killFeedKey = key;
+        KillFeed = entries;
     }
 
     private static int LastAtOrBefore(IReadOnlyList<PlayerSample> samples, int tick)
@@ -519,17 +703,23 @@ public partial class RadarViewModel : ViewModelBase
         return a + delta * t;
     }
 
-    private static string MomentText(MomentContext m)
+    private static string MomentText(MomentContext m, (int Dealt, int Taken) damage)
     {
         var bomb = m.Bomb switch
         {
-            BombState.Planted => $"бомба заложена на {m.BombSite}",
-            BombState.Defused => "бомба обезврежена",
-            BombState.Exploded => "бомба взорвалась",
-            _ => "бомба не заложена",
+            BombState.Planted => Loc.T($"бомба заложена на {m.BombSite}", $"bomb planted on {m.BombSite}"),
+            BombState.Defused => Loc.T("бомба обезврежена", "bomb defused"),
+            BombState.Exploded => Loc.T("бомба взорвалась", "bomb exploded"),
+            _ => Loc.T("бомба не заложена", "bomb not planted"),
         };
-        return $"{Labels.Side(m.Side)} · {m.Matchup} · {(m.PlayerAlive ? $"${m.Money}, экип. ${m.Equipment}" : "погиб")} · " +
-               $"закупка {Labels.Buy(m.TeamBuy)} против {Labels.Buy(m.EnemyBuy)} · {bomb} · счёт {m.ScoreUs}:{m.ScoreThem}";
+        var state = m.PlayerAlive
+            ? Loc.T($"${m.Money}, экип. ${m.Equipment}", $"${m.Money}, equipment ${m.Equipment}")
+            : Loc.T("погиб", "dead");
+        return Loc.T(
+            $"{Labels.Side(m.Side)} · {m.Matchup} · {state} · урон: нанёс {damage.Dealt}, получил {damage.Taken} · " +
+            $"закупка {Labels.Buy(m.TeamBuy)} против {Labels.Buy(m.EnemyBuy)} · {bomb} · счёт {m.ScoreUs}:{m.ScoreThem}",
+            $"{Labels.Side(m.Side)} · {m.Matchup} · {state} · damage: dealt {damage.Dealt}, taken {damage.Taken} · " +
+            $"{Labels.Buy(m.TeamBuy)} vs {Labels.Buy(m.EnemyBuy)} · {bomb} · score {m.ScoreUs}:{m.ScoreThem}");
     }
 
     /// <summary>Тепловая карта по раундам под фильтром: позиции игрока или места его смертей.</summary>
@@ -612,6 +802,9 @@ public partial class RadarViewModel : ViewModelBase
 
         public static Color Ct(int i) => FromHsv(185 + (i * 41) % 60, 0.75, 1.0);
 
+        /// <summary>Цвет стороны для маркеров игроков и имён в киллфиде.</summary>
+        public static Color Side(Side side) => side == Domain.Side.CT ? Color.FromRgb(90, 170, 255) : Color.FromRgb(255, 170, 60);
+
         public static Color Grenade(GrenadeType type) => type switch
         {
             GrenadeType.HighExplosive => Color.FromRgb(255, 80, 80),
@@ -640,14 +833,47 @@ public partial class RadarViewModel : ViewModelBase
     }
 }
 
+/// <summary>Строка киллфида.</summary>
+/// <param name="IsSelectedKill">Убийство совершил анализируемый игрок.</param>
+/// <param name="IsSelectedDeath">Погиб анализируемый игрок.</param>
+/// <param name="IsSelectedAssist">Анализируемый игрок помог в убийстве.</param>
+public sealed record KillFeedEntry(
+    int Tick,
+    string Attacker,
+    IBrush AttackerBrush,
+    string Assist,
+    IBrush AssistBrush,
+    string Weapon,
+    bool Headshot,
+    string Victim,
+    IBrush VictimBrush,
+    bool IsSelectedKill,
+    bool IsSelectedDeath,
+    bool IsSelectedAssist)
+{
+    private static readonly IBrush Highlight = new SolidColorBrush(Color.FromRgb(230, 60, 60));
+    private static readonly IBrush AssistHighlight = new SolidColorBrush(Color.FromArgb(150, 230, 60, 60));
+    private static readonly IBrush Plain = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+    private static readonly IBrush NormalBackground = new SolidColorBrush(Color.FromArgb(200, 12, 14, 18));
+    private static readonly IBrush DeathBackground = new SolidColorBrush(Color.FromArgb(225, 75, 16, 16));
+
+    public bool HasAttacker => Attacker.Length > 0;
+
+    public bool HasAssist => Assist.Length > 0;
+
+    public IBrush BorderBrush => IsSelectedKill || IsSelectedDeath ? Highlight : IsSelectedAssist ? AssistHighlight : Plain;
+
+    public IBrush Background => IsSelectedDeath ? DeathBackground : NormalBackground;
+}
+
 public sealed class RouteRoundRow(RoundRoute route)
 {
     public int Round => route.Round;
 
-    public string Header => $"Раунд {route.Round} · {Texts.SideShort(route.Side)}{(route.Died ? " · погиб" : "")}";
+    public string Header => $"{Loc.T("Раунд", "Round")} {route.Round} · {Texts.SideShort(route.Side)}{(route.Died ? Loc.T(" · погиб", " · died") : "")}";
 
     public string ZonesText => route.Zones.Count == 0
-        ? "нет данных о зонах"
+        ? Loc.T("нет данных о зонах", "no zone data")
         : string.Join(" → ", route.Zones.Select(z => $"{z.Zone} {Texts.Time(z.Arrival)}"));
 }
 
@@ -655,11 +881,11 @@ public sealed class FrequentRouteRow(FrequentRoute route)
 {
     public FrequentRoute Route { get; } = route;
 
-    public string Header => $"{Texts.SideShort(Route.Side)} · {Route.Rounds.Count} раунд(ов) · {Route.Share:P0}";
+    public string Header => $"{Texts.SideShort(Route.Side)} · {Route.Rounds.Count} {Loc.T("раунд(ов)", "round(s)")} · {Route.Share:P0}";
 
     public string ZonesText => string.Join(" → ", Route.Zones);
 
-    public string RoundsText => "Раунды: " + string.Join(", ", Route.Rounds);
+    public string RoundsText => Loc.T("Раунды: ", "Rounds: ") + string.Join(", ", Route.Rounds);
 }
 
 public sealed class ZoneTimingRow(ZoneTiming timing)
@@ -675,43 +901,62 @@ public sealed class ZoneTimingRow(ZoneTiming timing)
     public string Range => $"{Texts.Time(timing.EarliestArrival)} – {Texts.Time(timing.LatestArrival)}";
 }
 
-public sealed class GrenadeClusterRow(GrenadeCluster cluster)
+public sealed class GrenadeClusterRow(GrenadeCluster cluster, IReadOnlyDictionary<int, GrenadeDamage> damage)
 {
     public GrenadeCluster Cluster { get; } = cluster;
 
     public string Header =>
         $"{Texts.GrenadeName(Cluster.Type)} ×{Cluster.Throws.Count} · {Texts.SideShort(Cluster.Side)} · ~{Texts.Time(Cluster.MedianThrowTime)}";
 
-    public string RouteText => $"{Texts.ZoneOrUnknown(Cluster.FromZone)} → {Texts.ZoneOrUnknown(Cluster.ToZone)}";
+    public string RouteText
+    {
+        get
+        {
+            var text = $"{Texts.ZoneOrUnknown(Cluster.FromZone)} → {Texts.ZoneOrUnknown(Cluster.ToZone)}";
+            var total = Cluster.Throws.Sum(t => damage.GetValueOrDefault(t.Id)?.EnemyDamage ?? 0);
+            return total > 0 ? text + Loc.T($" · урон {total}", $" · damage {total}") : text;
+        }
+    }
 
-    public string RoundsText => "Раунды: " + string.Join(", ", Cluster.Rounds);
+    public string RoundsText => Loc.T("Раунды: ", "Rounds: ") + string.Join(", ", Cluster.Rounds);
 }
 
-public sealed class GrenadeThrowRow(GrenadeThrow grenade, string landZone, MatchData match)
+public sealed class GrenadeThrowRow(GrenadeThrow grenade, string landZone, GrenadeDamage? damage, MatchData match)
 {
     public GrenadeThrow Throw { get; } = grenade;
 
-    public string Header => $"Р{Throw.Round} · {Texts.Time(Throw.ThrowTime)} · {Texts.GrenadeName(Throw.Type)} · {Texts.SideShort(Throw.ThrowerSide)}";
+    public string Header =>
+        $"{Loc.T("Р", "R")}{Throw.Round} · {Texts.Time(Throw.ThrowTime)} · {Texts.GrenadeName(Throw.Type)} · {Texts.SideShort(Throw.ThrowerSide)}";
 
     public string Details
     {
         get
         {
-            var target = Throw.Detonated ? Texts.ZoneOrUnknown(landZone) : "не сработала";
+            var target = Throw.Detonated ? Texts.ZoneOrUnknown(landZone) : Loc.T("не сработала", "did not go off");
             var text = $"{Texts.ZoneOrUnknown(Throw.ThrowerPlace)} → {target}";
+            if (damage is not null && (damage.EnemyDamage > 0 || damage.TeamDamage > 0))
+            {
+                text += Loc.T($" · урон {damage.EnemyDamage} (противников: {damage.EnemiesHit})",
+                    $" · damage {damage.EnemyDamage} (enemies hit: {damage.EnemiesHit})");
+                if (damage.TeamDamage > 0)
+                    text += Loc.T($", своим {damage.TeamDamage}", $", teammates {damage.TeamDamage}");
+            }
             if (Throw.Type != GrenadeType.Flashbang || Throw.FlashVictims.Count == 0)
                 return text;
 
             var victims = Throw.FlashVictims
                 .OrderBy(v => v.IsTeammate)
-                .Select(v => $"{(v.IsSelf ? "себя" : match.FindPlayer(v.SteamId)?.Name ?? "?")}{(v.IsTeammate && !v.IsSelf ? " (союзник)" : "")} {v.Duration:F1} с");
-            return $"{text} · ослепил: {string.Join(", ", victims)}";
+                .Select(v => (v.IsSelf ? Loc.T("себя", "self") : match.FindPlayer(v.SteamId)?.Name ?? "?") +
+                             (v.IsTeammate && !v.IsSelf ? Loc.T(" (союзник)", " (teammate)") : "") +
+                             Loc.T($" {v.Duration:F1} с", $" {v.Duration:F1} s"));
+            return text + Loc.T(" · ослепил: ", " · blinded: ") + string.Join(", ", victims);
         }
     }
 }
 
 public sealed class GrenadeSummaryRow(GrenadeTypeSummary summary)
 {
-    public string Text =>
-        $"{Texts.SideShort(summary.Side)} · {Texts.GrenadeName(summary.Type)}: {summary.Count} в {summary.Rounds} раунд(ах), медиана {Texts.Time(summary.MedianThrowTime)}";
+    public string Text => Loc.T(
+        $"{Texts.SideShort(summary.Side)} · {Texts.GrenadeName(summary.Type)}: {summary.Count} в {summary.Rounds} раунд(ах), медиана {Texts.Time(summary.MedianThrowTime)}",
+        $"{Texts.SideShort(summary.Side)} · {Texts.GrenadeName(summary.Type)}: {summary.Count} in {summary.Rounds} round(s), median {Texts.Time(summary.MedianThrowTime)}");
 }

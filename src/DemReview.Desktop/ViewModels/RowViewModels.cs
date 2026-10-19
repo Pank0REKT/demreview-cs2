@@ -1,4 +1,6 @@
 using DemReview.Application.Context;
+using DemReview.Application.Export;
+using DemReview.Application.Localization;
 using DemReview.Application.Situations;
 using DemReview.Domain;
 
@@ -13,9 +15,9 @@ public sealed class PlayerRowViewModel(PlayerInfo player)
 
     public string Name => Player.Name;
 
-    public string SteamIdText => Player.IsBot ? "бот" : Player.SteamId.ToString();
+    public string SteamIdText => Player.IsBot ? Loc.T("бот", "bot") : Player.SteamId.ToString();
 
-    public string TeamText => $"{Player.TeamName} · {Texts.SideShort(Player.FinalSide)}";
+    public string TeamText => $"{ProfileExporter.TeamName(Player.TeamName, Player.FinalSide)} · {Texts.SideShort(Player.FinalSide)}";
 
     public Side Side => Player.FinalSide;
 
@@ -27,7 +29,7 @@ public sealed class PlayerRowViewModel(PlayerInfo player)
         {
             var t = Player.SideByRound.Count(kv => kv.Value == Side.T);
             var ct = Player.SideByRound.Count(kv => kv.Value == Side.CT);
-            return $"за T: {t} раунд(ов), за CT: {ct} раунд(ов)";
+            return Loc.T($"за T: {t} раунд(ов), за CT: {ct} раунд(ов)", $"T: {t} round(s), CT: {ct} round(s)");
         }
     }
 }
@@ -52,14 +54,14 @@ public sealed class RoundRowViewModel(RoundInfo round, RoundEconomy? economy = n
         }
     }
 
-    public string Overtime => round.IsOvertime ? "да" : "";
+    public string Overtime => round.IsOvertime ? Loc.T("да", "yes") : "";
 
     public string BuyT => economy is null ? "" : $"{Labels.Buy(economy.T.Buy)} (${economy.T.AverageEquipment})";
 
     public string BuyCT => economy is null ? "" : $"{Labels.Buy(economy.CT.Buy)} (${economy.CT.AverageEquipment})";
 }
 
-/// <summary>Русские названия значений доменной модели.</summary>
+/// <summary>Подписи значений доменной модели на текущем языке.</summary>
 public static class Texts
 {
     public static string SideShort(Side side) => side switch
@@ -69,18 +71,58 @@ public static class Texts
         _ => "—",
     };
 
-    public static string GrenadeName(GrenadeType type) => type switch
-    {
-        GrenadeType.HighExplosive => "HE",
-        GrenadeType.Flashbang => "Флешка",
-        GrenadeType.Smoke => "Дым",
-        GrenadeType.Molotov => "Молотов",
-        GrenadeType.Incendiary => "Зажигательная",
-        GrenadeType.Decoy => "Ложная",
-        _ => type.ToString(),
-    };
+    public static string GrenadeName(GrenadeType type) => Labels.Grenade(type);
 
     public static string ZoneOrUnknown(string zone) => string.IsNullOrEmpty(zone) ? "?" : zone;
+
+    /// <summary>Название оружия из событий демки (ak47, m4a1_silencer, inferno…) в привычном виде.</summary>
+    public static string Weapon(string name) => name switch
+    {
+        "ak47" => "AK-47",
+        "m4a1" => "M4A4",
+        "m4a1_silencer" or "m4a1_silencer_off" => "M4A1-S",
+        "awp" => "AWP",
+        "deagle" => "Desert Eagle",
+        "glock" => "Glock-18",
+        "usp_silencer" or "usp_silencer_off" => "USP-S",
+        "hkp2000" => "P2000",
+        "p250" => "P250",
+        "tec9" => "Tec-9",
+        "fiveseven" => "Five-SeveN",
+        "cz75a" => "CZ75-Auto",
+        "elite" => "Dual Berettas",
+        "revolver" => "R8",
+        "mac10" => "MAC-10",
+        "mp9" => "MP9",
+        "mp7" => "MP7",
+        "mp5sd" => "MP5-SD",
+        "ump45" => "UMP-45",
+        "p90" => "P90",
+        "bizon" => "PP-Bizon",
+        "galilar" => "Galil AR",
+        "famas" => "FAMAS",
+        "sg556" => "SG 553",
+        "aug" => "AUG",
+        "ssg08" => "SSG 08",
+        "scar20" => "SCAR-20",
+        "g3sg1" => "G3SG1",
+        "nova" => "Nova",
+        "xm1014" => "XM1014",
+        "mag7" => "MAG-7",
+        "sawedoff" => "Sawed-Off",
+        "m249" => "M249",
+        "negev" => "Negev",
+        "taser" => "Zeus x27",
+        "hegrenade" => "HE",
+        "flashbang" => Loc.T("флешка", "flashbang"),
+        "smokegrenade" => Loc.T("дым", "smoke"),
+        "decoy" => Loc.T("ложная", "decoy"),
+        "inferno" or "molotov" or "incgrenade" => Loc.T("огонь", "fire"),
+        "world" => Loc.T("мир", "world"),
+        "planted_c4" or "c4" => Loc.T("бомба", "bomb"),
+        _ when name.StartsWith("knife", StringComparison.Ordinal) || name.StartsWith("bayonet", StringComparison.Ordinal) => Loc.T("нож", "knife"),
+        _ => name,
+    };
 
     /// <summary>Время от конца фризтайма в формате м:сс.</summary>
     public static string Time(float seconds)
@@ -91,14 +133,14 @@ public static class Texts
 
     public static string RoundEndReason(RoundEndReason reason) => reason switch
     {
-        Domain.RoundEndReason.TargetBombed => "Бомба взорвана",
-        Domain.RoundEndReason.BombDefused => "Бомба обезврежена",
-        Domain.RoundEndReason.CTsWin => "CT уничтожили T",
-        Domain.RoundEndReason.TerroristsWin => "T уничтожили CT",
-        Domain.RoundEndReason.RoundDraw => "Ничья",
-        Domain.RoundEndReason.TargetSaved => "Время вышло",
-        Domain.RoundEndReason.TerroristsSurrender => "T сдались",
-        Domain.RoundEndReason.CTsSurrender => "CT сдались",
-        _ => "Не завершён",
+        Domain.RoundEndReason.TargetBombed => Loc.T("Бомба взорвана", "Bomb exploded"),
+        Domain.RoundEndReason.BombDefused => Loc.T("Бомба обезврежена", "Bomb defused"),
+        Domain.RoundEndReason.CTsWin => Loc.T("CT уничтожили T", "CTs eliminated Ts"),
+        Domain.RoundEndReason.TerroristsWin => Loc.T("T уничтожили CT", "Ts eliminated CTs"),
+        Domain.RoundEndReason.RoundDraw => Loc.T("Ничья", "Draw"),
+        Domain.RoundEndReason.TargetSaved => Loc.T("Время вышло", "Time ran out"),
+        Domain.RoundEndReason.TerroristsSurrender => Loc.T("T сдались", "Ts surrendered"),
+        Domain.RoundEndReason.CTsSurrender => Loc.T("CT сдались", "CTs surrendered"),
+        _ => Loc.T("Не завершён", "Not finished"),
     };
 }

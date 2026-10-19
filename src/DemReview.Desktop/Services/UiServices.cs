@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using DemReview.Application.Localization;
 
 namespace DemReview.Desktop.Services;
 
@@ -43,7 +44,7 @@ public interface IFileDialogService
 
 public sealed class AvaloniaFileDialogService(MainWindowAccessor windowAccessor) : IFileDialogService
 {
-    private static readonly FilePickerFileType DemoFileType = new("Демки CS2 (*.dem)") { Patterns = ["*.dem"] };
+    private static FilePickerFileType DemoFileType => new(Loc.T("Демки CS2 (*.dem)", "CS2 demos (*.dem)")) { Patterns = ["*.dem"] };
 
     public async Task<string?> PickDemoFileAsync()
     {
@@ -52,7 +53,7 @@ public sealed class AvaloniaFileDialogService(MainWindowAccessor windowAccessor)
 
         var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Открыть демку CS2",
+            Title = Loc.T("Открыть демку CS2", "Open a CS2 demo"),
             AllowMultiple = false,
             FileTypeFilter = [DemoFileType, FilePickerFileTypes.All],
         });
@@ -67,7 +68,7 @@ public sealed class AvaloniaFileDialogService(MainWindowAccessor windowAccessor)
 
         var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Экспорт профиля игрока",
+            Title = Loc.T("Экспорт профиля игрока", "Export player profile"),
             SuggestedFileName = suggestedName,
             DefaultExtension = "md",
             ShowOverwritePrompt = true,

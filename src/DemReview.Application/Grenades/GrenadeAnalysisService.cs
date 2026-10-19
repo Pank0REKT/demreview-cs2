@@ -1,5 +1,6 @@
 using System.Numerics;
 using DemReview.Application.Maps;
+using DemReview.Application.Damage;
 using DemReview.Domain;
 
 namespace DemReview.Application.Grenades;
@@ -29,7 +30,12 @@ public sealed class GrenadeAnalysisService : IGrenadeAnalysisService
             .ThenByDescending(s => s.Count)
             .ToList();
 
-        return new GrenadeAnalysis(steamId, throws, clusters, summary, Flashes(throws), landZones);
+        var ids = throws.Select(t => t.Id).ToHashSet();
+        var damage = DamageAnalysis.ByGrenade(match, DamageAnalysis.EffectiveHits(match))
+            .Where(kv => ids.Contains(kv.Key))
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
+
+        return new GrenadeAnalysis(steamId, throws, clusters, summary, Flashes(throws), landZones, damage);
     }
 
     /// <summary>

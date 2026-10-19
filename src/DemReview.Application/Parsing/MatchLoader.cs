@@ -1,3 +1,4 @@
+using DemReview.Application.Localization;
 using DemReview.Domain;
 using Microsoft.Extensions.Logging;
 
@@ -21,7 +22,7 @@ public sealed class MatchLoader(
         bool bypassCache = false)
     {
         if (!File.Exists(path))
-            throw new DemoParseException($"Файл не найден: {path}");
+            throw new DemoParseException(Loc.T($"Файл не найден: {path}", $"File not found: {path}"));
 
         var options = new ParseOptions(settings.Current.SampleTickStep);
         var key = DemoFileKey.FromFile(path, options.SampleTickStep);
@@ -31,7 +32,7 @@ public sealed class MatchLoader(
         if (cached is not null)
         {
             logger.LogInformation("Демка взята из кеша: {Path}", key.FullPath);
-            progress?.Report(new ParseProgress(1, "Загружено из кеша"));
+            progress?.Report(new ParseProgress(1, Loc.T("Загружено из кеша", "Loaded from cache")));
             return cached;
         }
 

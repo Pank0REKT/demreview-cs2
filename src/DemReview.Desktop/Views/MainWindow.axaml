@@ -3,6 +3,7 @@
         xmlns:vm="using:DemReview.Desktop.ViewModels"
         xmlns:behaviors="using:DemReview.Desktop.Behaviors"
         xmlns:controls="using:DemReview.Desktop.Controls"
+        xmlns:l="using:DemReview.Desktop.Localization"
         xmlns:situations="using:DemReview.Application.Situations"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -13,6 +14,8 @@
         Width="1280" Height="800" MinWidth="900" MinHeight="600"
         WindowStartupLocation="CenterScreen"
         behaviors:FileDrop.Command="{Binding LoadFileCommand}">
+
+    <!-- Подписи: {l:T 'русский', 'English'} — берутся на текущем языке при создании окна. -->
 
     <Window.KeyBindings>
         <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenCommand}" />
@@ -25,17 +28,19 @@
     <DockPanel>
         <!-- Меню -->
         <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_Файл">
-                <MenuItem Header="_Открыть демку…" InputGesture="Ctrl+O" Command="{Binding OpenCommand}" />
-                <MenuItem Header="_Повторный анализ" InputGesture="F5" Command="{Binding ReloadCommand}" />
-                <MenuItem Header="_Разобрать заново (без кеша)" InputGesture="Shift+F5" Command="{Binding ReparseCommand}" />
-                <MenuItem Header="_Экспорт профиля…" InputGesture="Ctrl+E" Command="{Binding ExportCommand}" />
+            <MenuItem Header="{l:T '_Файл', '_File'}">
+                <MenuItem Header="{l:T '_Открыть демку…', '_Open demo…'}" InputGesture="Ctrl+O" Command="{Binding OpenCommand}" />
+                <MenuItem Header="{l:T '_Повторный анализ', '_Analyze again'}" InputGesture="F5" Command="{Binding ReloadCommand}" />
+                <MenuItem Header="{l:T '_Разобрать заново (без кеша)', '_Reparse (skip cache)'}" InputGesture="Shift+F5" Command="{Binding ReparseCommand}" />
+                <MenuItem Header="{l:T '_Экспорт профиля…', '_Export profile…'}" InputGesture="Ctrl+E" Command="{Binding ExportCommand}" />
                 <Separator />
-                <MenuItem Header="_Отменить разбор" InputGesture="Escape" Command="{Binding CancelCommand}" />
+                <MenuItem Header="{l:T 'О_тменить разбор', '_Cancel parsing'}" InputGesture="Escape" Command="{Binding CancelCommand}" />
             </MenuItem>
-            <MenuItem Header="_Сервис">
-                <MenuItem Header="Папка с картами (maps)" Command="{Binding OpenMapsFolderCommand}" />
-                <MenuItem Header="Папка данных и журналов" Command="{Binding OpenDataFolderCommand}" />
+            <MenuItem Header="{l:T '_Сервис', '_Tools'}">
+                <MenuItem Header="{l:T '_Настройки', '_Settings'}" Command="{Binding OpenSettingsCommand}" />
+                <Separator />
+                <MenuItem Header="{l:T 'Папка с картами (maps)', 'Map images folder (maps)'}" Command="{Binding OpenMapsFolderCommand}" />
+                <MenuItem Header="{l:T 'Папка данных и журналов', 'Data and logs folder'}" Command="{Binding OpenDataFolderCommand}" />
             </MenuItem>
         </Menu>
 
@@ -45,7 +50,7 @@
                 <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                 <ProgressBar Grid.Column="1" Width="240" Minimum="0" Maximum="100"
                              Value="{Binding ProgressPercent}" IsVisible="{Binding IsBusy}" VerticalAlignment="Center" />
-                <Button Grid.Column="2" Content="Отмена (Esc)" Command="{Binding CancelCommand}" IsVisible="{Binding IsBusy}" />
+                <Button Grid.Column="2" Content="{l:T 'Отмена (Esc)', 'Cancel (Esc)'}" Command="{Binding CancelCommand}" IsVisible="{Binding IsBusy}" />
             </Grid>
         </Border>
 
@@ -54,7 +59,7 @@
                 Background="#4D2B2B" BorderBrush="#C25050" BorderThickness="1">
             <Grid ColumnDefinitions="*,Auto">
                 <SelectableTextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" VerticalAlignment="Center" />
-                <Button Grid.Column="1" Content="Закрыть" Command="{Binding DismissErrorCommand}" Margin="12,0,0,0" />
+                <Button Grid.Column="1" Content="{l:T 'Закрыть', 'Close'}" Command="{Binding DismissErrorCommand}" Margin="12,0,0,0" />
             </Grid>
         </Border>
 
@@ -62,7 +67,7 @@
             <!-- Левая панель: игроки -->
             <DockPanel Margin="12,12,0,12">
                 <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="0,0,0,8">
-                    <TextBlock Classes="header" Text="Игроки" />
+                    <TextBlock Classes="header" Text="{l:T 'Игроки', 'Players'}" />
                     <TextBlock Classes="secondary" Text="{Binding MatchSummary}" TextWrapping="Wrap" IsVisible="{Binding HasMatch}" />
                 </StackPanel>
 
@@ -71,33 +76,33 @@
                         Background="{DynamicResource PanelBackgroundBrush}">
                     <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8"
                           DataContext="{Binding Filter}" x:DataType="vm:FilterViewModel">
-                        <TextBlock Grid.ColumnSpan="2" Classes="header" Text="Фильтры" />
-                        <TextBlock Grid.Row="1" Text="Раунд" VerticalAlignment="Center" />
+                        <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{l:T 'Фильтры', 'Filters'}" />
+                        <TextBlock Grid.Row="1" Text="{l:T 'Раунд', 'Round'}" VerticalAlignment="Center" />
                         <ComboBox Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Rounds}"
                                   SelectedItem="{Binding SelectedRound}" MaxDropDownHeight="400">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:FilterOption"><TextBlock Text="{Binding Label}" /></DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <TextBlock Grid.Row="2" Text="Сторона" VerticalAlignment="Center" />
+                        <TextBlock Grid.Row="2" Text="{l:T 'Сторона', 'Side'}" VerticalAlignment="Center" />
                         <ComboBox Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Sides}" SelectedItem="{Binding SelectedSide}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:FilterOption"><TextBlock Text="{Binding Label}" /></DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <TextBlock Grid.Row="3" Text="Закупка" VerticalAlignment="Center" />
+                        <TextBlock Grid.Row="3" Text="{l:T 'Закупка', 'Buy'}" VerticalAlignment="Center" />
                         <ComboBox Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Buys}" SelectedItem="{Binding SelectedBuy}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:FilterOption"><TextBlock Text="{Binding Label}" /></DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <TextBlock Grid.Row="4" Text="Гранаты" VerticalAlignment="Center" />
+                        <TextBlock Grid.Row="4" Text="{l:T 'Гранаты', 'Grenades'}" VerticalAlignment="Center" />
                         <ComboBox Grid.Row="4" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Grenades}" SelectedItem="{Binding SelectedGrenade}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:FilterOption"><TextBlock Text="{Binding Label}" /></DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <Button Grid.Row="5" Grid.ColumnSpan="2" Content="Сбросить фильтры" Command="{Binding ResetCommand}"
+                        <Button Grid.Row="5" Grid.ColumnSpan="2" Content="{l:T 'Сбросить фильтры', 'Reset filters'}" Command="{Binding ResetCommand}"
                                 IsEnabled="{Binding IsActive}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
                     </Grid>
                 </Border>
@@ -117,87 +122,115 @@
                         </ListBox.ItemTemplate>
                     </ListBox>
                     <TextBlock IsVisible="{Binding !HasMatch}" Classes="secondary" TextWrapping="Wrap" Margin="0,8"
-                               Text="Список игроков появится после открытия демки." />
+                               Text="{l:T 'Список игроков появится после открытия демки.', 'The player list appears after you open a demo.'}" />
                 </Grid>
             </DockPanel>
 
             <GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="Transparent" />
 
             <!-- Центр: вкладки -->
-            <Grid Grid.Column="2" Margin="0,4,12,12">
-                <!-- Пустое состояние -->
-                <Border IsVisible="{Binding !HasMatch}" BorderBrush="{DynamicResource PanelBorderBrush}"
-                        BorderThickness="2" CornerRadius="8" Margin="0,8,0,0">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12">
-                        <TextBlock Classes="header" HorizontalAlignment="Center" Text="Перетащите сюда файл .dem" />
-                        <TextBlock Classes="secondary" HorizontalAlignment="Center" Text="или откройте его через меню «Файл» (Ctrl+O)" />
-                        <Button HorizontalAlignment="Center" Content="Открыть демку…" Command="{Binding OpenCommand}" IsEnabled="{Binding IsIdle}" />
-                    </StackPanel>
-                </Border>
+            <TabControl Grid.Column="2" Margin="0,4,12,12" SelectedIndex="{Binding SelectedTabIndex}">
+                <TabItem Header="{l:T 'Радар', 'Radar'}">
+                    <Grid>
+                        <!-- Пустое состояние -->
+                        <Border IsVisible="{Binding !HasMatch}" BorderBrush="{DynamicResource PanelBorderBrush}"
+                                BorderThickness="2" CornerRadius="8" Margin="0,8,0,0">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12">
+                                <TextBlock Classes="header" HorizontalAlignment="Center" Text="{l:T 'Перетащите сюда файл .dem', 'Drop a .dem file here'}" />
+                                <TextBlock Classes="secondary" HorizontalAlignment="Center"
+                                           Text="{l:T 'или откройте его через меню «Файл» (Ctrl+O)', 'or open it from the File menu (Ctrl+O)'}" />
+                                <Button HorizontalAlignment="Center" Content="{l:T 'Открыть демку…', 'Open demo…'}" Command="{Binding OpenCommand}" IsEnabled="{Binding IsIdle}" />
+                            </StackPanel>
+                        </Border>
 
-                <TabControl IsVisible="{Binding HasMatch}" SelectedIndex="{Binding SelectedTabIndex}">
-                    <TabItem Header="Радар">
+                        <Grid IsVisible="{Binding HasMatch}">
                         <Grid ColumnDefinitions="*,4,340" DataContext="{Binding Radar}" x:DataType="vm:RadarViewModel">
                             <!-- Радар и таймлайн -->
                             <DockPanel>
-                            <Border DockPanel.Dock="Bottom" Padding="8,6" Margin="0,4,0,0" CornerRadius="4"
-                                    Background="{DynamicResource PanelBackgroundBrush}" DataContext="{Binding Timeline}"
-                                    x:DataType="vm:TimelineViewModel">
-                                <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="10">
-                                    <Button Content="{Binding PlayButtonText}" Command="{Binding PlayPauseCommand}" MinWidth="72" />
-                                    <Slider Grid.Column="1" Minimum="{Binding MinTick}" Maximum="{Binding MaxTick}"
-                                            Value="{Binding CurrentTick}" IsEnabled="{Binding IsEnabled}" VerticalAlignment="Center" />
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                        <TextBlock Text="Скорость" VerticalAlignment="Center" Classes="secondary" />
-                                        <ComboBox ItemsSource="{Binding Speeds}" SelectedItem="{Binding Speed}" IsEnabled="{Binding IsEnabled}">
-                                            <ComboBox.ItemTemplate>
-                                                <DataTemplate x:DataType="x:Double">
-                                                    <TextBlock Text="{Binding StringFormat='×{0}'}" />
-                                                </DataTemplate>
-                                            </ComboBox.ItemTemplate>
-                                        </ComboBox>
-                                    </StackPanel>
-                                    <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Margin="0,4,0,0" TextWrapping="Wrap" FontSize="12">
-                                        <Run Text="{Binding TimeText}" FontWeight="SemiBold" />
-                                        <Run Text="  " />
-                                        <Run Text="{Binding ContextText}" />
-                                    </TextBlock>
-                                </Grid>
-                            </Border>
-                            <Grid>
-                                <controls:RadarControl MapImage="{Binding MapImage}" Routes="{Binding Routes}"
-                                                       HighlightedRounds="{Binding HighlightedRounds}"
-                                                       ShowRoutes="{Binding ShowRoutes}" RadarToWorld="{Binding RadarToWorld}"
-                                                       Grenades="{Binding Grenades}" HighlightedGrenades="{Binding HighlightedGrenades}"
-                                                       ShowGrenades="{Binding ShowGrenades}" Heatmap="{Binding Heatmap}"
-                                                       Deaths="{Binding Deaths}" Players="{Binding Players}" />
-
-                                <TextBlock Text="{Binding MapTitle}" Classes="header" Margin="12,8" IsHitTestVisible="False"
-                                           HorizontalAlignment="Left" VerticalAlignment="Top" />
-
-                                <Border IsVisible="{Binding HasMapHint}" Margin="12,40,12,0" Padding="10,6" CornerRadius="4"
-                                        HorizontalAlignment="Left" VerticalAlignment="Top" Background="#CC1C1F24"
-                                        BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1">
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Text="{Binding MapHint}" TextWrapping="Wrap" MaxWidth="520" FontSize="12" />
-                                        <Button Content="Открыть папку maps" Command="{Binding OpenMapsFolderCommand}" FontSize="12" />
-                                    </StackPanel>
-                                </Border>
-
-                                <!-- Режим раундов-примеров паттерна -->
-                                <Border IsVisible="{Binding HasFocus}" Margin="12,0,12,34" Padding="10,6" CornerRadius="4"
-                                        HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="#E61C2A3A"
-                                        BorderBrush="#5AA0E6" BorderThickness="1" MaxWidth="720">
-                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                                        <TextBlock Text="{Binding FocusText}" TextWrapping="Wrap" FontSize="12" VerticalAlignment="Center" />
-                                        <Button Grid.Column="1" Content="Показать все" Command="{Binding ClearSelectionCommand}" FontSize="12" />
+                                <Border DockPanel.Dock="Bottom" Padding="8,6" Margin="0,4,0,0" CornerRadius="4"
+                                        Background="{DynamicResource PanelBackgroundBrush}" DataContext="{Binding Timeline}"
+                                        x:DataType="vm:TimelineViewModel">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="10">
+                                        <Button Content="{Binding PlayButtonText}" Command="{Binding PlayPauseCommand}" MinWidth="72" />
+                                        <Slider Grid.Column="1" Minimum="{Binding MinTick}" Maximum="{Binding MaxTick}"
+                                                Value="{Binding CurrentTick}" IsEnabled="{Binding IsEnabled}" VerticalAlignment="Center" />
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                            <TextBlock Text="{l:T 'Скорость', 'Speed'}" VerticalAlignment="Center" Classes="secondary" />
+                                            <ComboBox ItemsSource="{Binding Speeds}" SelectedItem="{Binding Speed}" IsEnabled="{Binding IsEnabled}">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate x:DataType="x:Double">
+                                                        <TextBlock Text="{Binding StringFormat='×{0}'}" />
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Margin="0,4,0,0" TextWrapping="Wrap" FontSize="12">
+                                            <Run Text="{Binding TimeText}" FontWeight="SemiBold" />
+                                            <Run Text="  " />
+                                            <Run Text="{Binding ContextText}" />
+                                        </TextBlock>
                                     </Grid>
                                 </Border>
+                                <Grid>
+                                    <controls:RadarControl MapImage="{Binding MapImage}" Routes="{Binding Routes}"
+                                                           HighlightedRounds="{Binding HighlightedRounds}"
+                                                           ShowRoutes="{Binding ShowRoutes}" RadarToWorld="{Binding RadarToWorld}"
+                                                           Grenades="{Binding Grenades}" HighlightedGrenades="{Binding HighlightedGrenades}"
+                                                           ShowGrenades="{Binding ShowGrenades}" Heatmap="{Binding Heatmap}"
+                                                           Deaths="{Binding Deaths}" Players="{Binding Players}"
+                                                           DamageTexts="{Binding DamageTexts}" />
 
-                                <TextBlock Classes="secondary" Margin="12,8" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                           IsHitTestVisible="False"
-                                           Text="Колесо — масштаб · перетаскивание — сдвиг · двойной клик — сброс" />
-                            </Grid>
+                                    <TextBlock Text="{Binding MapTitle}" Classes="header" Margin="12,8" IsHitTestVisible="False"
+                                               HorizontalAlignment="Left" VerticalAlignment="Top" />
+
+                                    <!-- Киллфид (таймлайн): убийства и смерть анализируемого игрока выделены красной рамкой -->
+                                    <ItemsControl ItemsSource="{Binding KillFeed}" IsVisible="{Binding HasKillFeed}" IsHitTestVisible="False"
+                                                  HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,10,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:KillFeedEntry">
+                                                <Border Background="{Binding Background}" BorderBrush="{Binding BorderBrush}" BorderThickness="1.5"
+                                                        CornerRadius="3" Padding="8,3" Margin="0,0,0,3" HorizontalAlignment="Right">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <TextBlock Text="{Binding Attacker}" Foreground="{Binding AttackerBrush}" FontWeight="SemiBold"
+                                                                   IsVisible="{Binding HasAttacker}" VerticalAlignment="Center" />
+                                                        <TextBlock Text="{Binding Assist}" Foreground="{Binding AssistBrush}" FontSize="12"
+                                                                   IsVisible="{Binding HasAssist}" VerticalAlignment="Center" />
+                                                        <TextBlock Text="{Binding Weapon}" Foreground="#D8DCE2" FontSize="12" VerticalAlignment="Center" />
+                                                        <Border IsVisible="{Binding Headshot}" Background="#D8DCE2" CornerRadius="2" Padding="3,0"
+                                                                VerticalAlignment="Center">
+                                                            <TextBlock Text="HS" Foreground="Black" FontSize="10" FontWeight="Bold" />
+                                                        </Border>
+                                                        <TextBlock Text="{Binding Victim}" Foreground="{Binding VictimBrush}" FontWeight="SemiBold"
+                                                                   VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <Border IsVisible="{Binding HasMapHint}" Margin="12,40,12,0" Padding="10,6" CornerRadius="4"
+                                            HorizontalAlignment="Left" VerticalAlignment="Top" Background="#CC1C1F24"
+                                            BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="{Binding MapHint}" TextWrapping="Wrap" MaxWidth="520" FontSize="12" />
+                                            <Button Content="{l:T 'Открыть папку maps', 'Open the maps folder'}" Command="{Binding OpenMapsFolderCommand}" FontSize="12" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Режим раундов-примеров паттерна -->
+                                    <Border IsVisible="{Binding HasFocus}" Margin="12,0,12,34" Padding="10,6" CornerRadius="4"
+                                            HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="#E61C2A3A"
+                                            BorderBrush="#5AA0E6" BorderThickness="1" MaxWidth="720">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                            <TextBlock Text="{Binding FocusText}" TextWrapping="Wrap" FontSize="12" VerticalAlignment="Center" />
+                                            <Button Grid.Column="1" Content="{l:T 'Показать все', 'Show all'}" Command="{Binding ClearSelectionCommand}" FontSize="12" />
+                                        </Grid>
+                                    </Border>
+
+                                    <TextBlock Classes="secondary" Margin="12,8" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                               IsHitTestVisible="False"
+                                               Text="{l:T 'Колесо — масштаб · перетаскивание — сдвиг · двойной клик — сброс · наведите на игрока — ник', 'Wheel — zoom · drag — pan · double-click — reset · hover a player — nickname'}" />
+                                </Grid>
                             </DockPanel>
 
                             <GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="Transparent" />
@@ -205,14 +238,14 @@
                             <!-- Панель маршрутов -->
                             <DockPanel Grid.Column="2" Margin="8,8,0,0">
                                 <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
-                                    <TextBlock Classes="header" Text="Слои" />
+                                    <TextBlock Classes="header" Text="{l:T 'Слои', 'Layers'}" />
                                     <WrapPanel>
-                                        <CheckBox Content="Маршруты" IsChecked="{Binding ShowRoutes}" Margin="0,0,12,0" />
-                                        <CheckBox Content="Гранаты" IsChecked="{Binding ShowGrenades}" Margin="0,0,12,0" />
-                                        <CheckBox Content="Смерти" IsChecked="{Binding ShowDeaths}" />
+                                        <CheckBox Content="{l:T 'Маршруты', 'Routes'}" IsChecked="{Binding ShowRoutes}" Margin="0,0,12,0" />
+                                        <CheckBox Content="{l:T 'Гранаты', 'Grenades'}" IsChecked="{Binding ShowGrenades}" Margin="0,0,12,0" />
+                                        <CheckBox Content="{l:T 'Смерти', 'Deaths'}" IsChecked="{Binding ShowDeaths}" />
                                     </WrapPanel>
                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <CheckBox Content="Тепловая карта:" IsChecked="{Binding ShowHeatmap}" />
+                                        <CheckBox Content="{l:T 'Тепловая карта:', 'Heatmap:'}" IsChecked="{Binding ShowHeatmap}" />
                                         <ComboBox ItemsSource="{x:Static vm:RadarViewModel.HeatmapModes}" SelectedItem="{Binding SelectedHeatmapMode}"
                                                   IsEnabled="{Binding ShowHeatmap}" MinWidth="110">
                                             <ComboBox.ItemTemplate>
@@ -223,12 +256,12 @@
                                         </ComboBox>
                                     </StackPanel>
                                     <TextBlock Classes="secondary" TextWrapping="Wrap"
-                                               Text="Раунд, сторона, закупка и тип гранаты — фильтры слева под списком игроков." />
-                                    <Button Content="Снять выделение" Command="{Binding ClearSelectionCommand}" />
+                                               Text="{l:T 'Раунд, сторона, закупка и тип гранаты — фильтры слева под списком игроков.', 'Round, side, buy and grenade type filters are on the left under the player list.'}" />
+                                    <Button Content="{l:T 'Снять выделение', 'Clear selection'}" Command="{Binding ClearSelectionCommand}" />
                                 </StackPanel>
 
                                 <TabControl Padding="0">
-                                    <TabItem Header="Раунды" FontSize="14">
+                                    <TabItem Header="{l:T 'Раунды', 'Rounds'}" FontSize="14">
                                         <ListBox ItemsSource="{Binding RoundRows}" SelectedItem="{Binding SelectedRound}">
                                             <ListBox.ItemTemplate>
                                                 <DataTemplate x:DataType="vm:RouteRoundRow">
@@ -240,10 +273,10 @@
                                             </ListBox.ItemTemplate>
                                         </ListBox>
                                     </TabItem>
-                                    <TabItem Header="Частые" FontSize="14">
+                                    <TabItem Header="{l:T 'Частые', 'Frequent'}" FontSize="14">
                                         <Grid>
                                             <TextBlock IsVisible="{Binding !FrequentRoutes.Count}" Classes="secondary" Margin="4,8" TextWrapping="Wrap"
-                                                       Text="Повторяющихся маршрутов (одинаковые первые 3 зоны минимум в 2 раундах) нет." />
+                                                       Text="{l:T 'Повторяющихся маршрутов (одинаковые первые 3 зоны минимум в 2 раундах) нет.', 'No repeated routes (same first 3 zones in at least 2 rounds).'}" />
                                             <ListBox ItemsSource="{Binding FrequentRoutes}" SelectedItem="{Binding SelectedFrequentRoute}">
                                                 <ListBox.ItemTemplate>
                                                     <DataTemplate x:DataType="vm:FrequentRouteRow">
@@ -257,7 +290,7 @@
                                             </ListBox>
                                         </Grid>
                                     </TabItem>
-                                    <TabItem Header="Гранаты" FontSize="14">
+                                    <TabItem Header="{l:T 'Гранаты', 'Grenades'}" FontSize="14">
                                         <DockPanel>
                                             <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="4,4,4,8">
                                                 <ItemsControl ItemsSource="{Binding GrenadeSummary}">
@@ -270,10 +303,10 @@
                                                 <TextBlock Text="{Binding FlashSummaryText}" Classes="secondary" TextWrapping="Wrap" />
                                             </StackPanel>
                                             <TabControl Padding="0">
-                                                <TabItem Header="Раскидки" FontSize="13">
+                                                <TabItem Header="{l:T 'Раскидки', 'Lineups'}" FontSize="13">
                                                     <Grid>
                                                         <TextBlock IsVisible="{Binding !GrenadeClusters.Count}" Classes="secondary" Margin="4,8" TextWrapping="Wrap"
-                                                                   Text="Повторяющихся раскидок (тот же тип, близкие точки броска и падения минимум в 2 бросках) нет." />
+                                                                   Text="{l:T 'Повторяющихся раскидок (тот же тип, близкие точки броска и падения минимум в 2 бросках) нет.', 'No repeated lineups (same type, close throw and landing points in at least 2 throws).'}" />
                                                         <ListBox ItemsSource="{Binding GrenadeClusters}" SelectedItem="{Binding SelectedCluster}">
                                                             <ListBox.ItemTemplate>
                                                                 <DataTemplate x:DataType="vm:GrenadeClusterRow">
@@ -287,7 +320,7 @@
                                                         </ListBox>
                                                     </Grid>
                                                 </TabItem>
-                                                <TabItem Header="Все броски" FontSize="13">
+                                                <TabItem Header="{l:T 'Все броски', 'All throws'}" FontSize="13">
                                                     <ListBox ItemsSource="{Binding GrenadeThrows}" SelectedItem="{Binding SelectedThrow}">
                                                         <ListBox.ItemTemplate>
                                                             <DataTemplate x:DataType="vm:GrenadeThrowRow">
@@ -302,15 +335,15 @@
                                             </TabControl>
                                         </DockPanel>
                                     </TabItem>
-                                    <TabItem Header="Тайминги" FontSize="14">
+                                    <TabItem Header="{l:T 'Тайминги', 'Timings'}" FontSize="14">
                                         <DataGrid ItemsSource="{Binding ZoneTimings}" IsReadOnly="True" AutoGenerateColumns="False"
                                                   CanUserSortColumns="True" GridLinesVisibility="Horizontal">
                                             <DataGrid.Columns>
-                                                <DataGridTextColumn Header="Ст." Binding="{Binding Side}" x:DataType="vm:ZoneTimingRow" />
-                                                <DataGridTextColumn Header="Зона" Binding="{Binding Zone}" x:DataType="vm:ZoneTimingRow" Width="*" />
-                                                <DataGridTextColumn Header="Медиана" Binding="{Binding Median}" x:DataType="vm:ZoneTimingRow" />
-                                                <DataGridTextColumn Header="Разброс" Binding="{Binding Range}" x:DataType="vm:ZoneTimingRow" />
-                                                <DataGridTextColumn Header="Р." Binding="{Binding Rounds}" x:DataType="vm:ZoneTimingRow" />
+                                                <DataGridTextColumn Header="{l:T 'Ст.', 'Side'}" Binding="{Binding Side}" x:DataType="vm:ZoneTimingRow" />
+                                                <DataGridTextColumn Header="{l:T 'Зона', 'Zone'}" Binding="{Binding Zone}" x:DataType="vm:ZoneTimingRow" Width="*" />
+                                                <DataGridTextColumn Header="{l:T 'Медиана', 'Median'}" Binding="{Binding Median}" x:DataType="vm:ZoneTimingRow" />
+                                                <DataGridTextColumn Header="{l:T 'Разброс', 'Range'}" Binding="{Binding Range}" x:DataType="vm:ZoneTimingRow" />
+                                                <DataGridTextColumn Header="{l:T 'Р.', 'Rds'}" Binding="{Binding Rounds}" x:DataType="vm:ZoneTimingRow" />
                                             </DataGrid.Columns>
                                         </DataGrid>
                                     </TabItem>
@@ -319,185 +352,230 @@
 
                             <TextBlock Grid.ColumnSpan="3" IsVisible="{Binding !RoundRows.Count}" Classes="secondary"
                                        HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,40" IsHitTestVisible="False"
-                                       Text="Выберите игрока в списке слева, чтобы увидеть его маршруты." />
+                                       Text="{l:T 'Выберите игрока в списке слева, чтобы увидеть его маршруты.', 'Select a player in the list on the left to see their routes.'}" />
                         </Grid>
-                    </TabItem>
+                        </Grid>
+                    </Grid>
+                </TabItem>
 
-                    <TabItem Header="Статистика">
-                        <TabControl DataContext="{Binding Statistics}" x:DataType="vm:StatisticsViewModel" Padding="0,8,0,0">
-                            <TabItem Header="Ситуации игрока" FontSize="15">
-                                <Grid>
-                                    <TextBlock IsVisible="{Binding !HasPlayer}" Classes="secondary" HorizontalAlignment="Center"
-                                               VerticalAlignment="Center" Text="Выберите игрока в списке слева." />
-                                    <DataGrid IsVisible="{Binding HasPlayer}" ItemsSource="{Binding SituationRows}" IsReadOnly="True"
-                                              AutoGenerateColumns="False" GridLinesVisibility="Horizontal" CanUserSortColumns="True"
-                                              FrozenColumnCount="2">
+                <TabItem Header="{l:T 'Статистика', 'Statistics'}" IsEnabled="{Binding HasMatch}">
+                    <TabControl DataContext="{Binding Statistics}" x:DataType="vm:StatisticsViewModel" Padding="0,8,0,0">
+                        <TabItem Header="{l:T 'Ситуации игрока', 'Player situations'}" FontSize="15">
+                            <Grid>
+                                <TextBlock IsVisible="{Binding !HasPlayer}" Classes="secondary" HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" Text="{l:T 'Выберите игрока в списке слева.', 'Select a player in the list on the left.'}" />
+                                <DataGrid IsVisible="{Binding HasPlayer}" ItemsSource="{Binding SituationRows}" IsReadOnly="True"
+                                          AutoGenerateColumns="False" GridLinesVisibility="Horizontal" CanUserSortColumns="True"
+                                          FrozenColumnCount="2">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="{l:T 'Р.', 'Rd'}" Binding="{Binding Round}" x:DataType="vm:SituationRowViewModel" />
+                                        <DataGridTextColumn Header="{l:T 'Ст.', 'Side'}" Binding="{Binding Side}" x:DataType="vm:SituationRowViewModel" />
+                                        <DataGridTextColumn Header="{l:T 'Закупка: своя / команды / соперника', 'Buy: own / team / enemy'}" Binding="{Binding Buy}" x:DataType="vm:SituationRowViewModel" />
+                                        <DataGridTextColumn Header="{l:T 'Экипировка: своя / ср. команды', 'Equipment: own / team avg'}" Binding="{Binding Equipment}" x:DataType="vm:SituationRowViewModel" />
+                                        <DataGridTextColumn Header="{l:T 'Счёт', 'Score'}" Binding="{Binding Score}" x:DataType="vm:SituationRowViewModel" />
+                                        <DataGridTextColumn Header="{l:T 'Маршрут', 'Route'}" Binding="{Binding Route}" x:DataType="vm:SituationRowViewModel" />
+                                        <DataGridTextColumn Header="{l:T 'Итоговая позиция', 'Final position'}" Binding="{Binding FinalZone}" x:DataType="vm:SituationRowViewModel" />
+                                        <DataGridTextColumn Header="{l:T 'Гранаты', 'Grenades'}" Binding="{Binding Grenades}" x:DataType="vm:SituationRowViewModel" />
+                                        <DataGridTextColumn Header="{l:T 'Первый контакт', 'First contact'}" Binding="{Binding Contact}" x:DataType="vm:SituationRowViewModel" />
+                                        <DataGridTextColumn Header="{l:T 'Агрессия', 'Aggression'}" Binding="{Binding Aggression}" x:DataType="vm:SituationRowViewModel" />
+                                        <DataGridTextColumn Header="{l:T 'Первая дуэль', 'Opening duel'}" Binding="{Binding FirstDuel}" x:DataType="vm:SituationRowViewModel" />
+                                        <DataGridTextColumn Header="{l:T 'Урон', 'Damage'}" Binding="{Binding Damage}" x:DataType="vm:SituationRowViewModel" />
+                                        <DataGridTextColumn Header="{l:T 'Итог', 'Outcome'}" Binding="{Binding Outcome}" x:DataType="vm:SituationRowViewModel" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </TabItem>
+
+                        <TabItem Header="{l:T 'Условия → действия', 'Conditions → actions'}" FontSize="15">
+                            <Grid>
+                                <TextBlock IsVisible="{Binding !HasPlayer}" Classes="secondary" HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" Text="{l:T 'Выберите игрока в списке слева.', 'Select a player in the list on the left.'}" />
+                                <DockPanel IsVisible="{Binding HasPlayer}">
+                                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                                        <TextBlock Text="{l:T 'Таблица:', 'Table:'}" VerticalAlignment="Center" />
+                                        <ComboBox ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}" MinWidth="280">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate x:DataType="situations:FrequencyTable">
+                                                    <TextBlock Text="{Binding Name}" />
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                        <TextBlock Classes="secondary" VerticalAlignment="Center" TextWrapping="Wrap"
+                                                   Text="{l:T 'Доля — как часто решение принималось при этом условии. Малая выборка одной демки: смотрите на «из N».', 'Share is how often the decision was made under this condition. One demo is a small sample: look at “of N”.'}" />
+                                    </StackPanel>
+                                    <DataGrid ItemsSource="{Binding FrequencyRows}" IsReadOnly="True" AutoGenerateColumns="False"
+                                              GridLinesVisibility="Horizontal" CanUserSortColumns="True">
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="Р." Binding="{Binding Round}" x:DataType="vm:SituationRowViewModel" />
-                                            <DataGridTextColumn Header="Ст." Binding="{Binding Side}" x:DataType="vm:SituationRowViewModel" />
-                                            <DataGridTextColumn Header="Закупка: своя / команды / соперника" Binding="{Binding Buy}" x:DataType="vm:SituationRowViewModel" />
-                                            <DataGridTextColumn Header="Экипировка: своя / ср. команды" Binding="{Binding Equipment}" x:DataType="vm:SituationRowViewModel" />
-                                            <DataGridTextColumn Header="Счёт" Binding="{Binding Score}" x:DataType="vm:SituationRowViewModel" />
-                                            <DataGridTextColumn Header="Маршрут" Binding="{Binding Route}" x:DataType="vm:SituationRowViewModel" />
-                                            <DataGridTextColumn Header="Итоговая позиция" Binding="{Binding FinalZone}" x:DataType="vm:SituationRowViewModel" />
-                                            <DataGridTextColumn Header="Гранаты" Binding="{Binding Grenades}" x:DataType="vm:SituationRowViewModel" />
-                                            <DataGridTextColumn Header="Первый контакт" Binding="{Binding Contact}" x:DataType="vm:SituationRowViewModel" />
-                                            <DataGridTextColumn Header="Агрессия" Binding="{Binding Aggression}" x:DataType="vm:SituationRowViewModel" />
-                                            <DataGridTextColumn Header="Первая дуэль" Binding="{Binding FirstDuel}" x:DataType="vm:SituationRowViewModel" />
-                                            <DataGridTextColumn Header="Итог" Binding="{Binding Outcome}" x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTextColumn Header="{l:T 'Условие', 'Condition'}" Binding="{Binding Condition}" x:DataType="vm:FrequencyRowViewModel" />
+                                            <DataGridTextColumn Header="{l:T 'Решение', 'Decision'}" Binding="{Binding Decision}" x:DataType="vm:FrequencyRowViewModel" Width="*" />
+                                            <DataGridTextColumn Header="{l:T 'Раз', 'Times'}" Binding="{Binding Count}" x:DataType="vm:FrequencyRowViewModel" />
+                                            <DataGridTextColumn Header="{l:T 'Доля', 'Share'}" Binding="{Binding Share}" SortMemberPath="ShareValue" x:DataType="vm:FrequencyRowViewModel" />
+                                            <DataGridTextColumn Header="{l:T 'Раунды', 'Rounds'}" Binding="{Binding Rounds}" x:DataType="vm:FrequencyRowViewModel" />
                                         </DataGrid.Columns>
                                     </DataGrid>
-                                </Grid>
-                            </TabItem>
+                                </DockPanel>
+                            </Grid>
+                        </TabItem>
 
-                            <TabItem Header="Условия → действия" FontSize="15">
-                                <Grid>
-                                    <TextBlock IsVisible="{Binding !HasPlayer}" Classes="secondary" HorizontalAlignment="Center"
-                                               VerticalAlignment="Center" Text="Выберите игрока в списке слева." />
-                                    <DockPanel IsVisible="{Binding HasPlayer}">
-                                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
-                                            <TextBlock Text="Таблица:" VerticalAlignment="Center" />
-                                            <ComboBox ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}" MinWidth="280">
-                                                <ComboBox.ItemTemplate>
-                                                    <DataTemplate x:DataType="situations:FrequencyTable">
-                                                        <TextBlock Text="{Binding Name}" />
-                                                    </DataTemplate>
-                                                </ComboBox.ItemTemplate>
-                                            </ComboBox>
-                                            <TextBlock Classes="secondary" VerticalAlignment="Center" TextWrapping="Wrap"
-                                                       Text="Доля — как часто решение принималось при этом условии. Малая выборка одной демки: смотрите на «из N»." />
-                                        </StackPanel>
-                                        <DataGrid ItemsSource="{Binding FrequencyRows}" IsReadOnly="True" AutoGenerateColumns="False"
-                                                  GridLinesVisibility="Horizontal" CanUserSortColumns="True">
-                                            <DataGrid.Columns>
-                                                <DataGridTextColumn Header="Условие" Binding="{Binding Condition}" x:DataType="vm:FrequencyRowViewModel" />
-                                                <DataGridTextColumn Header="Решение" Binding="{Binding Decision}" x:DataType="vm:FrequencyRowViewModel" Width="*" />
-                                                <DataGridTextColumn Header="Раз" Binding="{Binding Count}" x:DataType="vm:FrequencyRowViewModel" />
-                                                <DataGridTextColumn Header="Доля" Binding="{Binding Share}" SortMemberPath="ShareValue" x:DataType="vm:FrequencyRowViewModel" />
-                                                <DataGridTextColumn Header="Раунды" Binding="{Binding Rounds}" x:DataType="vm:FrequencyRowViewModel" />
-                                            </DataGrid.Columns>
-                                        </DataGrid>
-                                    </DockPanel>
-                                </Grid>
-                            </TabItem>
+                        <TabItem Header="{l:T 'Раунды матча', 'Match rounds'}" FontSize="15">
+                            <DataGrid ItemsSource="{Binding MatchRounds}" IsReadOnly="True" AutoGenerateColumns="False"
+                                      GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="{l:T 'Раунд', 'Round'}" Binding="{Binding Number}" x:DataType="vm:RoundRowViewModel" />
+                                    <DataGridTextColumn Header="{l:T 'Счёт до (T : CT)', 'Score before (T : CT)'}" Binding="{Binding ScoreBefore}" x:DataType="vm:RoundRowViewModel" />
+                                    <DataGridTextColumn Header="{l:T 'Закупка T', 'T buy'}" Binding="{Binding BuyT}" x:DataType="vm:RoundRowViewModel" />
+                                    <DataGridTextColumn Header="{l:T 'Закупка CT', 'CT buy'}" Binding="{Binding BuyCT}" x:DataType="vm:RoundRowViewModel" />
+                                    <DataGridTextColumn Header="{l:T 'Победитель', 'Winner'}" Binding="{Binding Winner}" x:DataType="vm:RoundRowViewModel" />
+                                    <DataGridTextColumn Header="{l:T 'Причина', 'Reason'}" Binding="{Binding Reason}" x:DataType="vm:RoundRowViewModel" Width="*" />
+                                    <DataGridTextColumn Header="{l:T 'Длительность', 'Duration'}" Binding="{Binding Duration}" x:DataType="vm:RoundRowViewModel" />
+                                    <DataGridTextColumn Header="{l:T 'Овертайм', 'Overtime'}" Binding="{Binding Overtime}" x:DataType="vm:RoundRowViewModel" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+                    </TabControl>
+                </TabItem>
 
-                            <TabItem Header="Раунды матча" FontSize="15">
-                                <DataGrid ItemsSource="{Binding MatchRounds}" IsReadOnly="True" AutoGenerateColumns="False"
-                                          GridLinesVisibility="Horizontal" CanUserSortColumns="True">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Раунд" Binding="{Binding Number}" x:DataType="vm:RoundRowViewModel" />
-                                        <DataGridTextColumn Header="Счёт до (T : CT)" Binding="{Binding ScoreBefore}" x:DataType="vm:RoundRowViewModel" />
-                                        <DataGridTextColumn Header="Закупка T" Binding="{Binding BuyT}" x:DataType="vm:RoundRowViewModel" />
-                                        <DataGridTextColumn Header="Закупка CT" Binding="{Binding BuyCT}" x:DataType="vm:RoundRowViewModel" />
-                                        <DataGridTextColumn Header="Победитель" Binding="{Binding Winner}" x:DataType="vm:RoundRowViewModel" />
-                                        <DataGridTextColumn Header="Причина" Binding="{Binding Reason}" x:DataType="vm:RoundRowViewModel" Width="*" />
-                                        <DataGridTextColumn Header="Длительность" Binding="{Binding Duration}" x:DataType="vm:RoundRowViewModel" />
-                                        <DataGridTextColumn Header="Овертайм" Binding="{Binding Overtime}" x:DataType="vm:RoundRowViewModel" />
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                            </TabItem>
-                        </TabControl>
-                    </TabItem>
-
-                    <TabItem Header="Профиль игрока">
-                        <Grid DataContext="{Binding Profile}" x:DataType="vm:ProfileViewModel">
-                            <TextBlock IsVisible="{Binding !HasProfile}" Classes="secondary" HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Text="{Binding IsBuilding, Converter={x:Static vm:ProfileConverters.EmptyText}}" />
-                            <DockPanel IsVisible="{Binding HasProfile}" Margin="4,8,0,0">
-                                <!-- Заголовок: имя, предсказуемость, экспорт -->
-                                <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Classes="header" FontSize="20" Text="{Binding Title}" />
-                                        <StackPanel Orientation="Horizontal" Spacing="10">
-                                            <TextBlock Text="Предсказуемость" VerticalAlignment="Center" />
-                                            <ProgressBar Minimum="0" Maximum="100" Value="{Binding Predictability}" Width="200" VerticalAlignment="Center" />
-                                            <TextBlock Text="{Binding Predictability, StringFormat='{}{0}%'}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                                        </StackPanel>
-                                        <TextBlock Classes="secondary" Text="{Binding PredictabilityText}" TextWrapping="Wrap" />
+                <TabItem Header="{l:T 'Профиль игрока', 'Player profile'}" IsEnabled="{Binding HasMatch}">
+                    <Grid DataContext="{Binding Profile}" x:DataType="vm:ProfileViewModel">
+                        <TextBlock IsVisible="{Binding !HasProfile}" Classes="secondary" HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding IsBuilding, Converter={x:Static vm:ProfileConverters.EmptyText}}" />
+                        <DockPanel IsVisible="{Binding HasProfile}" Margin="4,8,0,0">
+                            <!-- Заголовок: имя, предсказуемость, экспорт -->
+                            <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Classes="header" FontSize="20" Text="{Binding Title}" />
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <TextBlock Text="{l:T 'Предсказуемость', 'Predictability'}" VerticalAlignment="Center" />
+                                        <ProgressBar Minimum="0" Maximum="100" Value="{Binding Predictability}" Width="200" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding Predictability, StringFormat='{}{0}%'}" FontWeight="SemiBold" VerticalAlignment="Center" />
                                     </StackPanel>
-                                    <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Top">
-                                        <Button Content="Экспорт профиля… (Ctrl+E)" Command="{Binding ExportCommand}" HorizontalAlignment="Right" />
-                                        <TextBlock Classes="secondary" Text="{Binding StatusText}" TextWrapping="Wrap" MaxWidth="360" />
-                                    </StackPanel>
-                                </Grid>
+                                    <TextBlock Classes="secondary" Text="{Binding PredictabilityText}" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Top">
+                                    <Button Content="{l:T 'Экспорт профиля… (Ctrl+E)', 'Export profile… (Ctrl+E)'}" Command="{Binding ExportCommand}" HorizontalAlignment="Right" />
+                                    <TextBlock Classes="secondary" Text="{Binding StatusText}" TextWrapping="Wrap" MaxWidth="360" />
+                                </StackPanel>
+                            </Grid>
 
-                                <!-- Роль -->
-                                <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding Roles}" Margin="0,0,0,8">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate x:DataType="vm:RoleRowViewModel">
-                                            <StackPanel Margin="0,0,0,6">
-                                                <TextBlock>
-                                                    <Run Text="Роль " />
-                                                    <Run Text="{Binding Header}" FontWeight="SemiBold" />
-                                                    <Run Text="  " />
-                                                    <Run Text="{Binding Confidence}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                                                </TextBlock>
-                                                <TextBlock Classes="secondary" Text="{Binding Reasons}" TextWrapping="Wrap" />
-                                            </StackPanel>
+                            <!-- Роль -->
+                            <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding Roles}" Margin="0,0,0,8">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:RoleRowViewModel">
+                                        <StackPanel Margin="0,0,0,6">
+                                            <TextBlock>
+                                                <Run Text="{l:T 'Роль ', 'Role '}" />
+                                                <Run Text="{Binding Header}" FontWeight="SemiBold" />
+                                                <Run Text="  " />
+                                                <Run Text="{Binding Confidence}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            </TextBlock>
+                                            <TextBlock Classes="secondary" Text="{Binding Reasons}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Сводка по сторонам -->
+                            <DataGrid DockPanel.Dock="Top" ItemsSource="{Binding Sides}" IsReadOnly="True" AutoGenerateColumns="False"
+                                      GridLinesVisibility="Horizontal" CanUserSortColumns="False" Margin="0,0,0,8" MaxHeight="120">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="{l:T 'Сторона', 'Side'}" Binding="{Binding Side}" x:DataType="vm:SideSummaryRowViewModel" />
+                                    <DataGridTextColumn Header="{l:T 'Раундов', 'Rounds'}" Binding="{Binding Rounds}" x:DataType="vm:SideSummaryRowViewModel" />
+                                    <DataGridTextColumn Header="{l:T 'У / С', 'K / D'}" Binding="{Binding KillsDeaths}" x:DataType="vm:SideSummaryRowViewModel" />
+                                    <DataGridTextColumn Header="{l:T 'Урон/раунд', 'ADR'}" Binding="{Binding Damage}" x:DataType="vm:SideSummaryRowViewModel" />
+                                    <DataGridTextColumn Header="{l:T 'Выживание', 'Survival'}" Binding="{Binding Survival}" x:DataType="vm:SideSummaryRowViewModel" />
+                                    <DataGridTextColumn Header="{l:T 'Победы', 'Wins'}" Binding="{Binding Wins}" x:DataType="vm:SideSummaryRowViewModel" />
+                                    <DataGridTextColumn Header="{l:T 'Первый контакт', 'First contact'}" Binding="{Binding Contact}" x:DataType="vm:SideSummaryRowViewModel" />
+                                    <DataGridTextColumn Header="{l:T 'Первая дуэль', 'Opening duel'}" Binding="{Binding FirstDuel}" x:DataType="vm:SideSummaryRowViewModel" />
+                                    <DataGridTextColumn Header="{l:T 'Гранат/раунд', 'Grenades/round'}" Binding="{Binding Grenades}" x:DataType="vm:SideSummaryRowViewModel" />
+                                    <DataGridTextColumn Header="{l:T 'Агрессия / пассив', 'Aggressive / passive'}" Binding="{Binding Style}" x:DataType="vm:SideSummaryRowViewModel" />
+                                    <DataGridTextColumn Header="{l:T 'До союзника', 'To teammate'}" Binding="{Binding Distance}" x:DataType="vm:SideSummaryRowViewModel" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- Паттерны -->
+                            <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                                <TextBlock Classes="header" Text="{Binding PatternsHeader}" VerticalAlignment="Center" Margin="0,0,16,0" />
+                                <TextBlock Text="{l:T 'Сортировка', 'Sort'}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <ComboBox ItemsSource="{x:Static vm:ProfileViewModel.SortModes}" SelectedItem="{Binding SelectedSort}" Margin="0,0,16,0">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:FilterOption"><TextBlock Text="{Binding Label}" /></DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <TextBlock Text="{l:T 'Частота ≥, %', 'Frequency ≥, %'}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <NumericUpDown Value="{Binding MinSharePercent}" Minimum="10" Maximum="100" Increment="5" FormatString="0" Width="110" Margin="0,0,16,0" />
+                                <TextBlock Text="{l:T 'Примеров ≥', 'Examples ≥'}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <NumericUpDown Value="{Binding MinExamples}" Minimum="1" Maximum="20" Increment="1" FormatString="0" Width="100" />
+                            </WrapPanel>
+                            <TextBlock DockPanel.Dock="Bottom" Classes="secondary" Margin="0,6,0,0" TextWrapping="Wrap"
+                                       Text="{l:T 'Одна демка — малая выборка: смотрите на «N из M» и уверенность. Клик по паттерну подсвечивает раунды-примеры на радаре.', 'One demo is a small sample: look at “N of M” and confidence. Clicking a pattern highlights its example rounds on the radar.'}" />
+                            <Grid>
+                                <TextBlock IsVisible="{Binding !Patterns.Count}" Classes="secondary" Margin="4,8" TextWrapping="Wrap"
+                                           Text="{l:T 'Устойчивых паттернов при заданных порогах нет. Попробуйте снизить порог частоты или числа примеров.', 'No stable patterns at these thresholds. Try lowering the frequency or examples threshold.'}" />
+                                <ListBox ItemsSource="{Binding Patterns}" SelectedItem="{Binding SelectedPattern}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:PatternRowViewModel">
+                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                                <Ellipse Width="10" Height="10" VerticalAlignment="Top" Margin="0,6,0,0"
+                                                         Fill="{Binding Pattern.Confidence, Converter={x:Static vm:ProfileConverters.ConfidenceBrush}}" />
+                                                <StackPanel Grid.Column="1" Spacing="2">
+                                                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding Details}" Classes="secondary" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                                <Button Grid.Column="2" Content="{l:T 'Показать на радаре', 'Show on radar'}" VerticalAlignment="Center"
+                                                        Command="{Binding $parent[ListBox].((vm:ProfileViewModel)DataContext).ShowOnRadarCommand}"
+                                                        CommandParameter="{Binding}" />
+                                            </Grid>
                                         </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </DockPanel>
+                    </Grid>
+                </TabItem>
 
-                                <!-- Сводка по сторонам -->
-                                <DataGrid DockPanel.Dock="Top" ItemsSource="{Binding Sides}" IsReadOnly="True" AutoGenerateColumns="False"
-                                          GridLinesVisibility="Horizontal" CanUserSortColumns="False" Margin="0,0,0,8" MaxHeight="120">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Сторона" Binding="{Binding Side}" x:DataType="vm:SideSummaryRowViewModel" />
-                                        <DataGridTextColumn Header="Раундов" Binding="{Binding Rounds}" x:DataType="vm:SideSummaryRowViewModel" />
-                                        <DataGridTextColumn Header="У / С" Binding="{Binding KillsDeaths}" x:DataType="vm:SideSummaryRowViewModel" />
-                                        <DataGridTextColumn Header="Выживание" Binding="{Binding Survival}" x:DataType="vm:SideSummaryRowViewModel" />
-                                        <DataGridTextColumn Header="Победы" Binding="{Binding Wins}" x:DataType="vm:SideSummaryRowViewModel" />
-                                        <DataGridTextColumn Header="Первый контакт" Binding="{Binding Contact}" x:DataType="vm:SideSummaryRowViewModel" />
-                                        <DataGridTextColumn Header="Первая дуэль" Binding="{Binding FirstDuel}" x:DataType="vm:SideSummaryRowViewModel" />
-                                        <DataGridTextColumn Header="Гранат/раунд" Binding="{Binding Grenades}" x:DataType="vm:SideSummaryRowViewModel" />
-                                        <DataGridTextColumn Header="Агрессия / пассив" Binding="{Binding Style}" x:DataType="vm:SideSummaryRowViewModel" />
-                                        <DataGridTextColumn Header="До союзника" Binding="{Binding Distance}" x:DataType="vm:SideSummaryRowViewModel" />
-                                    </DataGrid.Columns>
-                                </DataGrid>
+                <TabItem Header="{l:T 'Настройки', 'Settings'}">
+                    <ScrollViewer DataContext="{Binding Settings}" x:DataType="vm:SettingsViewModel">
+                        <StackPanel Margin="8,16" Spacing="24" MaxWidth="1100" HorizontalAlignment="Left">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="header" Text="{l:T 'Язык интерфейса', 'Interface language'}" />
+                                <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}" MinWidth="220">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:LanguageOption"><TextBlock Text="{Binding Name}" /></DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <TextBlock Classes="secondary" TextWrapping="Wrap"
+                                           Text="{l:T 'Интерфейс, формулировки паттернов и экспорт сразу переключаются на выбранный язык.', 'The interface, pattern wording and export switch to the selected language right away.'}" />
+                            </StackPanel>
 
-                                <!-- Паттерны -->
-                                <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,6">
-                                    <TextBlock Classes="header" Text="{Binding PatternsHeader}" VerticalAlignment="Center" Margin="0,0,16,0" />
-                                    <TextBlock Text="Сортировка" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                    <ComboBox ItemsSource="{x:Static vm:ProfileViewModel.SortModes}" SelectedItem="{Binding SelectedSort}" Margin="0,0,16,0">
-                                        <ComboBox.ItemTemplate>
-                                            <DataTemplate x:DataType="vm:FilterOption"><TextBlock Text="{Binding Label}" /></DataTemplate>
-                                        </ComboBox.ItemTemplate>
-                                    </ComboBox>
-                                    <TextBlock Text="Частота ≥, %" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                    <NumericUpDown Value="{Binding MinSharePercent}" Minimum="10" Maximum="100" Increment="5" FormatString="0" Width="110" Margin="0,0,16,0" />
-                                    <TextBlock Text="Примеров ≥" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                    <NumericUpDown Value="{Binding MinExamples}" Minimum="1" Maximum="20" Increment="1" FormatString="0" Width="100" />
-                                </WrapPanel>
-                                <TextBlock DockPanel.Dock="Bottom" Classes="secondary" Margin="0,6,0,0" TextWrapping="Wrap"
-                                           Text="Одна демка — малая выборка: смотрите на «N из M» и уверенность. Клик по паттерну подсвечивает раунды-примеры на радаре." />
-                                <Grid>
-                                    <TextBlock IsVisible="{Binding !Patterns.Count}" Classes="secondary" Margin="4,8" TextWrapping="Wrap"
-                                               Text="Устойчивых паттернов при заданных порогах нет. Попробуйте снизить порог частоты или числа примеров." />
-                                    <ListBox ItemsSource="{Binding Patterns}" SelectedItem="{Binding SelectedPattern}">
-                                        <ListBox.ItemTemplate>
-                                            <DataTemplate x:DataType="vm:PatternRowViewModel">
-                                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                                                    <Ellipse Width="10" Height="10" VerticalAlignment="Top" Margin="0,6,0,0"
-                                                             Fill="{Binding Pattern.Confidence, Converter={x:Static vm:ProfileConverters.ConfidenceBrush}}" />
-                                                    <StackPanel Grid.Column="1" Spacing="2">
-                                                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontWeight="SemiBold" />
-                                                        <TextBlock Text="{Binding Details}" Classes="secondary" TextWrapping="Wrap" />
-                                                    </StackPanel>
-                                                    <Button Grid.Column="2" Content="Показать на радаре" VerticalAlignment="Center"
-                                                            Command="{Binding $parent[ListBox].((vm:ProfileViewModel)DataContext).ShowOnRadarCommand}"
-                                                            CommandParameter="{Binding}" />
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ListBox.ItemTemplate>
-                                    </ListBox>
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="header" Text="{l:T 'Кеш разобранных демок', 'Parsed demo cache'}" />
+                                <TextBlock Text="{Binding CacheText}" />
+                                <TextBlock Classes="secondary" TextWrapping="Wrap"
+                                           Text="{l:T 'Повторное открытие демки из кеша занимает секунды вместо полного разбора. Хранятся последние 50 демок. Очистка не трогает сами файлы .dem.', 'Reopening a cached demo takes seconds instead of a full parse. The last 50 demos are kept. Clearing does not touch the .dem files themselves.'}" />
+                                <Button Content="{l:T 'Очистить кеш', 'Clear cache'}" Command="{Binding ClearCacheCommand}" />
+                                <TextBlock Classes="secondary" Text="{Binding CacheStatus}" TextWrapping="Wrap" />
+                            </StackPanel>
+
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="header" Text="{l:T 'Папки', 'Folders'}" />
+                                <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="8">
+                                    <TextBlock Text="{l:T 'Данные, настройки и журналы', 'Data, settings and logs'}" VerticalAlignment="Center" />
+                                    <SelectableTextBlock Grid.Column="1" Text="{Binding DataDirectory}" Classes="secondary" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                    <Button Grid.Column="2" Content="{l:T 'Открыть', 'Open'}" Command="{Binding OpenDataFolderCommand}" />
+                                    <TextBlock Grid.Row="1" Text="{l:T 'Изображения карт', 'Map images'}" VerticalAlignment="Center" />
+                                    <SelectableTextBlock Grid.Row="1" Grid.Column="1" Text="{Binding MapsDirectory}" Classes="secondary" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                    <Button Grid.Row="1" Grid.Column="2" Content="{l:T 'Открыть', 'Open'}" Command="{Binding OpenMapsFolderCommand}" />
                                 </Grid>
-                            </DockPanel>
-                        </Grid>
-                    </TabItem>
-                </TabControl>
-            </Grid>
+                                <TextBlock Classes="secondary" TextWrapping="Wrap"
+                                           Text="{l:T 'Пороги анализа (типы закупки, агрессия, раскидки, шаг выборки) задаются в settings.json в папке данных.', 'Analysis thresholds (buy types, aggression, lineups, sampling step) are set in settings.json in the data folder.'}" />
+                            </StackPanel>
+
+                            <TextBlock Classes="secondary" Text="{Binding Version, StringFormat='DemReview {0}'}" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
         </Grid>
     </DockPanel>
 </Window>

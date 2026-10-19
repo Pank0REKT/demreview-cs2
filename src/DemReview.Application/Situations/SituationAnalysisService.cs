@@ -1,4 +1,6 @@
 using DemReview.Application.Context;
+using DemReview.Application.Damage;
+using DemReview.Application.Localization;
 using DemReview.Application.Routes;
 using DemReview.Domain;
 
@@ -18,6 +20,7 @@ public sealed class SituationAnalysisService(IRoundContextService contexts, IRou
         var routesByRound = routeAnalysis.Rounds.ToDictionary(r => r.Round);
         var player = match.FindPlayer(steamId);
 
+        var damage = DamageAnalysis.DealtByRound(DamageAnalysis.EffectiveHits(match), steamId);
         var situations = new List<RoundSituation>();
         foreach (var round in match.Rounds)
         {
@@ -25,14 +28,14 @@ public sealed class SituationAnalysisService(IRoundContextService contexts, IRou
             if (side == Side.None || !routesByRound.TryGetValue(round.Number, out var route))
                 continue;
 
-            situations.Add(Build(match, context, steamId, round, side, route, options));
+            situations.Add(Build(match, context, steamId, round, side, route, options, damage.GetValueOrDefault(round.Number)));
         }
 
         return new SituationAnalysis(steamId, situations, Tables(situations));
     }
 
     private static RoundSituation Build(MatchData match, IMatchContext context, ulong steamId, RoundInfo round, Side side,
-        RoundRoute route, SituationOptions options)
+        RoundRoute route, SituationOptions options, int damage)
     {
         var economy = context.Economy(round.Number);
         var (scoreUs, scoreThem) = side == Side.CT ? (round.ScoreCTBefore, round.ScoreTBefore) : (round.ScoreTBefore, round.ScoreCTBefore);
@@ -81,6 +84,7 @@ public sealed class SituationAnalysisService(IRoundContextService contexts, IRou
             aggression,
             firstDuel,
             roundKills.Count(k => k.AttackerSteamId == steamId && k.VictimSteamId != steamId),
+            damage,
             route.Died,
             round.Winner == side);
     }
@@ -113,20 +117,23 @@ public sealed class SituationAnalysisService(IRoundContextService contexts, IRou
     private static List<FrequencyTable> Tables(IReadOnlyList<RoundSituation> rounds)
     {
         static string SideBuy(RoundSituation s) => $"{Labels.Side(s.Side)} · {Labels.Buy(s.TeamBuy)}";
+        var sideBuy = Loc.T("Сторона и закупка команды", "Side and team buy");
+        var aggression = Loc.T("Агрессия", "Aggression");
+        var noData = Loc.T("нет данных", "no data");
 
         return
         [
-            Table("Закупка → маршрут", "Сторона и закупка команды", "Маршрут (первые зоны)", rounds, SideBuy,
-                s => s.RouteKey.Length > 0 ? s.RouteKey : "нет данных"),
-            Table("Закупка → агрессия", "Сторона и закупка команды", "Агрессия", rounds, SideBuy,
+            Table(Loc.T("Закупка → маршрут", "Buy → route"), sideBuy, Loc.T("Маршрут (первые зоны)", "Route (first zones)"), rounds, SideBuy,
+                s => s.RouteKey.Length > 0 ? s.RouteKey : noData),
+            Table(Loc.T("Закупка → агрессия", "Buy → aggression"), sideBuy, aggression, rounds, SideBuy,
                 s => Labels.Aggression(s.Aggression)),
-            Table("Закупка → итоговая позиция", "Сторона и закупка команды", "Итоговая позиция", rounds, SideBuy,
-                s => s.FinalZone.Length > 0 ? s.FinalZone : "нет данных"),
-            Table("Закупка → гранаты", "Сторона и закупка команды", "Гранат за раунд", rounds, SideBuy,
+            Table(Loc.T("Закупка → итоговая позиция", "Buy → final position"), sideBuy, Loc.T("Итоговая позиция", "Final position"), rounds, SideBuy,
+                s => s.FinalZone.Length > 0 ? s.FinalZone : noData),
+            Table(Loc.T("Закупка → гранаты", "Buy → grenades"), sideBuy, Loc.T("Гранат за раунд", "Grenades per round"), rounds, SideBuy,
                 s => s.GrenadeCount switch { 0 => "0", <= 2 => "1–2", _ => "3+" }),
-            Table("Счёт → агрессия", "Сторона и счёт", "Агрессия", rounds,
+            Table(Loc.T("Счёт → агрессия", "Score → aggression"), Loc.T("Сторона и счёт", "Side and score"), aggression, rounds,
                 s => $"{Labels.Side(s.Side)} · {Labels.Score(s.Score)}", s => Labels.Aggression(s.Aggression)),
-            Table("Сторона → первая дуэль", "Сторона", "Первая дуэль раунда", rounds,
+            Table(Loc.T("Сторона → первая дуэль", "Side → opening duel"), Loc.T("Сторона", "Side"), Loc.T("Первая дуэль раунда", "Opening duel of the round"), rounds,
                 s => Labels.Side(s.Side), s => Labels.FirstDuel(s.FirstDuel)),
         ];
     }
@@ -150,7 +157,7 @@ public sealed class SituationAnalysisService(IRoundContextService contexts, IRou
     }
 }
 
-/// <summary>Русские подписи значений для таблиц и формулировок.</summary>
+/// <summary>Подписи значений для таблиц и формулировок на текущем языке.</summary>
 public static class Labels
 {
     public static string Side(Side side) => side switch { Domain.Side.T => "T", Domain.Side.CT => "CT", _ => "—" };
@@ -164,30 +171,40 @@ public static class Labels
 
     public static string Buy(BuyType buy) => buy switch
     {
-        BuyType.Pistol => "пистолетка",
-        BuyType.Eco => "эко",
-        BuyType.Force => "форс",
-        _ => "фулл-бай",
+        BuyType.Pistol => Loc.T("пистолетка", "pistol"),
+        BuyType.Eco => Loc.T("эко", "eco"),
+        BuyType.Force => Loc.T("форс", "force buy"),
+        _ => Loc.T("фулл-бай", "full buy"),
+    };
+
+    public static string Grenade(GrenadeType type) => type switch
+    {
+        GrenadeType.HighExplosive => "HE",
+        GrenadeType.Flashbang => Loc.T("Флешка", "Flashbang"),
+        GrenadeType.Smoke => Loc.T("Дым", "Smoke"),
+        GrenadeType.Molotov => Loc.T("Молотов", "Molotov"),
+        GrenadeType.Incendiary => Loc.T("Зажигательная", "Incendiary"),
+        _ => Loc.T("Ложная", "Decoy"),
     };
 
     public static string Aggression(Aggression a) => a switch
     {
-        Situations.Aggression.Aggressive => "агрессия",
-        Situations.Aggression.Neutral => "нейтрально",
-        _ => "пассив",
+        Situations.Aggression.Aggressive => Loc.T("агрессия", "aggressive"),
+        Situations.Aggression.Neutral => Loc.T("нейтрально", "neutral"),
+        _ => Loc.T("пассив", "passive"),
     };
 
     public static string Score(ScoreState s) => s switch
     {
-        ScoreState.Leading => "ведём",
-        ScoreState.Trailing => "отстаём",
-        _ => "равный счёт",
+        ScoreState.Leading => Loc.T("ведём", "leading"),
+        ScoreState.Trailing => Loc.T("отстаём", "trailing"),
+        _ => Loc.T("равный счёт", "tied"),
     };
 
     public static string FirstDuel(FirstDuel d) => d switch
     {
-        Situations.FirstDuel.Won => "выиграл",
-        Situations.FirstDuel.Lost => "проиграл",
-        _ => "не участвовал",
+        Situations.FirstDuel.Won => Loc.T("выиграл", "won"),
+        Situations.FirstDuel.Lost => Loc.T("проиграл", "lost"),
+        _ => Loc.T("не участвовал", "not involved"),
     };
 }

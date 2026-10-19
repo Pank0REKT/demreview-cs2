@@ -7,7 +7,17 @@ public interface IMatchCache
 {
     bool TryGet(DemoFileKey key, out MatchData match);
     void Store(DemoFileKey key, MatchData match);
+
+    /// <summary>Сколько демок в кеше и сколько он занимает на диске.</summary>
+    MatchCacheInfo GetInfo();
+
+    /// <summary>Удалить все сохранённые демки.</summary>
+    void Clear();
 }
+
+/// <param name="SizeBytes">Размер на диске (0 — кеш только в памяти).</param>
+/// <param name="Location">Файл кеша или null.</param>
+public sealed record MatchCacheInfo(int Entries, long SizeBytes, string? Location);
 
 /// <summary>Идентификатор версии файла демки.</summary>
 public sealed record DemoFileKey(string FullPath, long Length, DateTime LastWriteTimeUtc, int SampleTickStep = 16)

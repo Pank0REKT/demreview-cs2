@@ -1,0 +1,24 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DemReview.Desktop.Views.LanguageWindow"
+        Title="DemReview"
+        Width="460" SizeToContent="Height" CanResize="False"
+        WindowStartupLocation="CenterScreen">
+    <!-- Окно первого запуска: показывается до выбора языка, поэтому подписи на обоих языках. -->
+    <StackPanel Margin="28,24" Spacing="16">
+        <StackPanel Spacing="4">
+            <TextBlock Classes="header" FontSize="20" Text="Выберите язык интерфейса" />
+            <TextBlock Classes="header" FontSize="20" Text="Choose the interface language" Foreground="{DynamicResource SecondaryTextBrush}" />
+        </StackPanel>
+        <UniformGrid Columns="2" ColumnSpacing="12">
+            <Button x:Name="RussianButton" Content="Русский" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    Padding="0,12" FontSize="16" Click="OnRussian" />
+            <Button x:Name="EnglishButton" Content="English" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    Padding="0,12" FontSize="16" Click="OnEnglish" />
+        </UniformGrid>
+        <StackPanel Spacing="2">
+            <TextBlock Classes="secondary" TextWrapping="Wrap" Text="Язык можно сменить позже во вкладке «Настройки»." />
+            <TextBlock Classes="secondary" TextWrapping="Wrap" Text="You can change it later on the Settings tab." />
+        </StackPanel>
+    </StackPanel>
+</Window>

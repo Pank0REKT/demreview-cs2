@@ -1,5 +1,6 @@
 using Avalonia.Data.Converters;
 using Avalonia.Media;
+using DemReview.Application.Localization;
 using DemReview.Application.Patterns;
 
 namespace DemReview.Desktop.ViewModels;
@@ -16,5 +17,5 @@ public static class ProfileConverters
 
     /// <summary>Текст пустой вкладки профиля.</summary>
     public static readonly IValueConverter EmptyText = new FuncValueConverter<bool, string>(building =>
-        building ? "Строю профиль игрока…" : "Выберите игрока в списке слева.");
+        building ? Loc.T("Строю профиль игрока…", "Building the player profile…") : Loc.T("Выберите игрока в списке слева.", "Select a player in the list on the left."));
 }

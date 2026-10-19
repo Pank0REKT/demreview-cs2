@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using DemReview.Application;
 using DemReview.Application.Context;
 using DemReview.Application.Filters;
+using DemReview.Application.Localization;
 using DemReview.Application.Situations;
 using DemReview.Domain;
 
@@ -144,7 +145,10 @@ public sealed class SituationRowViewModel(RoundSituation s)
 
     public string FirstDuel => Labels.FirstDuel(s.FirstDuel);
 
-    public string Outcome => $"{(s.RoundWon ? "победа" : "поражение")}, {s.Kills} уб.{(s.Died ? ", погиб" : "")}";
+    public string Outcome => Loc.T($"{(s.RoundWon ? "победа" : "поражение")}, {s.Kills} уб.{(s.Died ? ", погиб" : "")}",
+        $"{(s.RoundWon ? "win" : "loss")}, {s.Kills} kills{(s.Died ? ", died" : "")}");
+
+    public int Damage => s.Damage;
 }
 
 public sealed class FrequencyRowViewModel(FrequencyRow row)
@@ -153,7 +157,7 @@ public sealed class FrequencyRowViewModel(FrequencyRow row)
 
     public string Decision => row.Decision;
 
-    public string Count => $"{row.Count} из {row.Total}";
+    public string Count => Loc.T($"{row.Count} из {row.Total}", $"{row.Count} of {row.Total}");
 
     public string Share => $"{row.Share:P0}";
 

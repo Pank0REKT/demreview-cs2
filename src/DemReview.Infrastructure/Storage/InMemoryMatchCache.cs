@@ -30,4 +30,8 @@ public sealed class InMemoryMatchCache : IMatchCache
     }
 
     public void Store(DemoFileKey key, MatchData match) => _items[key.FullPath] = (key, match);
+
+    public MatchCacheInfo GetInfo() => new(_items.Count, 0, null);
+
+    public void Clear() => _items.Clear();
 }

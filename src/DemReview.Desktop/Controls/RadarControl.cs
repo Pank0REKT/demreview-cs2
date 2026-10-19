@@ -14,14 +14,23 @@ public sealed record RadarRoute(int Round, IReadOnlyList<Point> Points, IReadOnl
 /// <summary>Игрок в текущий момент таймлайна.</summary>
 /// <param name="Yaw">Угол обзора в градусах игры (0 — восток, 90 — север).</param>
 /// <param name="IsSelected">Анализируемый игрок — рисуется крупнее, с направлением взгляда и подписью.</param>
-public sealed record RadarPlayerMarker(Point Position, float Yaw, Color Color, bool IsSelected, string Label);
+/// <param name="Tooltip">Подсказка при наведении мышью (ник, оружие, здоровье).</param>
+/// <param name="IsDead">Погиб в этом раунде — рисуется крестиком на месте смерти.</param>
+public sealed record RadarPlayerMarker(
+    Point Position, float Yaw, Color Color, bool IsSelected, string Label, string Name, string Tooltip, bool IsDead);
+
+/// <summary>Всплывающий урон над жертвой: «−27».</summary>
+/// <param name="Age">0 — только что, 1 — исчезает.</param>
+public sealed record RadarDamageText(Point Position, string Text, Color Color, double Age);
 
 /// <summary>Вид отметки детонации гранаты.</summary>
 public enum RadarGrenadeKind { HighExplosive, Flash, Smoke, Fire, Decoy }
 
 /// <summary>Граната для отрисовки: точка броска и детонации в пикселях радара.</summary>
 /// <param name="EffectRadius">Радиус зоны действия (дым, огонь) в пикселях радара.</param>
-public sealed record RadarGrenade(int Id, int Round, RadarGrenadeKind Kind, Point From, Point? To, double EffectRadius, Color Color);
+/// <param name="DamageLabel">Урон гранаты (HE, огонь) — подпись у места взрыва.</param>
+public sealed record RadarGrenade(
+    int Id, int Round, RadarGrenadeKind Kind, Point From, Point? To, double EffectRadius, Color Color, string? DamageLabel = null);
 
 /// <summary>
 /// Радар карты: подложка (изображение или сетка), слои данных, зум колесом мыши и панорамирование.
@@ -61,7 +70,7 @@ public sealed class RadarControl : Control
     {
         AffectsRender<RadarControl>(MapImageProperty, RoutesProperty, HighlightedRoundsProperty, ShowRoutesProperty,
             GrenadesProperty, HighlightedGrenadesProperty, ShowGrenadesProperty, HeatmapProperty, DeathsProperty,
-            PlayersProperty);
+            PlayersProperty, DamageTextsProperty);
         RoutesProperty.Changed.AddClassHandler<RadarControl>((c, _) => c._geometryCache = null);
         ClipToBoundsProperty.OverrideDefaultValue<RadarControl>(true);
         FocusableProperty.OverrideDefaultValue<RadarControl>(true);
@@ -112,6 +121,16 @@ public sealed class RadarControl : Control
     /// <summary>Игроки в текущий момент таймлайна (null — режим таймлайна выключен).</summary>
     public static readonly StyledProperty<IReadOnlyList<RadarPlayerMarker>?> PlayersProperty =
         AvaloniaProperty.Register<RadarControl, IReadOnlyList<RadarPlayerMarker>?>(nameof(Players));
+
+    /// <summary>Всплывающий урон в момент таймлайна.</summary>
+    public static readonly StyledProperty<IReadOnlyList<RadarDamageText>?> DamageTextsProperty =
+        AvaloniaProperty.Register<RadarControl, IReadOnlyList<RadarDamageText>?>(nameof(DamageTexts));
+
+    public IReadOnlyList<RadarDamageText>? DamageTexts
+    {
+        get => GetValue(DamageTextsProperty);
+        set => SetValue(DamageTextsProperty, value);
+    }
 
     public Bitmap? Heatmap
     {
@@ -202,7 +221,98 @@ public sealed class RadarControl : Control
             DrawPlayers(context, scale);
         }
 
+        // Подписи — в экранных координатах: размер шрифта не зависит от зума.
+        if (ShowGrenades)
+            DrawGrenadeDamage(context);
+        DrawDamageTexts(context);
+        DrawHoveredPlayer(context);
         DrawCursorCoordinates(context);
+    }
+
+    private Point ToScreen(Point radar) => new(radar.X * Scale + Origin.X, radar.Y * Scale + Origin.Y);
+
+    private static FormattedText Text(string text, double size, IBrush brush, FontWeight weight = FontWeight.Normal) =>
+        new(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(FontFamily.Default, FontStyle.Normal, weight), size, brush);
+
+    /// <summary>Текст с тёмной обводкой — читается на любой подложке.</summary>
+    private static void DrawOutlined(DrawingContext context, FormattedText text, Point origin, double opacity = 1)
+    {
+        using (context.PushOpacity(opacity))
+        {
+            var outline = text.BuildGeometry(origin);
+            if (outline is not null)
+                context.DrawGeometry(null, new Pen(new SolidColorBrush(Color.FromArgb(220, 0, 0, 0)), 3, lineJoin: PenLineJoin.Round), outline);
+            context.DrawText(text, origin);
+        }
+    }
+
+    /// <summary>Урон HE и огня — у места взрыва.</summary>
+    private void DrawGrenadeDamage(DrawingContext context)
+    {
+        if (Grenades is not { Count: > 0 } grenades)
+            return;
+
+        var byId = HighlightedGrenades is { Count: > 0 } ids ? ids : null;
+        var byRound = byId is null && HighlightedRounds is { Count: > 0 } rounds ? rounds : null;
+        foreach (var g in grenades)
+        {
+            if (g.DamageLabel is not { } label || g.To is not { } to)
+                continue;
+            var active = byId?.Contains(g.Id) ?? byRound?.Contains(g.Round) ?? true;
+            if (!active)
+                continue;
+            var text = Text(label, 12, new SolidColorBrush(Color.FromRgb(255, 225, 120)), FontWeight.SemiBold);
+            DrawOutlined(context, text, ToScreen(to) + new Vector(8, -text.Height - 2));
+        }
+    }
+
+    /// <summary>Всплывающий урон: поднимается над жертвой и тает.</summary>
+    private void DrawDamageTexts(DrawingContext context)
+    {
+        if (DamageTexts is not { Count: > 0 } texts)
+            return;
+
+        foreach (var d in texts)
+        {
+            var text = Text(d.Text, 15, new SolidColorBrush(d.Color), FontWeight.Bold);
+            var origin = ToScreen(d.Position) + new Vector(-text.Width / 2, -text.Height - 10 - d.Age * 18);
+            DrawOutlined(context, text, origin, Math.Clamp(1.2 - d.Age, 0, 1));
+        }
+    }
+
+    /// <summary>Игрок под курсором (живой или погибший) — подсказка с ником.</summary>
+    private void DrawHoveredPlayer(DrawingContext context)
+    {
+        if (HoveredPlayer() is not { } player)
+            return;
+
+        var text = Text(player.Tooltip, 13, Brushes.White);
+        var anchor = ToScreen(player.Position);
+        var rect = new Rect(anchor.X + 12, anchor.Y - text.Height - 12, text.Width + 12, text.Height + 6);
+        // Не выходить за край контрола.
+        if (rect.Right > Bounds.Width)
+            rect = rect.WithX(Math.Max(0, anchor.X - 12 - rect.Width));
+        if (rect.Y < 0)
+            rect = rect.WithY(anchor.Y + 12);
+
+        context.DrawRectangle(new SolidColorBrush(Color.FromArgb(225, 20, 24, 30)), new Pen(new SolidColorBrush(player.Color), 1), rect, 3, 3);
+        context.DrawText(text, rect.TopLeft + new Vector(6, 3));
+    }
+
+    /// <summary>Ближайший к курсору маркер в радиусе 12 экранных пикселей.</summary>
+    private RadarPlayerMarker? HoveredPlayer()
+    {
+        if (_cursorRadar is not { } cursor || _dragStart is not null || Players is not { Count: > 0 } players)
+            return null;
+
+        var limit = 12 / Scale;
+        return players
+            .Select(p => (Player: p, Distance: Math.Sqrt(Math.Pow(p.Position.X - cursor.X, 2) + Math.Pow(p.Position.Y - cursor.Y, 2))))
+            .Where(x => x.Distance <= limit)
+            .OrderBy(x => x.Player.IsDead)
+            .ThenBy(x => x.Distance)
+            .Select(x => x.Player)
+            .FirstOrDefault();
     }
 
     private void DrawBackground(DrawingContext context, double scale)
@@ -340,7 +450,20 @@ public sealed class RadarControl : Control
         if (Players is not { Count: > 0 } players)
             return;
 
-        foreach (var player in players.OrderBy(p => p.IsSelected))
+        // Погибшие — приглушённые крестики под живыми.
+        foreach (var dead in players.Where(p => p.IsDead))
+        {
+            var deadPen = new Pen(new SolidColorBrush(Color.FromArgb(200, dead.Color.R, dead.Color.G, dead.Color.B)), 2 / scale);
+            var shadow = new Pen(new SolidColorBrush(Color.FromArgb(160, 0, 0, 0)), 3.6 / scale);
+            var d = 4.5 / scale;
+            foreach (var pen in new[] { shadow, deadPen })
+            {
+                context.DrawLine(pen, dead.Position + new Vector(-d, -d), dead.Position + new Vector(d, d));
+                context.DrawLine(pen, dead.Position + new Vector(-d, d), dead.Position + new Vector(d, -d));
+            }
+        }
+
+        foreach (var player in players.Where(p => !p.IsDead).OrderBy(p => p.IsSelected))
         {
             var brush = new SolidColorBrush(player.Color);
             var radius = (player.IsSelected ? 7 : 5) / scale;

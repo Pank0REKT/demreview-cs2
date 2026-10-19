@@ -2,6 +2,7 @@ using System.Numerics;
 using DemoFile;
 using DemoFile.Game.Cs;
 using DemoFile.GameStatic;
+using DemReview.Application.Localization;
 using DemReview.Application.Parsing;
 using DemReview.Domain;
 using Microsoft.Extensions.Logging;
@@ -36,7 +37,7 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
             if (percent == lastReported)
                 return;
             lastReported = percent;
-            progress?.Report(new ParseProgress(e.ProgressRatio, $"Разбор демки: {percent}%"));
+            progress?.Report(new ParseProgress(e.ProgressRatio, Loc.T($"Разбор демки: {percent}%", $"Parsing demo: {percent}%")));
         };
 
         try
@@ -50,14 +51,14 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
         catch (InvalidDemoException ex)
         {
             logger.LogWarning(ex, "Неподдерживаемая демка {Path}", path);
-            throw new DemoParseException("Файл не является демкой CS2 или повреждён.", ex);
+            throw new DemoParseException(Loc.T("Файл не является демкой CS2 или повреждён.", "The file is not a CS2 demo or is corrupted."), ex);
         }
         catch (Exception ex) when (ex is EndOfStreamException or IOException or InvalidDataException
                                        or IndexOutOfRangeException or ArgumentException or InvalidOperationException
                                        or NullReferenceException or FormatException)
         {
             logger.LogError(ex, "Ошибка разбора демки {Path}", path);
-            throw new DemoParseException("Демка повреждена или записана в неподдерживаемом формате — разбор прерван.", ex);
+            throw new DemoParseException(Loc.T("Демка повреждена или записана в неподдерживаемом формате — разбор прерван.", "The demo is corrupted or uses an unsupported format — parsing stopped."), ex);
         }
 
         if (reader.IsIncompleteFile)
@@ -67,14 +68,14 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
         var teamT = demo.TeamTerrorist;
         var teamCT = demo.TeamCounterTerrorist;
         var match = builder.Build(path, mapName, CsDemoParser.TickRate, (int)demo.CurrentGameTick.Value,
-            TeamName(teamT.ClanTeamname, "Террористы"), TeamName(teamCT.ClanTeamname, "Спецназ"),
+            TeamName(teamT.ClanTeamname), TeamName(teamCT.ClanTeamname),
             teamT.Score, teamCT.Score, options.SampleTickStep);
 
         if (match.Rounds.Count == 0)
-            throw new DemoParseException("В демке не найдено ни одного сыгранного раунда.");
+            throw new DemoParseException(Loc.T("В демке не найдено ни одного сыгранного раунда.", "No played rounds were found in the demo."));
 
         LogScoreboardMismatch(demo, match);
-        progress?.Report(new ParseProgress(1, "Готово"));
+        progress?.Report(new ParseProgress(1, Loc.T("Готово", "Done")));
         return match;
     }
 
@@ -86,7 +87,7 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            throw new DemoParseException($"Не удалось открыть файл: {ex.Message}", ex);
+            throw new DemoParseException(Loc.T($"Не удалось открыть файл: {ex.Message}", $"Could not open the file: {ex.Message}"), ex);
         }
     }
 
@@ -100,9 +101,9 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
             return;
 
         if (read == magic.Length && magic.SequenceEqual(Source1Magic))
-            throw new DemoParseException("Это демка CS:GO (Source 1). Поддерживаются только демки CS2.");
+            throw new DemoParseException(Loc.T("Это демка CS:GO (Source 1). Поддерживаются только демки CS2.", "This is a CS:GO (Source 1) demo. Only CS2 demos are supported."));
 
-        throw new DemoParseException("Файл не является демкой CS2 (неверная сигнатура .dem).");
+        throw new DemoParseException(Loc.T("Файл не является демкой CS2 (неверная сигнатура .dem).", "The file is not a CS2 demo (invalid .dem signature)."));
     }
 
     private static void Subscribe(CsDemoParser demo, MatchBuilder builder)
@@ -421,8 +422,9 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
 
     private static Vector3 ToVector(DemoFile.Vector v) => new(v.X, v.Y, v.Z);
 
-    private static string TeamName(string clanName, string fallback) =>
-        string.IsNullOrWhiteSpace(clanName) ? fallback : clanName;
+    /// <summary>Название клана; у безымянной команды — пустая строка (подпись по стороне подставляет UI).</summary>
+    private static string TeamName(string clanName) =>
+        string.IsNullOrWhiteSpace(clanName) ? "" : clanName.Trim();
 
     /// <summary>Сверка K/D/A, посчитанных по событиям, с табло игры — для диагностики.</summary>
     private void LogScoreboardMismatch(CsDemoParser demo, MatchData match)
