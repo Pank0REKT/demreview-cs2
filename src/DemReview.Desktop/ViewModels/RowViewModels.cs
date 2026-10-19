@@ -1,3 +1,5 @@
+using DemReview.Application.Context;
+using DemReview.Application.Situations;
 using DemReview.Domain;
 
 namespace DemReview.Desktop.ViewModels;
@@ -31,7 +33,7 @@ public sealed class PlayerRowViewModel(PlayerInfo player)
 }
 
 /// <summary>Строка таблицы раундов.</summary>
-public sealed class RoundRowViewModel(RoundInfo round)
+public sealed class RoundRowViewModel(RoundInfo round, RoundEconomy? economy = null)
 {
     public int Number => round.Number;
 
@@ -51,6 +53,10 @@ public sealed class RoundRowViewModel(RoundInfo round)
     }
 
     public string Overtime => round.IsOvertime ? "да" : "";
+
+    public string BuyT => economy is null ? "" : $"{Labels.Buy(economy.T.Buy)} (${economy.T.AverageEquipment})";
+
+    public string BuyCT => economy is null ? "" : $"{Labels.Buy(economy.CT.Buy)} (${economy.CT.AverageEquipment})";
 }
 
 /// <summary>Русские названия значений доменной модели.</summary>

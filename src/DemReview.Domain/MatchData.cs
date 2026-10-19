@@ -13,7 +13,9 @@ public sealed record MatchData(
     IReadOnlyList<KillEvent> Kills,
     IReadOnlyDictionary<ulong, PlayerTrack> Tracks,
     int SampleTickStep,
-    IReadOnlyList<GrenadeThrow> Grenades)
+    IReadOnlyList<GrenadeThrow> Grenades,
+    IReadOnlyList<BombEvent> Bombs,
+    IReadOnlyList<DamageEvent> Damages)
 {
     public IEnumerable<GrenadeThrow> GrenadesOf(ulong steamId) => Grenades.Where(g => g.ThrowerSteamId == steamId);
 

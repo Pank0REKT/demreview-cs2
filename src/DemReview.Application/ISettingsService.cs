@@ -12,6 +12,18 @@ public sealed record AppSettings
     /// <summary>Порог расстояния между точками детонации в одной раскидке, units.</summary>
     public float GrenadeClusterLandDistance { get; init; } = 250;
 
+    /// <summary>Тип закупки: средняя экипировка команды (или игрока) ниже — эко, $.</summary>
+    public int BuyEcoMaxEquipment { get; init; } = 1500;
+
+    /// <summary>Тип закупки: средняя экипировка не ниже — фулл-бай, между порогами — форс, $.</summary>
+    public int BuyFullMinEquipment { get; init; } = 3700;
+
+    /// <summary>Первый контакт (урон, убийство) не позже — агрессивный раунд, секунд от конца фризтайма.</summary>
+    public float AggressiveContactSeconds { get; init; } = 20;
+
+    /// <summary>Первый контакт не раньше (или его нет) — пассивный раунд, секунд.</summary>
+    public float PassiveContactSeconds { get; init; } = 50;
+
     public WindowPlacement? MainWindow { get; init; }
 }
 

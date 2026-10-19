@@ -23,6 +23,8 @@ internal sealed class MatchBuilder
     private readonly Dictionary<ulong, List<PlayerSample>> _samples = [];
     private readonly Dictionary<ulong, PlayerState> _players = [];
     private readonly List<GrenadeState> _grenades = [];
+    private readonly List<BombEvent> _bombs = [];
+    private readonly List<DamageEvent> _damages = [];
     private int _nextGrenadeId = 1;
     private OpenRound? _current;
     private int _pendingStartTick = -1;
@@ -39,6 +41,8 @@ internal sealed class MatchBuilder
         _kills.Clear();
         _samples.Clear();
         _grenades.Clear();
+        _bombs.Clear();
+        _damages.Clear();
         _current = null;
         foreach (var player in _players.Values)
             player.Sides.Clear();
@@ -59,6 +63,8 @@ internal sealed class MatchBuilder
         foreach (var list in _samples.Values)
             list.RemoveAll(s => s.Round >= number);
         _grenades.RemoveAll(g => g.Round >= number);
+        _bombs.RemoveAll(e => e.Round >= number);
+        _damages.RemoveAll(e => e.Round >= number);
         foreach (var player in _players.Values)
             player.Sides.Remove(number);
 
@@ -103,6 +109,19 @@ internal sealed class MatchBuilder
             return;
 
         _kills.Add(new KillEvent(tick, round, attacker, victim, assister, weapon, headshot, attackerPosition, victimPosition));
+    }
+
+    public void Bomb(int tick, BombEventType type, BombSite site, Vector3 position, ulong? player)
+    {
+        if (CurrentRoundNumber is { } round)
+            _bombs.Add(new BombEvent(tick, round, type, site, position, player));
+    }
+
+    /// <summary>Урон учитывается только во время идущего раунда.</summary>
+    public void Damage(int tick, ulong? attacker, ulong victim, int damage, string weapon)
+    {
+        if (_current is { } round && damage > 0)
+            _damages.Add(new DamageEvent(tick, round.Number, attacker, victim, damage, weapon));
     }
 
     /// <summary>Бросок гранаты. Возвращает идентификатор для последующей детонации или null, если раунд не идёт.</summary>
@@ -185,7 +204,7 @@ internal sealed class MatchBuilder
 
         return new MatchData(sourcePath, mapName, tickRate,
             new MatchScore(teamTName, finalScoreT, teamCTName, finalScoreCT),
-            rounds, players, _kills.ToList(), tracks, sampleTickStep, BuildGrenades());
+            rounds, players, _kills.ToList(), tracks, sampleTickStep, BuildGrenades(), _bombs.ToList(), _damages.ToList());
     }
 
     private PlayerInfo BuildPlayer(PlayerState state, IReadOnlyList<RoundInfo> rounds, string teamTName, string teamCTName)

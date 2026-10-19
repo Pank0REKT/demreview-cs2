@@ -16,6 +16,7 @@ public partial class MainWindowViewModel(
     IUiDispatcher dispatcher,
     StartupOptions startup,
     RadarViewModel radar,
+    StatisticsViewModel statistics,
     ILogger<MainWindowViewModel> logger) : ViewModelBase
 {
     private CancellationTokenSource? _loadCts;
@@ -47,9 +48,9 @@ public partial class MainWindowViewModel(
 
     public RadarViewModel Radar { get; } = radar;
 
-    public ObservableCollection<PlayerRowViewModel> Players { get; } = [];
+    public StatisticsViewModel Statistics { get; } = statistics;
 
-    public ObservableCollection<RoundRowViewModel> Rounds { get; } = [];
+    public ObservableCollection<PlayerRowViewModel> Players { get; } = [];
 
     public bool IsIdle => !IsBusy;
 
@@ -79,7 +80,7 @@ public partial class MainWindowViewModel(
     {
         try
         {
-            await Radar.ShowPlayerAsync(steamId);
+            await Task.WhenAll(Radar.ShowPlayerAsync(steamId), Statistics.ShowPlayerAsync(steamId));
         }
         catch (Exception ex)
         {
@@ -175,14 +176,12 @@ public partial class MainWindowViewModel(
         Match = match;
         CurrentPath = path;
         Radar.SetMatch(match);
+        Statistics.SetMatch(match);
 
         Players.Clear();
         foreach (var player in match.Players)
             Players.Add(new PlayerRowViewModel(player));
 
-        Rounds.Clear();
-        foreach (var round in match.Rounds)
-            Rounds.Add(new RoundRowViewModel(round));
 
         SelectedPlayer = Players.FirstOrDefault(p => p.SteamId == previousSteamId);
     }

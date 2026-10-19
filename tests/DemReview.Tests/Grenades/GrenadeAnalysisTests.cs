@@ -19,7 +19,7 @@ public class GrenadeAnalysisTests
     {
         var player = new PlayerInfo(Me, "me", false, Side.T, "A", 0, 0, 0, new Dictionary<int, Side> { [1] = Side.T });
         return new MatchData("x.dem", "de_mirage", 64, new MatchScore("A", 0, "B", 0), [], [player], [],
-            new Dictionary<ulong, PlayerTrack>(), 16, grenades);
+            new Dictionary<ulong, PlayerTrack>(), 16, grenades, [], []);
     }
 
     [Fact]

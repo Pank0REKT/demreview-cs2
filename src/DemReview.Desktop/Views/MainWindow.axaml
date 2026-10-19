@@ -3,6 +3,7 @@
         xmlns:vm="using:DemReview.Desktop.ViewModels"
         xmlns:behaviors="using:DemReview.Desktop.Behaviors"
         xmlns:controls="using:DemReview.Desktop.Controls"
+        xmlns:situations="using:DemReview.Application.Situations"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
@@ -241,17 +242,79 @@
                     </TabItem>
 
                     <TabItem Header="Статистика">
-                        <DataGrid ItemsSource="{Binding Rounds}" IsReadOnly="True" AutoGenerateColumns="False"
-                                  GridLinesVisibility="Horizontal" CanUserSortColumns="True">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Раунд" Binding="{Binding Number}" x:DataType="vm:RoundRowViewModel" />
-                                <DataGridTextColumn Header="Счёт до (T : CT)" Binding="{Binding ScoreBefore}" x:DataType="vm:RoundRowViewModel" />
-                                <DataGridTextColumn Header="Победитель" Binding="{Binding Winner}" x:DataType="vm:RoundRowViewModel" />
-                                <DataGridTextColumn Header="Причина" Binding="{Binding Reason}" x:DataType="vm:RoundRowViewModel" Width="*" />
-                                <DataGridTextColumn Header="Длительность" Binding="{Binding Duration}" x:DataType="vm:RoundRowViewModel" />
-                                <DataGridTextColumn Header="Овертайм" Binding="{Binding Overtime}" x:DataType="vm:RoundRowViewModel" />
-                            </DataGrid.Columns>
-                        </DataGrid>
+                        <TabControl DataContext="{Binding Statistics}" x:DataType="vm:StatisticsViewModel" Padding="0,8,0,0">
+                            <TabItem Header="Ситуации игрока" FontSize="15">
+                                <Grid>
+                                    <TextBlock IsVisible="{Binding !HasPlayer}" Classes="secondary" HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" Text="Выберите игрока в списке слева." />
+                                    <DataGrid IsVisible="{Binding HasPlayer}" ItemsSource="{Binding SituationRows}" IsReadOnly="True"
+                                              AutoGenerateColumns="False" GridLinesVisibility="Horizontal" CanUserSortColumns="True"
+                                              FrozenColumnCount="2">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Р." Binding="{Binding Round}" x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTextColumn Header="Ст." Binding="{Binding Side}" x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTextColumn Header="Закупка: своя / команды / соперника" Binding="{Binding Buy}" x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTextColumn Header="Экипировка: своя / ср. команды" Binding="{Binding Equipment}" x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTextColumn Header="Счёт" Binding="{Binding Score}" x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTextColumn Header="Маршрут" Binding="{Binding Route}" x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTextColumn Header="Итоговая позиция" Binding="{Binding FinalZone}" x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTextColumn Header="Гранаты" Binding="{Binding Grenades}" x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTextColumn Header="Первый контакт" Binding="{Binding Contact}" x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTextColumn Header="Агрессия" Binding="{Binding Aggression}" x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTextColumn Header="Первая дуэль" Binding="{Binding FirstDuel}" x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTextColumn Header="Итог" Binding="{Binding Outcome}" x:DataType="vm:SituationRowViewModel" />
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Grid>
+                            </TabItem>
+
+                            <TabItem Header="Условия → действия" FontSize="15">
+                                <Grid>
+                                    <TextBlock IsVisible="{Binding !HasPlayer}" Classes="secondary" HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" Text="Выберите игрока в списке слева." />
+                                    <DockPanel IsVisible="{Binding HasPlayer}">
+                                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                                            <TextBlock Text="Таблица:" VerticalAlignment="Center" />
+                                            <ComboBox ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}" MinWidth="280">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate x:DataType="situations:FrequencyTable">
+                                                        <TextBlock Text="{Binding Name}" />
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
+                                            <TextBlock Classes="secondary" VerticalAlignment="Center" TextWrapping="Wrap"
+                                                       Text="Доля — как часто решение принималось при этом условии. Малая выборка одной демки: смотрите на «из N»." />
+                                        </StackPanel>
+                                        <DataGrid ItemsSource="{Binding FrequencyRows}" IsReadOnly="True" AutoGenerateColumns="False"
+                                                  GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="Условие" Binding="{Binding Condition}" x:DataType="vm:FrequencyRowViewModel" />
+                                                <DataGridTextColumn Header="Решение" Binding="{Binding Decision}" x:DataType="vm:FrequencyRowViewModel" Width="*" />
+                                                <DataGridTextColumn Header="Раз" Binding="{Binding Count}" x:DataType="vm:FrequencyRowViewModel" />
+                                                <DataGridTextColumn Header="Доля" Binding="{Binding Share}" SortMemberPath="ShareValue" x:DataType="vm:FrequencyRowViewModel" />
+                                                <DataGridTextColumn Header="Раунды" Binding="{Binding Rounds}" x:DataType="vm:FrequencyRowViewModel" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </DockPanel>
+                                </Grid>
+                            </TabItem>
+
+                            <TabItem Header="Раунды матча" FontSize="15">
+                                <DataGrid ItemsSource="{Binding MatchRounds}" IsReadOnly="True" AutoGenerateColumns="False"
+                                          GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Раунд" Binding="{Binding Number}" x:DataType="vm:RoundRowViewModel" />
+                                        <DataGridTextColumn Header="Счёт до (T : CT)" Binding="{Binding ScoreBefore}" x:DataType="vm:RoundRowViewModel" />
+                                        <DataGridTextColumn Header="Закупка T" Binding="{Binding BuyT}" x:DataType="vm:RoundRowViewModel" />
+                                        <DataGridTextColumn Header="Закупка CT" Binding="{Binding BuyCT}" x:DataType="vm:RoundRowViewModel" />
+                                        <DataGridTextColumn Header="Победитель" Binding="{Binding Winner}" x:DataType="vm:RoundRowViewModel" />
+                                        <DataGridTextColumn Header="Причина" Binding="{Binding Reason}" x:DataType="vm:RoundRowViewModel" Width="*" />
+                                        <DataGridTextColumn Header="Длительность" Binding="{Binding Duration}" x:DataType="vm:RoundRowViewModel" />
+                                        <DataGridTextColumn Header="Овертайм" Binding="{Binding Overtime}" x:DataType="vm:RoundRowViewModel" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </TabItem>
+                        </TabControl>
                     </TabItem>
 
                     <TabItem Header="Профиль игрока">

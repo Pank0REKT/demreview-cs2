@@ -25,6 +25,7 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
         Subscribe(demo, builder);
         SubscribeSampling(demo, builder, Math.Clamp(options.SampleTickStep, 1, 128));
         SubscribeGrenades(demo, builder);
+        SubscribeBombAndDamage(demo, builder);
 
         var reader = DemoFileReader.Create(demo, stream);
         var lastReported = -1;
@@ -242,6 +243,54 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
 
             infernoStarts.Add((Tick(), ToVector(inferno.Origin), KeyOf(controller)));
             TryLinkMolotov();
+        };
+    }
+
+    /// <summary>
+    /// Бомба и урон. Буква точки берётся из CPlantedC4.BombSite (0 — A, 1 — B): поле Site в событии —
+    /// это entity id триггера точки, а не буква.
+    /// </summary>
+    private static void SubscribeBombAndDamage(CsDemoParser demo, MatchBuilder builder)
+    {
+        int Tick() => (int)demo.CurrentGameTick.Value;
+        var lastSite = BombSite.Unknown;
+
+        BombSite PlantedSite()
+        {
+            var planted = demo.Entities.OfType<CPlantedC4>().LastOrDefault();
+            return planted is null ? BombSite.Unknown : planted.BombSite == 1 ? BombSite.B : BombSite.A;
+        }
+
+        demo.Source1GameEvents.BombPlanted += e =>
+        {
+            var site = PlantedSite();
+            if (site == BombSite.Unknown && e.PlayerPawn?.LastPlaceName is { } place)
+                site = place.EndsWith('A') ? BombSite.A : place.EndsWith('B') ? BombSite.B : BombSite.Unknown;
+            lastSite = site;
+
+            var position = e.PlayerPawn is { } pawn ? ToVector(pawn.Origin) : Vector3.Zero;
+            builder.Bomb(Tick(), BombEventType.Planted, site, position, e.Player is { } p ? KeyOf(p) : null);
+        };
+
+        // CPlantedC4 может появиться после события bomb_planted в том же тике — уточняем точку.
+        demo.EntityEvents.CPlantedC4.Create += c4 =>
+            lastSite = c4.BombSite == 1 ? BombSite.B : BombSite.A;
+
+        demo.Source1GameEvents.BombDefused += e =>
+            builder.Bomb(Tick(), BombEventType.Defused, lastSite,
+                e.PlayerPawn is { } pawn ? ToVector(pawn.Origin) : Vector3.Zero, e.Player is { } p ? KeyOf(p) : null);
+
+        demo.Source1GameEvents.BombExploded += _ =>
+        {
+            var c4 = demo.Entities.OfType<CPlantedC4>().LastOrDefault();
+            builder.Bomb(Tick(), BombEventType.Exploded, lastSite, c4 is null ? Vector3.Zero : ToVector(c4.Origin), null);
+        };
+
+        demo.Source1GameEvents.PlayerHurt += e =>
+        {
+            if (e.Player is not { } victim)
+                return;
+            builder.Damage(Tick(), e.Attacker is { } attacker ? KeyOf(attacker) : null, KeyOf(victim), e.DmgHealth, e.Weapon);
         };
     }
 

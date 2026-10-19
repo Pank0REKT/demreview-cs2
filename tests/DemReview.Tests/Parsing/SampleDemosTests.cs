@@ -73,6 +73,17 @@ public class SampleDemosTests
         // Детонация недалеко по времени от броска (граната не «склеилась» с чужой).
         Assert.All(grenades.Where(g => g.Detonated), g => Assert.InRange(g.DetonateTick!.Value - g.ThrowTick, 0, 64 * 25));
 
+        // Экономика: пистолетки — 1-й раунд и первый после смены сторон (MR12 → 13-й).
+        var context = new DemReview.Application.Context.RoundContextService().Create(match);
+        var pistols = match.Rounds.Where(r => context.Economy(r.Number)!.IsPistol).Select(r => r.Number).ToList();
+        Assert.Equal(match.Rounds.Count >= 13 ? [1, 13] : [1], pistols);
+
+        // Бомба: каждая обезвреженная/взорванная — после закладки в том же раунде, точка известна.
+        Assert.All(match.Bombs.Where(b => b.Type != BombEventType.Planted), b =>
+            Assert.Contains(match.Bombs, p => p.Type == BombEventType.Planted && p.Round == b.Round && p.Tick < b.Tick));
+        Assert.All(match.Bombs, b => Assert.NotEqual(BombSite.Unknown, b.Site));
+        Assert.NotEmpty(match.Damages);
+
         var flashes = grenades.Where(g => g.Type == GrenadeType.Flashbang).ToList();
         Assert.True(flashes.Count(f => f.FlashVictims.Count > 0) >= flashes.Count / 3, "Слишком мало флешек с ослеплёнными");
     }
