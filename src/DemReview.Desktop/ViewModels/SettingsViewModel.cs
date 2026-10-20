@@ -11,7 +11,7 @@ namespace DemReview.Desktop.ViewModels;
 
 public sealed record LanguageOption(UiLanguage Language, string Name);
 
-/// <summary>Вкладка «Настройки»: язык интерфейса, кеш разобранных демок, каталоги, обновления, статистика.</summary>
+/// <summary>Вкладка «Настройки»: язык интерфейса, основной игрок, кеш разобранных демок, каталоги, обновления, статистика.</summary>
 public partial class SettingsViewModel : ViewModelBase
 {
     private readonly LanguageService _language;
@@ -30,6 +30,8 @@ public partial class SettingsViewModel : ViewModelBase
         _settings = settings;
         CheckForUpdates = settings.Current.CheckForUpdates;
         SendUsageStatistics = settings.Current.SendUsageStatistics;
+        AskForMainPlayer = !settings.Current.MainPlayerPromptDisabled;
+        MainPlayerInput = settings.Current.MainPlayerSteamId?.ToString() ?? "";
         _logger = logger;
         SelectedLanguage = Languages.First(l => l.Language == Loc.Language);
     }
@@ -75,6 +77,8 @@ public partial class SettingsViewModel : ViewModelBase
     public void RefreshLanguage()
     {
         CacheStatus = null;
+        MainPlayerStatus = null;
+        OnPropertyChanged(nameof(MainPlayerText));
         _ = RefreshAsync();
     }
 

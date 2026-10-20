@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.ComponentModel;
 using DemReview.Application.Context;
 using DemReview.Application.Export;
 using DemReview.Application.Localization;
@@ -7,9 +8,13 @@ using DemReview.Domain;
 namespace DemReview.Desktop.ViewModels;
 
 /// <summary>Строка списка игроков.</summary>
-public sealed class PlayerRowViewModel(PlayerInfo player)
+public sealed partial class PlayerRowViewModel(PlayerInfo player) : ObservableObject
 {
     public PlayerInfo Player { get; } = player;
+
+    /// <summary>Это основной игрок — сам пользователь.</summary>
+    [ObservableProperty]
+    public partial bool IsMe { get; set; }
 
     public ulong SteamId => Player.SteamId;
 

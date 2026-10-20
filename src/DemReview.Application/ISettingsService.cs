@@ -42,6 +42,15 @@ public sealed record AppSettings
     /// <summary>Отправлять анонимную статистику: запуск программы и загрузка демки (карта, без имён и файлов).</summary>
     public bool SendUsageStatistics { get; init; } = true;
 
+    /// <summary>Основной игрок (сам пользователь): выбирается автоматически и отмечается в списке игроков. Хранится только локально.</summary>
+    public ulong? MainPlayerSteamId { get; init; }
+
+    /// <summary>Последний известный ник основного игрока — для подписи в настройках.</summary>
+    public string? MainPlayerName { get; init; }
+
+    /// <summary>Пользователь попросил не предлагать выбрать себя при открытии демки.</summary>
+    public bool MainPlayerPromptDisabled { get; init; }
+
     public WindowPlacement? MainWindow { get; init; }
 }
 

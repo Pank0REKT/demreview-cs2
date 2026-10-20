@@ -73,6 +73,40 @@
             </Grid>
         </Border>
 
+        <!-- Кто вы в этой демке: выбор основного игрока, пока он не задан -->
+        <Border DockPanel.Dock="Top" IsVisible="{Binding IsMainPlayerPromptVisible}" Margin="12,8,12,0" Padding="14,10" CornerRadius="4"
+                Background="#2E2616" BorderBrush="#E8B04A" BorderThickness="1">
+            <StackPanel Spacing="8">
+                <TextBlock Classes="header" Text="{l:T 'Кто вы в этой демке?', 'Which player are you in this demo?'}" />
+                <TextBlock TextWrapping="Wrap"
+                           Text="{l:T 'Выберите себя — DemReview запомнит ваш SteamID. В следующих демках вы будете выбраны сразу и отмечены в списке игроков: не придётся искать себя среди десяти ников. А когда появится профиль по нескольким демкам, из ваших матчей будет собираться личный профиль — привычки, роли и ошибки за много игр.', 'Pick yourself and DemReview will remember your SteamID. In the next demos you will be selected right away and marked in the player list, so you will not have to look for yourself among ten nicknames. And once the multi-demo profile arrives, your matches will build up a personal profile: habits, roles and mistakes across many games.'}" />
+                <ItemsControl ItemsSource="{Binding MainPlayerCandidates}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PlayerRowViewModel">
+                            <Button Margin="0,0,6,6" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ChooseMainPlayerCommand}"
+                                    CommandParameter="{Binding}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding TeamText}" FontSize="12" VerticalAlignment="Center"
+                                               Classes.side-t="{Binding Side, Converter={x:Static vm:SideConverters.IsT}}"
+                                               Classes.side-ct="{Binding Side, Converter={x:Static vm:SideConverters.IsCT}}" />
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                    <TextBlock Classes="secondary" TextWrapping="Wrap" VerticalAlignment="Center"
+                               Text="{l:T 'SteamID хранится только на этом компьютере и никуда не отправляется. Изменить выбор или ввести SteamID вручную можно в «Настройках».', 'Your SteamID is stored only on this computer and is never sent anywhere. You can change it or enter a SteamID manually in Settings.'}" />
+                    <Button Grid.Column="1" Content="{l:T 'Меня нет в этой демке', 'I am not in this demo'}" Command="{Binding SkipMainPlayerPromptCommand}" />
+                    <Button Grid.Column="2" Content="{l:T 'Не спрашивать', 'Do not ask again'}" Command="{Binding DisableMainPlayerPromptCommand}" />
+                </Grid>
+            </StackPanel>
+        </Border>
+
         <Grid ColumnDefinitions="320,4,*">
             <!-- Левая панель: игроки -->
             <DockPanel Margin="12,12,0,12">
@@ -121,7 +155,12 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="vm:PlayerRowViewModel">
                                 <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" Margin="0,2">
-                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                        <Border IsVisible="{Binding IsMe}" Background="#E8B04A" CornerRadius="3" Padding="5,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{l:T 'Вы', 'You'}" Foreground="Black" FontSize="11" FontWeight="Bold" />
+                                        </Border>
+                                    </StackPanel>
                                     <TextBlock Grid.Column="1" Text="{Binding KdaText}" />
                                     <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Classes="secondary" Text="{Binding TeamText}"
                                                Classes.side-t="{Binding Side, Converter={x:Static vm:SideConverters.IsT}}"
@@ -556,6 +595,23 @@
                                 </ComboBox>
                                 <TextBlock Classes="secondary" TextWrapping="Wrap"
                                            Text="{l:T 'Интерфейс, формулировки паттернов и экспорт сразу переключаются на выбранный язык.', 'The interface, pattern wording and export switch to the selected language right away.'}" />
+                            </StackPanel>
+
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="header" Text="{l:T 'Основной игрок (вы)', 'Main player (you)'}" />
+                                <TextBlock Text="{Binding MainPlayerText}" />
+                                <TextBlock Classes="secondary" TextWrapping="Wrap"
+                                           Text="{l:T 'Основной игрок выбирается сразу при открытии демки и отмечается в списке игроков; позже из ваших демок будет собираться личный профиль. SteamID хранится только на этом компьютере.', 'The main player is selected as soon as a demo opens and is marked in the player list; later your demos will build up a personal profile. The SteamID is stored only on this computer.'}" />
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBox Text="{Binding MainPlayerInput}" Width="360"
+                                             PlaceholderText="{l:T 'SteamID64, ссылка на профиль, [U:1:…] или STEAM_0:…', 'SteamID64, profile link, [U:1:…] or STEAM_0:…'}" />
+                                    <Button Content="{l:T 'Сохранить', 'Save'}" Command="{Binding SaveMainPlayerCommand}" />
+                                    <Button Content="{l:T 'Выбрать в открытой демке', 'Pick in the open demo'}" Command="{Binding PickMainPlayerCommand}" />
+                                    <Button Content="{l:T 'Сбросить', 'Clear'}" Command="{Binding ClearMainPlayerCommand}" IsEnabled="{Binding HasMainPlayer}" />
+                                </StackPanel>
+                                <TextBlock Classes="secondary" Text="{Binding MainPlayerStatus}" TextWrapping="Wrap" />
+                                <CheckBox Content="{l:T 'Предлагать выбрать себя при открытии демки, пока основной игрок не выбран', 'Offer to pick yourself when a demo opens until the main player is set'}"
+                                          IsChecked="{Binding AskForMainPlayer}" />
                             </StackPanel>
 
                             <StackPanel Spacing="8">

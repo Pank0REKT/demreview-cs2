@@ -2,13 +2,20 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [0.1.2]
 
 ### Features
-- Radar images and coordinates for de_vertigo (two levels) and de_cache.
+- Main player: pick yourself in the first opened demo (or enter a SteamID64, profile link, [U:1:…] or STEAM_0:…
+  in *Settings → Main player*). You are then selected automatically and marked *You* in the player list.
+  The SteamID is stored only locally.
 - Radars for 13 more maps: cs_office, cs_italy, cs_shelter, de_dust, de_ancient_night, de_boulder, de_debris,
   de_eldorado, de_fachwerk, de_poseidon, ar_baggage, ar_shoots, ar_shoots_night.
 - de_train: the lower level is detected by height, like on Nuke and Vertigo.
+
+## [0.1.1]
+
+### Features
+- Radar images and coordinates for de_vertigo (two levels) and de_cache.
 - Anonymous usage statistics via Aptabase: app start and demo load (map, cache or parse, parse time).
   No file names, nicknames or persistent user ID. Can be turned off in *Settings → Usage statistics*.
 

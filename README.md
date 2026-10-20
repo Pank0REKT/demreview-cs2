@@ -55,7 +55,9 @@ Each release has `SHA256SUMS.txt` to verify the downloads.
 1. **Open a demo:** *File → Open demo* (Ctrl+O), drag a `.dem` file onto the window, or pass the path on the
    command line (on Windows you can use *Open with → DemReview*). Parsing runs in the background and can be
    cancelled with Esc.
-2. **Pick a player** in the list on the left. All tabs now show this player.
+2. **Pick a player** in the list on the left. All tabs now show this player. On the first demo DemReview offers to pick
+   yourself as the *main player*: from then on you are selected as soon as a demo opens and marked *You* in the list
+   (you can also enter your SteamID in Settings).
 3. **Radar.** Layers are toggled on the right. Select a round in the *Rounds* list (or in the round filter) to open
    the timeline: press *Play* or drag the slider. Hover a player to see the nickname, weapon and HP.
    The *Frequent*, *Grenades* and *Timings* lists highlight their rounds and lineups on the radar.
@@ -66,7 +68,7 @@ Each release has `SHA256SUMS.txt` to verify the downloads.
    grey — low): one demo is a small sample. *Show on radar* overlays the example rounds.
 6. **Export** the profile with Ctrl+E: the format follows the file type (`.md` or `.json`), the text follows the
    interface language.
-7. **Settings:** interface language, the parsed demo cache (size, clearing), data and map folders, update check, usage statistics.
+7. **Settings:** interface language, main player (your SteamID), the parsed demo cache (size, clearing), data and map folders, update check, usage statistics.
 
 ### Keyboard shortcuts
 
@@ -106,6 +108,8 @@ Analysis thresholds can be tuned in `settings.json`:
 | `Language` | — | `ru` or `en`; empty — ask on start |
 | `CheckForUpdates` | `true` | Check GitHub for a new release on start |
 | `SendUsageStatistics` | `true` | Send anonymous usage statistics (app start, demo load) |
+| `MainPlayerSteamId` | — | Your SteamID64: selected automatically and marked *You* in the player list |
+| `MainPlayerPromptDisabled` | `false` | Do not offer to pick yourself when a demo opens |
 | `SampleTickStep` | 16 | Position sampling step, ticks (8–16) |
 | `GrenadeClusterThrowDistance` | 150 | Max distance between throw points in one lineup, units |
 | `GrenadeClusterLandDistance` | 250 | Max distance between detonation points in one lineup, units |

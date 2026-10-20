@@ -90,6 +90,16 @@ public partial class MainWindowViewModel(
 
     public ObservableCollection<PlayerRowViewModel> Players { get; } = [];
 
+    /// <summary>Панель «Кто вы в этой демке?»: предлагается, пока основной игрок не выбран.</summary>
+    [ObservableProperty]
+    public partial bool IsMainPlayerPromptVisible { get; private set; }
+
+    /// <summary>Игроки для панели выбора себя: без ботов, по командам.</summary>
+    public ObservableCollection<PlayerRowViewModel> MainPlayerCandidates { get; } = [];
+
+    /// <summary>Демка, в которой пользователь ответил «Меня здесь нет» — в ней панель больше не показывается.</summary>
+    private string? _mainPlayerPromptSkippedPath;
+
     public bool IsIdle => !IsBusy;
 
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
@@ -137,6 +147,8 @@ public partial class MainWindowViewModel(
             if (switchTab)
                 SelectedTabIndex = 0;
         };
+        Settings.MainPlayerChanged += OnMainPlayerChanged;
+        Settings.MainPlayerPickRequested += ShowMainPlayerPrompt;
         _ = Settings.CheckOnStartupAsync();
         analytics.Track(AnalyticsEvents.AppStarted, new Dictionary<string, object> { ["language"] = Loc.Language.ToString() });
         return startup.DemoPath is { } path ? LoadFileAsync(path) : Task.CompletedTask;
@@ -270,11 +282,66 @@ public partial class MainWindowViewModel(
         Filter.SetMatch(match);
         Profile.SetMatch(match);
 
+        var mainSteamId = Settings.MainPlayerSteamId;
         Players.Clear();
         foreach (var player in match.Players)
-            Players.Add(new PlayerRowViewModel(player));
+            Players.Add(new PlayerRowViewModel(player) { IsMe = player.SteamId == mainSteamId });
 
+        var me = Players.FirstOrDefault(p => p.IsMe);
+        if (me is not null)
+            Settings.RememberMainPlayerName(me.Name);
 
-        SelectedPlayer = Players.FirstOrDefault(p => p.SteamId == previousSteamId);
+        // Тот же игрок, что был выбран (повторный анализ, смена языка), иначе — сам пользователь.
+        SelectedPlayer = Players.FirstOrDefault(p => p.SteamId == previousSteamId) ?? me;
+
+        MainPlayerCandidates.Clear();
+        foreach (var player in Players.Where(p => !p.Player.IsBot).OrderBy(p => p.Side).ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase))
+            MainPlayerCandidates.Add(player);
+        IsMainPlayerPromptVisible = Settings.ShouldPromptForMainPlayer && path != _mainPlayerPromptSkippedPath && MainPlayerCandidates.Count > 0;
+    }
+
+    /// <summary>«Это я» на панели выбора: запомнить и сразу показать себя.</summary>
+    [RelayCommand]
+    private void ChooseMainPlayer(PlayerRowViewModel? row)
+    {
+        if (row is null)
+            return;
+        Settings.SetMainPlayer(row.SteamId, row.Name);
+        SelectedPlayer = row;
+    }
+
+    [RelayCommand]
+    private void SkipMainPlayerPrompt()
+    {
+        _mainPlayerPromptSkippedPath = CurrentPath;
+        IsMainPlayerPromptVisible = false;
+    }
+
+    [RelayCommand]
+    private void DisableMainPlayerPrompt()
+    {
+        Settings.AskForMainPlayer = false;
+        IsMainPlayerPromptVisible = false;
+    }
+
+    /// <summary>«Выбрать в открытой демке» в настройках.</summary>
+    private void ShowMainPlayerPrompt()
+    {
+        if (MainPlayerCandidates.Count == 0)
+        {
+            Settings.MainPlayerStatus = Loc.T("Сначала откройте демку, в которой вы играете.", "Open a demo you played in first.");
+            return;
+        }
+        IsMainPlayerPromptVisible = true;
+    }
+
+    private void OnMainPlayerChanged(ulong? steamId)
+    {
+        foreach (var row in Players)
+            row.IsMe = row.SteamId == steamId;
+        if (steamId is not null)
+            IsMainPlayerPromptVisible = false;
+        if (Players.FirstOrDefault(p => p.IsMe) is { } me)
+            Settings.RememberMainPlayerName(me.Name);
     }
 }
