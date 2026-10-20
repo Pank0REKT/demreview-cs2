@@ -10,7 +10,7 @@ often enough to be predictable. It works offline on Windows and Linux.
 
 > **About the project.** DemReview is a pet project built with the help of [Claude Code](https://claude.com/claude-code).
 > It is fully open source under the [MIT License](LICENSE) and is maintained by me
-> ([@Pank0REKT](https://github.com/Pank0REKT)). Bug reports and ideas are welcome in [Issues](../../issues).
+> ([@Pank0REKT](https://github.com/Pank0REKT)). Bug reports go to [Issues](../../issues), ideas and suggestions — to [Discussions](https://github.com/Pank0REKT/demreview-cs2/discussions/1).
 
 ## What it shows
 

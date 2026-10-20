@@ -10,7 +10,7 @@ DemReview — десктопное приложение для анализа п
 
 > **О проекте.** DemReview — пет-проект, сделанный с помощью [Claude Code](https://claude.com/claude-code).
 > Он полностью открытый (open source, [лицензия MIT](LICENSE)) и поддерживается мной
-> ([@Pank0REKT](https://github.com/Pank0REKT)). Сообщения об ошибках и идеи — в [Issues](../../issues).
+> ([@Pank0REKT](https://github.com/Pank0REKT)). Сообщения об ошибках — в [Issues](../../issues), идеи и предложения — в [обсуждение](https://github.com/Pank0REKT/demreview-cs2/discussions/1).
 
 ## Что показывает
 
