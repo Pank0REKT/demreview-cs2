@@ -6,6 +6,9 @@ All notable changes are listed here. Versions follow [Semantic Versioning](https
 
 ### Features
 - Radar images and coordinates for de_vertigo (two levels) and de_cache.
+- Radars for 13 more maps: cs_office, cs_italy, cs_shelter, de_dust, de_ancient_night, de_boulder, de_debris,
+  de_eldorado, de_fachwerk, de_poseidon, ar_baggage, ar_shoots, ar_shoots_night.
+- de_train: the lower level is detected by height, like on Nuke and Vertigo.
 - Anonymous usage statistics via Aptabase: app start and demo load (map, cache or parse, parse time).
   No file names, nicknames or persistent user ID. Can be turned off in *Settings → Usage statistics*.
 

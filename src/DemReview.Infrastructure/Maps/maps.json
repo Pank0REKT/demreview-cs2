@@ -7,9 +7,22 @@
     { "name": "de_nuke",     "displayName": "Nuke",     "pos_x": -3453, "pos_y": 2887, "scale": 7.0, "lowerLevelMaxZ": -495 },
     { "name": "de_ancient",  "displayName": "Ancient",  "pos_x": -2953, "pos_y": 2164, "scale": 5.0 },
     { "name": "de_anubis",   "displayName": "Anubis",   "pos_x": -2796, "pos_y": 3328, "scale": 5.22 },
-    { "name": "de_train",    "displayName": "Train",    "pos_x": -2308, "pos_y": 2078, "scale": 4.082 },
+    { "name": "de_train",    "displayName": "Train",    "pos_x": -2308, "pos_y": 2078, "scale": 4.082, "lowerLevelMaxZ": -50 },
     { "name": "de_overpass", "displayName": "Overpass", "pos_x": -4831, "pos_y": 1781, "scale": 5.2 },
     { "name": "de_vertigo",  "displayName": "Vertigo",  "pos_x": -3168, "pos_y": 1762, "scale": 4.0, "lowerLevelMaxZ": 11700 },
-    { "name": "de_cache",    "displayName": "Cache",    "pos_x": -2000, "pos_y": 3250, "scale": 5.5 }
+    { "name": "de_cache",    "displayName": "Cache",    "pos_x": -2000, "pos_y": 3250, "scale": 5.5 },
+    { "name": "de_ancient_night", "displayName": "Ancient (Night)", "pos_x": -2953, "pos_y": 2164, "scale": 5.0 },
+    { "name": "de_dust",     "displayName": "Dust",     "pos_x": -2850, "pos_y": 4073, "scale": 6.0 },
+    { "name": "cs_office",   "displayName": "Office",   "pos_x": -1838, "pos_y": 1858, "scale": 4.1 },
+    { "name": "cs_italy",    "displayName": "Italy",    "pos_x": -2647, "pos_y": 2592, "scale": 4.6 },
+    { "name": "cs_shelter",  "displayName": "Shelter",  "pos_x": -3448.7712, "pos_y": 3805.3228, "scale": 3.311857 },
+    { "name": "de_boulder",  "displayName": "Boulder",  "pos_x": -3273.4917, "pos_y": 2930.2207, "scale": 2.8491137, "lowerLevelMaxZ": 62.757324 },
+    { "name": "de_debris",   "displayName": "Debris",   "pos_x": -3015.2393, "pos_y": 2919.2393, "scale": 1.9445695 },
+    { "name": "de_eldorado", "displayName": "Eldorado", "pos_x": -3548.6814, "pos_y": 2571.1816, "scale": 2.0656068 },
+    { "name": "de_fachwerk", "displayName": "Fachwerk", "pos_x": -2311.0767, "pos_y": 2874.6204, "scale": 2.5537856 },
+    { "name": "de_poseidon", "displayName": "Poseidon", "pos_x": -1046.3943, "pos_y": 1166.3942, "scale": 3.0124886 },
+    { "name": "ar_baggage",  "displayName": "Baggage",  "pos_x": -1316, "pos_y": 1288, "scale": 2.539062, "lowerLevelMaxZ": -5 },
+    { "name": "ar_shoots",   "displayName": "Shoots",   "pos_x": -1368, "pos_y": 1952, "scale": 2.6875 },
+    { "name": "ar_shoots_night", "displayName": "Shoots (Night)", "pos_x": -1368, "pos_y": 1952, "scale": 2.6875 }
   ]
 }

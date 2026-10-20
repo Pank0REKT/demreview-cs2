@@ -73,9 +73,16 @@ DemReview — десктопное приложение для анализа п
 
 ### Карты
 
-Изображения радаров и координаты включены для de_mirage, de_inferno, de_dust2, de_nuke, de_ancient, de_anubis,
-de_train, de_overpass, de_vertigo и de_cache (координаты сверены на реальных демках для Mirage и Anubis). Остальные карты рисуются
-на сетке с масштабом по позициям игроков. Как добавить карту — [`maps/README.txt`](maps/README.txt).
+Изображения радаров и координаты включены для 23 карт:
+
+- **Основной пул и классика:** de_mirage, de_inferno, de_dust2, de_nuke, de_ancient, de_anubis, de_train, de_overpass,
+  de_vertigo, de_cache, de_dust, de_ancient_night;
+- **Заложники:** cs_office, cs_italy, cs_shelter;
+- **Другие режимы и карты сообщества:** de_boulder, de_debris, de_eldorado, de_fachwerk, de_poseidon, ar_baggage, ar_shoots,
+  ar_shoots_night.
+
+Координаты взяты из overview-файлов игры; на реальных демках сверены для Mirage, Anubis и Cache.
+Остальные карты рисуются на сетке с масштабом по позициям игроков. Как добавить карту — [`maps/README.txt`](maps/README.txt).
 
 ### Данные и настройки
 

@@ -80,9 +80,16 @@ Each release has `SHA256SUMS.txt` to verify the downloads.
 
 ### Maps
 
-Radar images and coordinates are included for de_mirage, de_inferno, de_dust2, de_nuke, de_ancient, de_anubis,
-de_train, de_overpass, de_vertigo and de_cache (coordinates are verified on real demos for Mirage and Anubis). Other maps are drawn
-on a grid with the scale fitted to player positions. How to add a map: [`maps/README.txt`](maps/README.txt).
+Radar images and coordinates are included for 23 maps:
+
+- **Active Duty and classics:** de_mirage, de_inferno, de_dust2, de_nuke, de_ancient, de_anubis, de_train, de_overpass,
+  de_vertigo, de_cache, de_dust, de_ancient_night;
+- **Hostage:** cs_office, cs_italy, cs_shelter;
+- **Other modes and community maps:** de_boulder, de_debris, de_eldorado, de_fachwerk, de_poseidon, ar_baggage, ar_shoots,
+  ar_shoots_night.
+
+Coordinates come from the game's overview files; they are verified on real demos for Mirage, Anubis and Cache.
+Other maps are drawn on a grid with the scale fitted to player positions. How to add a map: [`maps/README.txt`](maps/README.txt).
 
 ### Data and settings
 
