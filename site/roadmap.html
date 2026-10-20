@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en" data-title-ru="Дорожная карта — DemReview" data-title-en="Roadmap — DemReview">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roadmap — DemReview</title>
+  <script>
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem("lang"); } catch (e) {}
+      var langs = navigator.languages || [navigator.language || ""];
+      var ru = /^(ru|uk|be|kk)/i.test(langs[0] || "");
+      document.documentElement.lang = saved === "ru" || saved === "en" ? saved : (ru ? "ru" : "en");
+    })();
+  </script>
+  <meta name="description" content="DemReview roadmap: player profile across many demos, grenade lineup library, self-review, FACEIT and matchmaking demos, opponent preparation (anti-strat).">
+  <meta name="theme-color" content="#0e1014">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="DemReview roadmap">
+  <meta property="og:description" content="What's coming next in DemReview: multi-demo profiles, lineups, self-review, FACEIT demos and anti-strat.">
+  <meta property="og:image" content="https://pank0rekt.github.io/demreview-cs2/assets/og.png">
+  <meta property="og:url" content="https://pank0rekt.github.io/demreview-cs2/roadmap.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">
+    <span data-lang="ru">К содержимому</span><span data-lang="en">Skip to content</span>
+  </a>
+
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="./" aria-label="DemReview"><img src="assets/icon.png" alt="" width="30" height="30"><span class="brand-name">DemReview</span></a>
+      <nav class="nav" aria-label="Main">
+        <a class="nav-home" href="./"><span data-lang="ru">Главная</span><span data-lang="en">Home</span></a>
+        <a href="usage.html"><span data-lang="ru"><span class="nav-long">Как пользоваться</span><span class="nav-short">Гайд</span></span><span data-lang="en"><span class="nav-long">How to use</span><span class="nav-short">Guide</span></span></a>
+        <a href="roadmap.html" aria-current="page"><span data-lang="ru">Планы</span><span data-lang="en">Roadmap</span></a>
+        <a class="nav-github" href="https://github.com/Pank0REKT/demreview-cs2">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+          <span>GitHub</span>
+        </a>
+        <button class="lang-toggle" type="button">RU</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="page-head container">
+      <h1><span data-lang="ru">Дорожная карта</span><span data-lang="en">Roadmap</span></h1>
+      <p class="lead"><span data-lang="ru">Что появится в DemReview дальше. Планы собраны из обратной связи сообщества и будут меняться вместе с ней.</span><span data-lang="en">What's coming to DemReview next. The plans come from community feedback and will evolve with it.</span></p>
+      <ul class="toc">
+        <li><a href="#profile"><span data-lang="ru">Профиль</span><span data-lang="en">Profile</span></a></li>
+        <li><a href="#grenades"><span data-lang="ru">Гранаты</span><span data-lang="en">Grenades</span></a></li>
+        <li><a href="#self-review"><span data-lang="ru">Разбор своей игры</span><span data-lang="en">Self-review</span></a></li>
+        <li><a href="#sources"><span data-lang="ru">Источники демок</span><span data-lang="en">Demo sources</span></a></li>
+        <li><a href="#anti-strat"><span data-lang="ru">Подготовка к сопернику</span><span data-lang="en">Anti-strat</span></a></li>
+      </ul>
+    </div>
+
+    <div class="container roadmap-page">
+      <div class="roadmap-toolbar">
+        <button class="roadmap-toggle-all" type="button" data-roadmap-toggle hidden>
+          <span data-lang="ru">Свернуть все</span><span data-lang="en">Collapse all</span>
+        </button>
+      </div>
+
+      <!-- 1. Профиль -->
+      <details class="roadmap-block" id="profile" open>
+        <summary>
+          <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg></span>
+          <span class="roadmap-block-head">
+            <span class="roadmap-num">01 · <span data-lang="ru">3 пункта</span><span data-lang="en">3 items</span></span>
+            <h2><span data-lang="ru">Профиль по многим демкам</span><span data-lang="en">Profile across many demos</span></h2>
+            <span class="roadmap-block-sub"><span data-lang="ru">Одна демка — малая выборка. Несколько демок — уверенные выводы.</span><span data-lang="en">One demo is a small sample. Several demos give confident conclusions.</span></span>
+          </span>
+        </summary>
+        <div class="roadmap-body">
+          <ol class="roadmap-items">
+            <li class="roadmap-item">
+              <h3><span data-lang="ru">Профиль по нескольким демкам</span><span data-lang="en">Profile from several demos</span></h3>
+              <p><span data-lang="ru">Выберите 3–10 демок одного игрока — DemReview найдёт его в каждой по SteamID и посчитает паттерны, роли и тепловые карты по всем матчам вместе. Чем больше раундов, тем выше уверенность в каждом паттерне.</span><span data-lang="en">Pick 3–10 demos of the same player — DemReview finds them in each one by SteamID and computes patterns, roles and heatmaps across all the matches together. More rounds mean more confidence in every pattern.</span></p>
+            </li>
+            <li class="roadmap-item">
+              <h3><span data-lang="ru">Фильтр по карте</span><span data-lang="en">Map filter</span></h3>
+              <p><span data-lang="ru">В общем профиле можно смотреть каждую карту отдельно: привычки игрока на Mirage и на Nuke обычно совсем разные.</span><span data-lang="en">Look at each map separately inside the combined profile: a player's habits on Mirage and on Nuke are usually very different.</span></p>
+            </li>
+            <li class="roadmap-item">
+              <h3><span data-lang="ru">Мой профиль</span><span data-lang="en">My profile</span></h3>
+              <p><span data-lang="ru">Добавьте себя как основного игрока: сводка из каждой новой демки будет сохраняться и дополнять предыдущие. Со временем сложится подробный профиль вашей игры.</span><span data-lang="en">Set yourself as the main player: the summary from every new demo is saved and added to the previous ones. Over time this builds a detailed profile of your play.</span></p>
+            </li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- 2. Гранаты -->
+      <details class="roadmap-block" id="grenades" open>
+        <summary>
+          <span class="feature-icon ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="15" r="6"/><path d="M11 9V6h4"/><path d="m15 6 3-2.5"/><path d="M8.5 15h5"/></svg></span>
+          <span class="roadmap-block-head">
+            <span class="roadmap-num">02 · <span data-lang="ru">2 пункта</span><span data-lang="en">2 items</span></span>
+            <h2><span data-lang="ru">Гранаты</span><span data-lang="en">Grenades</span></h2>
+            <span class="roadmap-block-sub"><span data-lang="ru">Сохранять лучшие раскидки и видеть, какая граната принесла пользу.</span><span data-lang="en">Keep the best lineups and see which grenades actually paid off.</span></span>
+          </span>
+        </summary>
+        <div class="roadmap-body">
+          <ol class="roadmap-items">
+            <li class="roadmap-item">
+              <h3><span data-lang="ru">Библиотека раскидок</span><span data-lang="en">Lineup library</span></h3>
+              <p><span data-lang="ru">Сохраняйте понравившиеся броски из демок — позицию и угол. Одна кнопка копирует команды <code>setpos</code> / <code>setang</code>: встаньте в точку на локальном сервере и отработайте бросок.</span><span data-lang="en">Save the throws you like from demos — position and angle. One button copies the <code>setpos</code> / <code>setang</code> commands so you can stand on the spot on a local server and practice the throw.</span></p>
+            </li>
+            <li class="roadmap-item">
+              <h3><span data-lang="ru">Эффективность гранат</span><span data-lang="en">Grenade effectiveness</span></h3>
+              <p><span data-lang="ru">Сколько урона нанесли HE и молотовы, скольких врагов ослепила флешка — и скольких тиммейтов.</span><span data-lang="en">How much damage HEs and molotovs dealt, how many enemies each flash blinded — and how many teammates.</span></p>
+            </li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- 3. Разбор своей игры -->
+      <details class="roadmap-block" id="self-review" open>
+        <summary>
+          <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></span>
+          <span class="roadmap-block-head">
+            <span class="roadmap-num">03 · <span data-lang="ru">4 пункта</span><span data-lang="en">4 items</span></span>
+            <h2><span data-lang="ru">Разбор своей игры</span><span data-lang="en">Self-review</span></h2>
+            <span class="roadmap-block-sub"><span data-lang="ru">Найти моменты, которые стоит пересмотреть, и сразу открыть их в игре.</span><span data-lang="en">Find the moments worth rewatching and open them straight in the game.</span></span>
+          </span>
+        </summary>
+        <div class="roadmap-body">
+          <ol class="roadmap-items">
+            <li class="roadmap-item">
+              <h3><span data-lang="ru">«Ошибки»</span><span data-lang="en">Mistakes</span></h3>
+              <p><span data-lang="ru">Отдельный список спорных моментов:</span><span data-lang="en">A separate list of questionable moments:</span></p>
+              <ul>
+                <li><span data-lang="ru">смерти без размена;</span><span data-lang="en">deaths that weren't traded;</span></li>
+                <li><span data-lang="ru">смерти в одиночку, далеко от команды;</span><span data-lang="en">deaths alone, far from the team;</span></li>
+                <li><span data-lang="ru">смерть с неиспользованными гранатами — и сколько денег пропало;</span><span data-lang="en">dying with unused grenades — and how much money was lost;</span></li>
+                <li><span data-lang="ru">повторный пик после выигранной дуэли.</span><span data-lang="en">re-peeking after winning a duel.</span></li>
+              </ul>
+            </li>
+            <li class="roadmap-item">
+              <h3><span data-lang="ru">Перейти к моменту в CS2</span><span data-lang="en">Jump to the moment in CS2</span></h3>
+              <p><span data-lang="ru">Кнопка копирует команду <code>demo_gototick</code> с нужным тиком — вставьте её в консоль и посмотрите ровно этот момент в игре.</span><span data-lang="en">A button copies the <code>demo_gototick</code> command with the right tick — paste it into the console and watch exactly that moment in the game.</span></p>
+            </li>
+            <li class="roadmap-item">
+              <h3><span data-lang="ru">Клатчи, ретейки и пост-плант</span><span data-lang="en">Clutches, retakes and post-plants</span></h3>
+              <p><span data-lang="ru">Где игрок стоит в этих ситуациях и как часто выигрывает раунд.</span><span data-lang="en">Where the player positions in these situations and how often they win the round.</span></p>
+            </li>
+            <li class="roadmap-item">
+              <h3><span data-lang="ru">Дуэли</span><span data-lang="en">Duels</span></h3>
+              <p><span data-lang="ru">С какой дистанции, с каким оружием и с какой стороны угла игрок выигрывает и проигрывает дуэли.</span><span data-lang="en">At what distance, with which weapon and from which side of an angle the player wins and loses duels.</span></p>
+            </li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- 4. Источники демок -->
+      <details class="roadmap-block" id="sources" open>
+        <summary>
+          <span class="feature-icon ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/></svg></span>
+          <span class="roadmap-block-head">
+            <span class="roadmap-num">04 · <span data-lang="ru">2 пункта</span><span data-lang="en">2 items</span></span>
+            <h2><span data-lang="ru">Источники демок</span><span data-lang="en">Demo sources</span></h2>
+            <span class="roadmap-block-sub"><span data-lang="ru">Открыть демку по ссылке, без ручного поиска и распаковки файлов.</span><span data-lang="en">Open a demo from a link, without hunting for and unpacking files.</span></span>
+          </span>
+        </summary>
+        <div class="roadmap-body">
+          <ol class="roadmap-items">
+            <li class="roadmap-item">
+              <h3><span data-lang="ru">Демки с FACEIT</span><span data-lang="en">FACEIT demos</span></h3>
+              <p><span data-lang="ru">Вставьте ссылку на матч FACEIT — DemReview сам скачает демку и откроет её.</span><span data-lang="en">Paste a FACEIT match link — DemReview downloads the demo and opens it for you.</span></p>
+            </li>
+            <li class="roadmap-item">
+              <h3><span data-lang="ru">Демки из матчмейкинга</span><span data-lang="en">Matchmaking demos</span></h3>
+              <p><span data-lang="ru">Загрузка демок матчмейкинга и Premier по share code матча (<code>CSGO-xxxxx-…</code>).</span><span data-lang="en">Load matchmaking and Premier demos by the match share code (<code>CSGO-xxxxx-…</code>).</span></p>
+            </li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- 5. Подготовка к сопернику -->
+      <details class="roadmap-block" id="anti-strat" open>
+        <summary>
+          <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1-3.5 3.5-5.5 6.5-5.5s5.5 2 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18 14.8c1.8.7 3 2.4 3.5 5.2"/></svg></span>
+          <span class="roadmap-block-head">
+            <span class="roadmap-num">05 · <span data-lang="ru">4 пункта</span><span data-lang="en">4 items</span></span>
+            <h2><span data-lang="ru">Подготовка к сопернику (anti-strat)</span><span data-lang="en">Opponent prep (anti-strat)</span></h2>
+            <span class="roadmap-block-sub"><span data-lang="ru">Изучить всю команду соперника перед матчем.</span><span data-lang="en">Study the whole opposing team before the match.</span></span>
+          </span>
+        </summary>
+        <div class="roadmap-body">
+          <p class="roadmap-goal"><span data-lang="ru"><strong>Цель:</strong> достаточно вставить в программу ссылку на лобби соперника — DemReview сам разберёт их демки на этой карте, и вы получите готовую картину.</span><span data-lang="en"><strong>The goal:</strong> just paste a link to the opponent's lobby — DemReview analyzes their demos on that map and you get the full picture.</span></p>
+          <ol class="roadmap-items">
+            <li class="roadmap-item">
+              <h3><span data-lang="ru">Режим «команда»</span><span data-lang="en">Team mode</span></h3>
+              <p><span data-lang="ru">Все 5 игроков соперника на одном радаре: их дефолтные позиции на CT и выходы на T по раундам.</span><span data-lang="en">All 5 opponents on one radar: their default CT positions and T-side executes round by round.</span></p>
+            </li>
+            <li class="roadmap-item">
+              <h3><span data-lang="ru">Досье на соперника</span><span data-lang="en">Scouting report</span></h3>
+              <p><span data-lang="ru">Одна страница (HTML или PDF) с ролями, частыми раскидками и таймингами — удобно отправить команде.</span><span data-lang="en">One page (HTML or PDF) with roles, common lineups and timings — easy to send to your team.</span></p>
+            </li>
+            <li class="roadmap-item">
+              <h3><span data-lang="ru">Тайминги первых контактов</span><span data-lang="en">First-contact timings</span></h3>
+              <p><span data-lang="ru">По точкам карты: «на B через Banana в среднем выходит на 0:18».</span><span data-lang="en">By map area: "takes B through Banana at 0:18 on average".</span></p>
+            </li>
+            <li class="roadmap-item">
+              <h3><span data-lang="ru">Сравнение двух игроков</span><span data-lang="en">Compare two players</span></h3>
+              <p><span data-lang="ru">Два профиля бок о бок: роли, паттерны, урон и предсказуемость.</span><span data-lang="en">Two profiles side by side: roles, patterns, damage and predictability.</span></p>
+            </li>
+          </ol>
+        </div>
+      </details>
+
+      <div class="roadmap-cta">
+        <h2><span data-lang="ru">Есть идея?</span><span data-lang="en">Have an idea?</span></h2>
+        <p class="lead"><span data-lang="ru">Дорожная карта строится по вашей обратной связи. Предлагайте, что добавить, и голосуйте за чужие идеи.</span><span data-lang="en">The roadmap is shaped by your feedback. Suggest what to add and vote for other people's ideas.</span></p>
+        <div class="download-buttons">
+          <a class="btn btn-primary" href="https://github.com/Pank0REKT/demreview-cs2/discussions/1"><span data-lang="ru">Предложить идею</span><span data-lang="en">Suggest an idea</span></a>
+          <a class="btn btn-ghost" href="https://github.com/Pank0REKT/demreview-cs2/issues"><span data-lang="ru">Сообщить об ошибке</span><span data-lang="en">Report a bug</span></a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div>
+        <p><span data-lang="ru">DemReview — бесплатный проект с открытым кодом под лицензией MIT. Автор — <a href="https://github.com/Pank0REKT">@Pank0REKT</a>.</span><span data-lang="en">DemReview is free and open source under the MIT License. Made by <a href="https://github.com/Pank0REKT">@Pank0REKT</a>.</span></p>
+        <p class="disclaimer"><span data-lang="ru">Не связан с Valve и не одобрен ею. Counter-Strike и изображения карт — © Valve Corporation.</span><span data-lang="en">Not affiliated with or endorsed by Valve. Counter-Strike and map images © Valve Corporation.</span></p>
+      </div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/Pank0REKT/demreview-cs2">GitHub</a></li>
+        <li><a href="https://github.com/Pank0REKT/demreview-cs2/issues"><span data-lang="ru">Сообщить об ошибке</span><span data-lang="en">Report a bug</span></a></li>
+        <li><a href="roadmap.html"><span data-lang="ru">Дорожная карта</span><span data-lang="en">Roadmap</span></a></li>
+        <li><a href="https://github.com/Pank0REKT/demreview-cs2/discussions/1"><span data-lang="ru">Предложить идею</span><span data-lang="en">Suggest an idea</span></a></li>
+        <li><a href="https://github.com/Pank0REKT/demreview-cs2/releases"><span data-lang="ru">Релизы</span><span data-lang="en">Releases</span></a></li>
+        <li><a href="https://github.com/Pank0REKT/demreview-cs2/blob/main/LICENSE">MIT</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script src="assets/site.js" defer></script>
+</body>
+</html>

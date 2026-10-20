@@ -109,6 +109,42 @@
     restart();
   }
 
+  // ---------- Дорожная карта: блок из адреса (#id) раскрывается, остальные сворачиваются ----------
+
+  const roadmapBlocks = [...document.querySelectorAll(".roadmap-block")];
+  if (roadmapBlocks.length) {
+    const toggleAll = document.querySelector("[data-roadmap-toggle]");
+
+    function updateToggle() {
+      const allOpen = roadmapBlocks.every(b => b.open);
+      toggleAll.innerHTML = allOpen ? t("Свернуть все", "Collapse all") : t("Развернуть все", "Expand all");
+    }
+
+    function openFromHash() {
+      const id = decodeURIComponent(location.hash.slice(1));
+      const target = roadmapBlocks.find(b => b.id === id);
+      if (!target) return;
+      for (const b of roadmapBlocks) {
+        b.open = b === target;
+        b.classList.toggle("is-target", b === target);
+      }
+      // После раскрытия высота блоков меняется — прокрутка к цели заново.
+      requestAnimationFrame(() => target.scrollIntoView({ block: "start" }));
+      updateToggle();
+    }
+
+    toggleAll.hidden = false;
+    toggleAll.addEventListener("click", () => {
+      const open = !roadmapBlocks.every(b => b.open);
+      for (const b of roadmapBlocks) b.open = open;
+      updateToggle();
+    });
+    for (const b of roadmapBlocks) b.addEventListener("toggle", updateToggle);
+    addEventListener("hashchange", openFromHash);
+    openFromHash();
+    updateToggle();
+  }
+
   // ---------- Релизы: кнопки скачивания и «Что нового» ----------
 
   function detectOs() {
