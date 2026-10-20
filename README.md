@@ -1,6 +1,6 @@
 # DemReview
 
-**English** · [Русский](README.ru.md)
+**English** · [Русский](README.ru.md) · [Website](https://pank0rekt.github.io/demreview-cs2/)
 
 DemReview is a desktop app that analyzes how **one specific player** behaves in a Counter-Strike 2 demo (`.dem`):
 where they go, which grenades they throw, how they react to the situation in a round, and which habits repeat
@@ -156,7 +156,7 @@ Self-contained single-file builds go to `artifacts/<rid>/`:
 | `DemReview.Desktop` | Avalonia UI (MVVM with CommunityToolkit.Mvvm), radar control, DI host |
 | `DemReview.Tests` | xUnit v3 tests |
 
-Code comments and design notes ([docs/PLAN.md](docs/PLAN.md)) are in Russian.
+Code comments are in Russian.
 
 ### Releasing
 

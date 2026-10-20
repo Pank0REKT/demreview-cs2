@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en" data-title-ru="Как пользоваться — DemReview" data-title-en="How to use — DemReview">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How to use — DemReview</title>
+  <script>
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem("lang"); } catch (e) {}
+      var langs = navigator.languages || [navigator.language || ""];
+      var ru = /^(ru|uk|be|kk)/i.test(langs[0] || "");
+      document.documentElement.lang = saved === "ru" || saved === "en" ? saved : (ru ? "ru" : "en");
+    })();
+  </script>
+  <meta name="description" content="How to use DemReview: install, open a CS2 demo, pick a player, read the radar, statistics and player profile. Hotkeys, settings and FAQ.">
+  <meta name="theme-color" content="#0e1014">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="How to use DemReview">
+  <meta property="og:description" content="Install, open a CS2 demo, pick a player and read their habits. Hotkeys, settings and FAQ.">
+  <meta property="og:image" content="https://pank0rekt.github.io/demreview-cs2/assets/og.png">
+  <meta property="og:url" content="https://pank0rekt.github.io/demreview-cs2/usage.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">
+    <span data-lang="ru">К содержимому</span><span data-lang="en">Skip to content</span>
+  </a>
+
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="./"><img src="assets/icon.png" alt="" width="30" height="30">DemReview</a>
+      <nav class="nav" aria-label="Main">
+        <a class="nav-home" href="./"><span data-lang="ru">Главная</span><span data-lang="en">Home</span></a>
+        <a href="usage.html" aria-current="page"><span data-lang="ru">Как пользоваться</span><span data-lang="en">How to use</span></a>
+        <a class="nav-github" href="https://github.com/Pank0REKT/demreview-cs2">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+          <span>GitHub</span>
+        </a>
+        <button class="lang-toggle" type="button">RU</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="page-head container">
+      <h1><span data-lang="ru">Как пользоваться</span><span data-lang="en">How to use</span></h1>
+      <p class="lead"><span data-lang="ru">От скачивания до профиля игрока — за пару минут.</span><span data-lang="en">From download to a player profile in a couple of minutes.</span></p>
+      <ul class="toc">
+        <li><a href="#install"><span data-lang="ru">Установка</span><span data-lang="en">Install</span></a></li>
+        <li><a href="#guide"><span data-lang="ru">Пошагово</span><span data-lang="en">Step by step</span></a></li>
+        <li><a href="#hotkeys"><span data-lang="ru">Горячие клавиши</span><span data-lang="en">Hotkeys</span></a></li>
+        <li><a href="#settings"><span data-lang="ru">Настройки и данные</span><span data-lang="en">Settings and data</span></a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+    </div>
+
+    <!-- Установка -->
+    <section id="install">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow"><span data-lang="ru">Шаг 0</span><span data-lang="en">Step 0</span></p>
+          <h2><span data-lang="ru">Установка</span><span data-lang="en">Install</span></h2>
+          <p class="lead"><span data-lang="ru">Сборки самодостаточные: .NET ставить не нужно.</span><span data-lang="en">Builds are self-contained: .NET is not required.</span></p>
+        </div>
+        <div class="privacy">
+          <div class="card">
+            <h3>Windows 10/11 x64</h3>
+            <p><span data-lang="ru">Распакуйте <code>DemReview-&lt;версия&gt;-win-x64.zip</code> и запустите <code>DemReview.exe</code>. Если SmartScreen предупредит — «Подробнее → Выполнить в любом случае».</span><span data-lang="en">Unpack <code>DemReview-&lt;version&gt;-win-x64.zip</code> and run <code>DemReview.exe</code>. If SmartScreen warns — <em>More info → Run anyway</em>.</span></p>
+          </div>
+          <div class="card">
+            <h3>Linux x64</h3>
+            <p><span data-lang="ru">Распакуйте и запустите:</span><span data-lang="en">Unpack and run:</span><br><code>tar -xzf DemReview-*-linux-x64.tar.gz</code><br><code>./DemReview-*-linux-x64/DemReview</code></p>
+          </div>
+          <div class="card">
+            <h3><span data-lang="ru">Первый запуск</span><span data-lang="en">First start</span></h3>
+            <p><span data-lang="ru">Программа спросит язык интерфейса — его можно сменить потом в «Настройках».</span><span data-lang="en">The app asks for the interface language — you can change it later in Settings.</span></p>
+          </div>
+        </div>
+        <p class="releases-more">
+          <a class="btn btn-primary" href="https://github.com/Pank0REKT/demreview-cs2/releases/latest" data-releases-link>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            <span data-lang="ru">Скачать последнюю версию</span><span data-lang="en">Download the latest version</span>
+          </a>
+        </p>
+      </div>
+    </section>
+
+    <!-- Пошагово -->
+    <section id="guide">
+      <div class="container guide">
+        <div class="section-head">
+          <p class="eyebrow"><span data-lang="ru">Пошагово</span><span data-lang="en">Step by step</span></p>
+          <h2><span data-lang="ru">Разбор демки</span><span data-lang="en">Reviewing a demo</span></h2>
+        </div>
+
+        <div class="guide-step">
+          <div>
+            <p class="num"><span data-lang="ru">Шаг 1–2</span><span data-lang="en">Steps 1–2</span></p>
+            <h3><span data-lang="ru">Откройте демку и выберите игрока</span><span data-lang="en">Open a demo and pick a player</span></h3>
+            <ul>
+              <li><span data-lang="ru">«Файл → Открыть демку» (<kbd>Ctrl</kbd>+<kbd>O</kbd>), перетаскивание <code>.dem</code> на окно или «Открыть с помощью → DemReview».</span><span data-lang="en"><em>File → Open demo</em> (<kbd>Ctrl</kbd>+<kbd>O</kbd>), drag a <code>.dem</code> onto the window, or <em>Open with → DemReview</em>.</span></li>
+              <li><span data-lang="ru">Разбор идёт в фоне, отмена — <kbd>Esc</kbd>. Повторное открытие той же демки — из кеша за секунды.</span><span data-lang="en">Parsing runs in the background; <kbd>Esc</kbd> cancels. Reopening the same demo takes seconds thanks to the cache.</span></li>
+              <li><span data-lang="ru"><strong>Выберите игрока</strong> в списке слева — все вкладки покажут только его. Ниже — фильтры: раунд, сторона, закупка, тип гранаты.</span><span data-lang="en"><strong>Pick a player</strong> in the list on the left — every tab now shows only them. Below are filters: round, side, buy, grenade type.</span></li>
+            </ul>
+          </div>
+          <img class="shot" src="assets/shots/radar-routes.webp" width="1600" height="873" loading="lazy" data-i18n-attr="alt"
+               data-ru-alt="Список игроков, фильтры и радар" data-en-alt="Player list, filters and radar" alt="Player list, filters and radar">
+        </div>
+
+        <div class="guide-step flip">
+          <div>
+            <p class="num"><span data-lang="ru">Шаг 3</span><span data-lang="en">Step 3</span></p>
+            <h3><span data-lang="ru">Радар и повтор раунда</span><span data-lang="en">Radar and round replay</span></h3>
+            <ul>
+              <li><span data-lang="ru">Слои включаются справа: маршруты, гранаты, смерти, тепловая карта. Зум — колесом, сдвиг — перетаскиванием, сброс — двойным кликом.</span><span data-lang="en">Layers are toggled on the right: routes, grenades, deaths, heatmap. Zoom with the wheel, pan by dragging, double-click to reset.</span></li>
+              <li><span data-lang="ru">Выберите раунд в списке «Раунды» — появится таймлайн: «Пуск» или ползунок, скорость ×0,5–×8.</span><span data-lang="en">Select a round in the <em>Rounds</em> list to open the timeline: press <em>Play</em> or drag the slider, speed ×0.5–×8.</span></li>
+              <li><span data-lang="ru">Наведите мышь на игрока — ник, оружие и HP. Списки «Частые», «Гранаты» и «Тайминги» подсвечивают свои раунды и раскидки.</span><span data-lang="en">Hover a player to see the nickname, weapon and HP. The <em>Frequent</em>, <em>Grenades</em> and <em>Timings</em> lists highlight their rounds and lineups.</span></li>
+            </ul>
+          </div>
+          <img class="shot" src="assets/shots/timeline.webp" width="1600" height="873" loading="lazy" data-i18n-attr="alt"
+               data-ru-alt="Повтор раунда с киллфидом" data-en-alt="Round replay with kill feed" alt="Round replay with kill feed">
+        </div>
+
+        <div class="guide-step">
+          <div>
+            <p class="num"><span data-lang="ru">Шаг 4</span><span data-lang="en">Step 4</span></p>
+            <h3><span data-lang="ru">Статистика</span><span data-lang="en">Statistics</span></h3>
+            <ul>
+              <li><span data-lang="ru"><strong>«Ситуации игрока»</strong> — каждый раунд: сторона, закупка, счёт и что игрок сделал.</span><span data-lang="en"><strong>Player situations</strong> — every round: side, buy, score and what the player did.</span></li>
+              <li><span data-lang="ru"><strong>«Условия → действия»</strong> — частотные таблицы: как часто решение следует за условием.</span><span data-lang="en"><strong>Conditions → actions</strong> — frequency tables: how often a decision follows a condition.</span></li>
+              <li><span data-lang="ru"><strong>«Раунды матча»</strong> — закупки обеих команд по раундам.</span><span data-lang="en"><strong>Match rounds</strong> — both teams' buys per round.</span></li>
+            </ul>
+          </div>
+          <img class="shot" src="assets/shots/statistics.webp" width="1600" height="873" loading="lazy" data-i18n-attr="alt"
+               data-ru-alt="Таблица «условия → действия»" data-en-alt="Conditions → actions table" alt="Conditions → actions table">
+        </div>
+
+        <div class="guide-step flip">
+          <div>
+            <p class="num"><span data-lang="ru">Шаг 5–6</span><span data-lang="en">Steps 5–6</span></p>
+            <h3><span data-lang="ru">Профиль игрока и экспорт</span><span data-lang="en">Player profile and export</span></h3>
+            <ul>
+              <li><span data-lang="ru">Паттерн показывается, если встречается не реже <strong>60%</strong> случаев и минимум в <strong>3 раундах</strong>; оба порога меняются на вкладке.</span><span data-lang="en">A pattern is shown if it happens in at least <strong>60%</strong> of cases and in at least <strong>3 rounds</strong>; both thresholds can be changed on the tab.</span></li>
+              <li><span data-lang="ru">Смотрите на «N из M» и цвет точки: зелёный — высокая уверенность, жёлтый — средняя, серый — низкая. Одна демка — малая выборка.</span><span data-lang="en">Look at "N of M" and the dot color: green — high confidence, yellow — medium, grey — low. One demo is a small sample.</span></li>
+              <li><span data-lang="ru">«Показать на радаре» накладывает раунды-примеры паттерна.</span><span data-lang="en"><em>Show on radar</em> overlays the pattern's example rounds.</span></li>
+              <li><span data-lang="ru"><strong>Экспорт</strong> — <kbd>Ctrl</kbd>+<kbd>E</kbd>: Markdown или JSON по расширению файла, текст на языке интерфейса.</span><span data-lang="en"><strong>Export</strong> — <kbd>Ctrl</kbd>+<kbd>E</kbd>: Markdown or JSON by file extension, text in the interface language.</span></li>
+            </ul>
+          </div>
+          <img class="shot" src="assets/shots/profile.webp" width="1600" height="873" loading="lazy" data-i18n-attr="alt"
+               data-ru-alt="Профиль игрока с паттернами" data-en-alt="Player profile with patterns" alt="Player profile with patterns">
+        </div>
+      </div>
+    </section>
+
+    <!-- Горячие клавиши -->
+    <section id="hotkeys">
+      <div class="container" style="max-width: 760px;">
+        <div class="section-head">
+          <h2><span data-lang="ru">Горячие клавиши</span><span data-lang="en">Hotkeys</span></h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th><span data-lang="ru">Клавиши</span><span data-lang="en">Keys</span></th><th><span data-lang="ru">Действие</span><span data-lang="en">Action</span></th></tr></thead>
+            <tbody>
+              <tr><td><kbd>Ctrl</kbd>+<kbd>O</kbd></td><td><span data-lang="ru">Открыть демку</span><span data-lang="en">Open a demo</span></td></tr>
+              <tr><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td><td><span data-lang="ru">Экспорт профиля игрока</span><span data-lang="en">Export the player profile</span></td></tr>
+              <tr><td><kbd>F5</kbd></td><td><span data-lang="ru">Повторный анализ</span><span data-lang="en">Re-run the analysis</span></td></tr>
+              <tr><td><kbd>Shift</kbd>+<kbd>F5</kbd></td><td><span data-lang="ru">Разобрать демку заново (без кеша)</span><span data-lang="en">Parse the demo again (bypass the cache)</span></td></tr>
+              <tr><td><kbd>Esc</kbd></td><td><span data-lang="ru">Отменить разбор</span><span data-lang="en">Cancel parsing</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Настройки и данные -->
+    <section id="settings">
+      <div class="container" style="max-width: 760px;">
+        <div class="section-head">
+          <h2><span data-lang="ru">Настройки и данные</span><span data-lang="en">Settings and data</span></h2>
+          <p class="lead"><span data-lang="ru">Вкладка «Настройки»: язык, кеш разобранных демок, папки данных и карт, проверка обновлений и статистика использования.</span><span data-lang="en">The Settings tab: language, parsed demo cache, data and map folders, update check and usage statistics.</span></p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th><span data-lang="ru">Что</span><span data-lang="en">What</span></th><th><span data-lang="ru">Где</span><span data-lang="en">Where</span></th></tr></thead>
+            <tbody>
+              <tr><td><span data-lang="ru">Папка данных</span><span data-lang="en">Data folder</span></td><td>Windows: <code>%LOCALAPPDATA%\DemReview</code><br>Linux: <code>~/.local/share/DemReview</code></td></tr>
+              <tr><td><code>settings.json</code></td><td><span data-lang="ru">Настройки, размер и положение окна, пороги анализа</span><span data-lang="en">Settings, window placement, analysis thresholds</span></td></tr>
+              <tr><td><code>demreview.db</code></td><td><span data-lang="ru">Кеш разобранных демок (последние 50); очищается в «Настройках»</span><span data-lang="en">Parsed demo cache (last 50); cleared in Settings</span></td></tr>
+              <tr><td><code>logs/</code></td><td><span data-lang="ru">Журналы за 14 дней — приложите к сообщению об ошибке</span><span data-lang="en">Logs for 14 days — attach them to a bug report</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="maps-note">
+          <span data-lang="ru">Пороги анализа (типы закупки, агрессия, раскидки, шаг выборки) — в <code>settings.json</code>; полный список ключей — в <a href="https://github.com/Pank0REKT/demreview-cs2/blob/main/README.ru.md#данные-и-настройки">README</a>.</span>
+          <span data-lang="en">Analysis thresholds (buy types, aggression, lineups, sampling step) live in <code>settings.json</code>; see the full list of keys in the <a href="https://github.com/Pank0REKT/demreview-cs2#data-and-settings">README</a>.</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq">
+      <div class="container">
+        <div class="section-head">
+          <h2><span data-lang="ru">Частые вопросы</span><span data-lang="en">FAQ</span></h2>
+        </div>
+        <div class="faq">
+          <details>
+            <summary><span data-lang="ru">Где взять демку?</span><span data-lang="en">Where do I get a demo?</span></summary>
+            <div class="answer">
+              <ul>
+                <li><span data-lang="ru"><strong>Ваши матчи в CS2:</strong> «Смотреть → Ваши матчи» → скачать запись. Файл <code>.dem</code> появится в папке игры <code>game\csgo\replays</code>.</span><span data-lang="en"><strong>Your CS2 matches:</strong> <em>Watch → Your Matches</em> → download the replay. The <code>.dem</code> file appears in the game folder <code>game\csgo\replays</code>.</span></li>
+                <li><span data-lang="ru"><strong>FACEIT:</strong> на странице матча — кнопка скачивания демки.</span><span data-lang="en"><strong>FACEIT:</strong> the match page has a demo download button.</span></li>
+                <li><span data-lang="ru"><strong>Профессиональные матчи:</strong> демки GOTV публикуются на HLTV.</span><span data-lang="en"><strong>Pro matches:</strong> GOTV demos are published on HLTV.</span></li>
+              </ul>
+              <p><span data-lang="ru">Если демка пришла в архиве (<code>.zip</code>, <code>.rar</code>, <code>.gz</code>, <code>.zst</code>), сначала распакуйте её.</span><span data-lang="en">If the demo comes in an archive (<code>.zip</code>, <code>.rar</code>, <code>.gz</code>, <code>.zst</code>), unpack it first.</span></p>
+            </div>
+          </details>
+          <details>
+            <summary><span data-lang="ru">Подходят ли демки CS:GO?</span><span data-lang="en">Do CS:GO demos work?</span></summary>
+            <div class="answer"><p><span data-lang="ru">Нет, только Counter-Strike 2: формат демок CS:GO другой.</span><span data-lang="en">No, only Counter-Strike 2: CS:GO demos use a different format.</span></p></div>
+          </details>
+          <details>
+            <summary><span data-lang="ru">Windows пишет «Система Windows защитила ваш компьютер»</span><span data-lang="en">Windows says "Windows protected your PC"</span></summary>
+            <div class="answer">
+              <p><span data-lang="ru">Это SmartScreen: программа не подписана платным сертификатом. Нажмите «Подробнее → Выполнить в любом случае». Код открыт, а подлинность архива можно проверить по <code>SHA256SUMS.txt</code> из релиза.</span><span data-lang="en">That's SmartScreen: the app is not signed with a paid certificate. Click <em>More info → Run anyway</em>. The code is open, and you can verify the archive with <code>SHA256SUMS.txt</code> from the release.</span></p>
+            </div>
+          </details>
+          <details>
+            <summary><span data-lang="ru">Что нужно для запуска на Linux?</span><span data-lang="en">What do I need on Linux?</span></summary>
+            <div class="answer"><p><span data-lang="ru">Linux x64 и графический сеанс с X11 или XWayland. Всё остальное, включая .NET, уже внутри сборки.</span><span data-lang="en">Linux x64 and a desktop session with X11 or XWayland. Everything else, .NET included, ships inside the build.</span></p></div>
+          </details>
+          <details>
+            <summary><span data-lang="ru">Почему паттернов мало или уверенность низкая?</span><span data-lang="en">Why are there few patterns, or low confidence?</span></summary>
+            <div class="answer">
+              <p><span data-lang="ru">Одна демка — это 20–30 раундов, из них на каждой стороне вдвое меньше. Программа учитывает малую выборку и не выдаёт случайные совпадения за привычки.</span><span data-lang="en">One demo is 20–30 rounds, and half that per side. The app accounts for the small sample and doesn't present coincidences as habits.</span></p>
+              <p><span data-lang="ru">Пороги (60% и 3 раунда) можно снизить на вкладке «Профиль игрока», но тогда чаще будут попадаться случайности.</span><span data-lang="en">You can lower the thresholds (60% and 3 rounds) on the <em>Player profile</em> tab, but you'll see more coincidences.</span></p>
+            </div>
+          </details>
+          <details id="faq-map">
+            <summary><span data-lang="ru">Как добавить свою карту?</span><span data-lang="en">How do I add my own map?</span></summary>
+            <div class="answer">
+              <p><span data-lang="ru">Без изображения радар рисуется на сетке — всё остальное работает. Чтобы добавить подложку:</span><span data-lang="en">Without an image the radar is drawn on a grid — everything else works. To add a background:</span></p>
+              <ul>
+                <li><span data-lang="ru">возьмите из файлов игры <code>game/csgo/panorama/images/overheadmaps/&lt;карта&gt;_radar_psd.png</code>;</span><span data-lang="en">take <code>game/csgo/panorama/images/overheadmaps/&lt;map&gt;_radar_psd.png</code> from the game files;</span></li>
+                <li><span data-lang="ru">переименуйте в <code>&lt;карта&gt;.png</code> и положите в папку <code>maps</code> рядом с программой («Настройки → Папки»).</span><span data-lang="en">rename it to <code>&lt;map&gt;.png</code> and put it in the <code>maps</code> folder next to the app (<em>Settings → Folders</em>).</span></li>
+              </ul>
+              <p><span data-lang="ru">Для точного совмещения нужны координаты карты в коде — подробности в <a href="https://github.com/Pank0REKT/demreview-cs2/blob/main/maps/README.txt">maps/README.txt</a>. Или <a href="https://github.com/Pank0REKT/demreview-cs2/issues">попросите добавить карту</a>.</span><span data-lang="en">Exact alignment needs the map's coordinates in the code — see <a href="https://github.com/Pank0REKT/demreview-cs2/blob/main/maps/README.txt">maps/README.txt</a>. Or <a href="https://github.com/Pank0REKT/demreview-cs2/issues">ask for the map to be added</a>.</span></p>
+            </div>
+          </details>
+          <details>
+            <summary><span data-lang="ru">Как обновить программу?</span><span data-lang="en">How do I update the app?</span></summary>
+            <div class="answer"><p><span data-lang="ru">Когда выходит новая версия, в программе появляется баннер со ссылкой. Скачайте новую сборку и распакуйте её на место старой — настройки и кеш хранятся отдельно и сохранятся.</span><span data-lang="en">When a new version is out, the app shows a banner with a link. Download the new build and unpack it over the old one — settings and cache are stored separately and are kept.</span></p></div>
+          </details>
+          <details>
+            <summary><span data-lang="ru">Что программа отправляет в сеть и как это отключить?</span><span data-lang="en">What does the app send over the network, and how do I turn it off?</span></summary>
+            <div class="answer">
+              <p><span data-lang="ru">Демки, файлы, ники и SteamID не отправляются никогда. Есть два необязательных запроса, оба отключаются в «Настройках»:</span><span data-lang="en">Demos, files, nicknames and SteamIDs are never sent. There are two optional requests, both can be turned off in Settings:</span></p>
+              <ul>
+                <li><span data-lang="ru"><strong>проверка обновлений</strong> — один запрос к GitHub при запуске;</span><span data-lang="en"><strong>update check</strong> — one request to GitHub on start;</span></li>
+                <li><span data-lang="ru"><strong>анонимная статистика</strong> (Aptabase) — запуск программы и загрузка демки: карта, из кеша или разбор, время разбора, плюс версия, ОС и язык системы. Постоянного идентификатора пользователя нет.</span><span data-lang="en"><strong>anonymous statistics</strong> (Aptabase) — app start and demo load: map, cache or parse, parse time, plus version, OS and system language. There is no persistent user ID.</span></li>
+              </ul>
+            </div>
+          </details>
+          <details>
+            <summary><span data-lang="ru">Нашёл ошибку или есть идея</span><span data-lang="en">I found a bug or have an idea</span></summary>
+            <div class="answer"><p><span data-lang="ru">Напишите в <a href="https://github.com/Pank0REKT/demreview-cs2/issues">Issues на GitHub</a>. Для ошибки приложите журнал из папки <code>logs</code> (открывается в «Настройках → Папки») и, если можно, ссылку на демку.</span><span data-lang="en">Open an <a href="https://github.com/Pank0REKT/demreview-cs2/issues">issue on GitHub</a>. For a bug, attach the log from the <code>logs</code> folder (open it from <em>Settings → Folders</em>) and, if possible, a link to the demo.</span></p></div>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div>
+        <p><span data-lang="ru">DemReview — бесплатный проект с открытым кодом под лицензией MIT. Автор — <a href="https://github.com/Pank0REKT">@Pank0REKT</a>.</span><span data-lang="en">DemReview is free and open source under the MIT License. Made by <a href="https://github.com/Pank0REKT">@Pank0REKT</a>.</span></p>
+        <p class="disclaimer"><span data-lang="ru">Не связан с Valve и не одобрен ею. Counter-Strike и изображения карт — © Valve Corporation.</span><span data-lang="en">Not affiliated with or endorsed by Valve. Counter-Strike and map images © Valve Corporation.</span></p>
+      </div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/Pank0REKT/demreview-cs2">GitHub</a></li>
+        <li><a href="https://github.com/Pank0REKT/demreview-cs2/issues"><span data-lang="ru">Сообщить об ошибке</span><span data-lang="en">Report a bug</span></a></li>
+        <li><a href="https://github.com/Pank0REKT/demreview-cs2/releases"><span data-lang="ru">Релизы</span><span data-lang="en">Releases</span></a></li>
+        <li><a href="https://github.com/Pank0REKT/demreview-cs2/blob/main/LICENSE">MIT</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script src="assets/site.js" defer></script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # DemReview
 
-[English](README.md) · **Русский**
+[English](README.md) · **Русский** · [Сайт](https://pank0rekt.github.io/demreview-cs2/)
 
 DemReview — десктопное приложение для анализа поведения **конкретного игрока** по демке Counter-Strike 2 (`.dem`):
 как он перемещается по карте, какие гранаты кидает, как реагирует на ситуацию в раунде и какие привычки
@@ -148,8 +148,6 @@ dotnet run --project src/DemReview.Desktop -- "путь/к/демке.dem"
 | `DemReview.Infrastructure` | Парсинг через [DemoFile.Net](https://github.com/saul/demofile-net), данные карт, кеш SQLite (EF Core), настройки, проверка обновлений, платформенные сервисы |
 | `DemReview.Desktop` | Avalonia UI (MVVM на CommunityToolkit.Mvvm), радар, DI-хост |
 | `DemReview.Tests` | Тесты xUnit v3 |
-
-План и решения — в [docs/PLAN.md](docs/PLAN.md).
 
 ### Выпуск релиза
 

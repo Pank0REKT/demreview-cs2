@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en" data-title-ru="DemReview — анализ игрока по демке CS2" data-title-en="DemReview — CS2 demo analysis of one player">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DemReview — CS2 demo analysis of one player</title>
+  <script>
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem("lang"); } catch (e) {}
+      var langs = navigator.languages || [navigator.language || ""];
+      var ru = /^(ru|uk|be|kk)/i.test(langs[0] || "");
+      document.documentElement.lang = saved === "ru" || saved === "en" ? saved : (ru ? "ru" : "en");
+    })();
+  </script>
+  <meta name="description" content="DemReview analyzes how one specific player behaves in a Counter-Strike 2 demo: routes, grenades, round replay, repeated patterns and a player profile. Free and open source for Windows and Linux.">
+  <meta name="theme-color" content="#0e1014">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="DemReview — CS2 demo analysis of one player">
+  <meta property="og:description" content="Routes, grenades, round replay, patterns and a player profile from a single .dem file. Free, open source, Windows & Linux.">
+  <meta property="og:image" content="https://pank0rekt.github.io/demreview-cs2/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://pank0rekt.github.io/demreview-cs2/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">
+    <span data-lang="ru">К содержимому</span><span data-lang="en">Skip to content</span>
+  </a>
+
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="./"><img src="assets/icon.png" alt="" width="30" height="30">DemReview</a>
+      <nav class="nav" aria-label="Main">
+        <a class="nav-home" href="./" aria-current="page"><span data-lang="ru">Главная</span><span data-lang="en">Home</span></a>
+        <a href="usage.html"><span data-lang="ru">Как пользоваться</span><span data-lang="en">How to use</span></a>
+        <a class="nav-github" href="https://github.com/Pank0REKT/demreview-cs2">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+          <span>GitHub</span>
+        </a>
+        <button class="lang-toggle" type="button">RU</button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Первый экран -->
+    <div class="hero container">
+      <img class="hero-icon" src="assets/icon.png" alt="" width="76" height="76">
+      <h1>DemReview</h1>
+      <p class="tagline">
+        <span data-lang="ru">Разбор <em>привычек одного игрока</em> по демке CS2</span>
+        <span data-lang="en">Read <em>one player's habits</em> from a CS2 demo</span>
+      </p>
+      <p class="hero-sub">
+        <span data-lang="ru">Куда он ходит, какие гранаты кидает, как реагирует на ситуацию в раунде — и какие решения повторяются настолько часто, что их можно предсказать.</span>
+        <span data-lang="en">Where they go, which grenades they throw, how they react to the situation in a round — and which decisions repeat often enough to be predictable.</span>
+      </p>
+
+      <div class="download" data-download>
+        <div class="download-buttons">
+          <a class="btn btn-primary" href="https://github.com/Pank0REKT/demreview-cs2/releases/latest" data-releases-link>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            <span data-lang="ru">Скачать</span><span data-lang="en">Download</span>
+          </a>
+        </div>
+        <p class="download-meta">
+          <span data-lang="ru">Windows 10/11 и Linux · бесплатно</span><span data-lang="en">Windows 10/11 and Linux · free</span>
+        </p>
+      </div>
+
+      <ul class="badges">
+        <li><span data-lang="ru">Бесплатно и open source</span><span data-lang="en">Free and open source</span></li>
+        <li><span data-lang="ru">Работает офлайн</span><span data-lang="en">Works offline</span></li>
+        <li><span data-lang="ru">.NET ставить не нужно</span><span data-lang="en">No .NET install needed</span></li>
+        <li><span data-lang="ru">Русский и английский</span><span data-lang="en">English and Russian</span></li>
+      </ul>
+    </div>
+
+    <!-- Карусель скриншотов -->
+    <div class="container">
+      <div class="carousel" data-carousel aria-roledescription="carousel"
+           data-i18n-attr="aria-label" data-ru-aria-label="Скриншоты" data-en-aria-label="Screenshots" aria-label="Screenshots">
+        <div class="carousel-viewport">
+          <div class="carousel-track">
+            <figure class="slide">
+              <button type="button" data-full="assets/shots/radar-routes.webp" data-i18n-attr="aria-label" data-ru-aria-label="Увеличить скриншот" data-en-aria-label="Enlarge screenshot" aria-label="Enlarge screenshot">
+                <img src="assets/shots/radar-routes.webp" width="1600" height="873" data-i18n-attr="alt"
+                     data-ru-alt="Радар: все маршруты, гранаты и смерти одного игрока" data-en-alt="Radar with all routes, grenades and deaths of one player" alt="Radar with all routes, grenades and deaths of one player">
+              </button>
+              <template><span data-lang="ru"><strong>Радар.</strong> Все маршруты игрока, гранаты от броска до детонации и смерти на подложке карты.</span><span data-lang="en"><strong>Radar.</strong> Every route of the player, grenades from throw to detonation, and deaths on the map.</span></template>
+            </figure>
+            <figure class="slide">
+              <button type="button" data-full="assets/shots/timeline.webp" data-i18n-attr="aria-label" data-ru-aria-label="Увеличить скриншот" data-en-aria-label="Enlarge screenshot" aria-label="Enlarge screenshot">
+                <img src="assets/shots/timeline.webp" width="1600" height="873" loading="lazy" data-i18n-attr="alt"
+                     data-ru-alt="Повтор раунда: киллфид и всплывающий урон" data-en-alt="Round replay with kill feed and damage pop-ups" alt="Round replay with kill feed and damage pop-ups">
+              </button>
+              <template><span data-lang="ru"><strong>Повтор раунда.</strong> Таймлайн с воспроизведением, киллфид как в игре, урон над жертвами и контекст момента.</span><span data-lang="en"><strong>Round replay.</strong> A playable timeline, a game-style kill feed, damage pop-ups and the context of the moment.</span></template>
+            </figure>
+            <figure class="slide">
+              <button type="button" data-full="assets/shots/statistics.webp" data-i18n-attr="aria-label" data-ru-aria-label="Увеличить скриншот" data-en-aria-label="Enlarge screenshot" aria-label="Enlarge screenshot">
+                <img src="assets/shots/statistics.webp" width="1600" height="873" loading="lazy" data-i18n-attr="alt"
+                     data-ru-alt="Таблица «условия → действия»" data-en-alt="Conditions → actions table" alt="Conditions → actions table">
+              </button>
+              <template><span data-lang="ru"><strong>Статистика.</strong> Каждый раунд как «условия → решение» и частотные таблицы.</span><span data-lang="en"><strong>Statistics.</strong> Every round as "conditions → decision" plus frequency tables.</span></template>
+            </figure>
+            <figure class="slide">
+              <button type="button" data-full="assets/shots/profile.webp" data-i18n-attr="aria-label" data-ru-aria-label="Увеличить скриншот" data-en-aria-label="Enlarge screenshot" aria-label="Enlarge screenshot">
+                <img src="assets/shots/profile.webp" width="1600" height="873" loading="lazy" data-i18n-attr="alt"
+                     data-ru-alt="Профиль игрока: роли, сводка по сторонам и паттерны" data-en-alt="Player profile: roles, side summary and patterns" alt="Player profile: roles, side summary and patterns">
+              </button>
+              <template><span data-lang="ru"><strong>Профиль игрока.</strong> Роль на каждой стороне, устойчивые паттерны с уверенностью, ADR и предсказуемость.</span><span data-lang="en"><strong>Player profile.</strong> Role on each side, stable patterns with confidence, ADR and predictability.</span></template>
+            </figure>
+          </div>
+        </div>
+        <button class="carousel-btn prev" type="button" data-i18n-attr="aria-label" data-ru-aria-label="Предыдущий" data-en-aria-label="Previous" aria-label="Previous">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <button class="carousel-btn next" type="button" data-i18n-attr="aria-label" data-ru-aria-label="Следующий" data-en-aria-label="Next" aria-label="Next">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        <div class="carousel-dots"></div>
+        <p class="carousel-caption" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <!-- Что это -->
+    <section id="about">
+      <div class="container about">
+        <div class="about-text">
+          <p class="eyebrow"><span data-lang="ru">О программе</span><span data-lang="en">About</span></p>
+          <h2><span data-lang="ru">Одна демка — один игрок — его привычки</span><span data-lang="en">One demo, one player, their habits</span></h2>
+          <p data-lang="ru">DemReview — десктопное приложение для анализа поведения <strong>конкретного игрока</strong> по демке Counter-Strike 2 (<code>.dem</code>). Выберите игрока — и все вкладки покажут только его: маршруты, гранаты, дуэли, урон и решения в каждом раунде.</p>
+          <p data-lang="en">DemReview is a desktop app that analyzes how <strong>one specific player</strong> behaves in a Counter-Strike 2 demo (<code>.dem</code>). Pick a player and every tab shows only them: routes, grenades, duels, damage and decisions in each round.</p>
+          <p data-lang="ru">Программа ищет то, что повторяется: <strong>в каких условиях</strong> (сторона, закупка, счёт) игрок принимает <strong>какое решение</strong> — и честно показывает, насколько уверенным можно быть, ведь одна демка — это малая выборка.</p>
+          <p data-lang="en">It looks for what repeats: <strong>under which conditions</strong> (side, buy, score) the player makes <strong>which decision</strong> — and is honest about how confident you can be, because one demo is a small sample.</p>
+          <p data-lang="ru">Пригодится, чтобы изучить соперника перед матчем, разобрать свою игру или помочь тиммейту увидеть его предсказуемые привычки.</p>
+          <p data-lang="en">Use it to scout an opponent before a match, review your own play, or show a teammate their predictable habits.</p>
+        </div>
+        <div class="card pattern-card" aria-label="Example">
+          <p class="label">
+            <span><span data-lang="ru">Пример из профиля игрока</span><span data-lang="en">Example from a player profile</span></span>
+            <span>de_mirage</span>
+          </p>
+          <div class="pattern">
+            <span class="dot good" aria-hidden="true"></span>
+            <p>
+              <span data-lang="ru">На T при закупке «фулл-бай» в 7 из 9 раундов идёт <span class="route">TSpawn → SideAlley → TopofMid</span><span class="share">уверенность высокая</span></span>
+              <span data-lang="en">On T (full buy): in 7 of 9 rounds takes <span class="route">TSpawn → SideAlley → TopofMid</span><span class="share">high confidence</span></span>
+            </p>
+          </div>
+          <div class="pattern">
+            <span class="dot good" aria-hidden="true"></span>
+            <p>
+              <span data-lang="ru">На CT в 9 из 12 раундов в начале раунда занимает <span class="route">Connector</span><span class="share">уверенность высокая</span></span>
+              <span data-lang="en">On CT: in 9 of 12 rounds sets up at <span class="route">Connector</span> early in the round<span class="share">high confidence</span></span>
+            </p>
+          </div>
+          <div class="pattern">
+            <span class="dot warn" aria-hidden="true"></span>
+            <p>
+              <span data-lang="ru">На T после первой смерти в команде в 4 из 5 раундов в течение 8 с <span class="route">вступает в бой (размен)</span><span class="share">уверенность средняя</span></span>
+              <span data-lang="en">On T: after the first teammate death, <span class="route">joins the fight within 8 s (trade)</span> in 4 of 5 rounds<span class="share">medium confidence</span></span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Как это работает -->
+    <section id="how">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow"><span data-lang="ru">Как это работает</span><span data-lang="en">How it works</span></p>
+          <h2><span data-lang="ru">Три шага до профиля игрока</span><span data-lang="en">Three steps to a player profile</span></h2>
+        </div>
+        <ol class="steps">
+          <li class="card">
+            <h3><span data-lang="ru">Откройте демку</span><span data-lang="en">Open a demo</span></h3>
+            <p><span data-lang="ru">Перетащите <code>.dem</code> на окно или нажмите <kbd>Ctrl</kbd>+<kbd>O</kbd>. Разбор идёт в фоне, повторное открытие — из кеша за секунды.</span><span data-lang="en">Drag a <code>.dem</code> onto the window or press <kbd>Ctrl</kbd>+<kbd>O</kbd>. Parsing runs in the background; reopening is instant from the cache.</span></p>
+          </li>
+          <li class="card">
+            <h3><span data-lang="ru">Выберите игрока</span><span data-lang="en">Pick a player</span></h3>
+            <p><span data-lang="ru">Все вкладки — радар, статистика, профиль — сразу показывают только его.</span><span data-lang="en">Every tab — radar, statistics, profile — now shows only this player.</span></p>
+          </li>
+          <li class="card">
+            <h3><span data-lang="ru">Изучите паттерны</span><span data-lang="en">Study the patterns</span></h3>
+            <p><span data-lang="ru">Профиль покажет роль и повторяющиеся решения; один клик — примеры раундов на радаре.</span><span data-lang="en">The profile shows the role and repeated decisions; one click shows example rounds on the radar.</span></p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Возможности -->
+    <section id="features">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow"><span data-lang="ru">Возможности</span><span data-lang="en">Features</span></p>
+          <h2><span data-lang="ru">Всё, что нужно для разбора</span><span data-lang="en">Everything you need for a review</span></h2>
+        </div>
+        <div class="features">
+          <div class="card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 12 19 5"/></svg></div>
+            <h3><span data-lang="ru">Радар</span><span data-lang="en">Radar</span></h3>
+            <p><span data-lang="ru">Маршруты, гранаты от броска до детонации (зоны дыма и огня), смерти, тепловые карты позиций и смертей.</span><span data-lang="en">Routes, grenades from throw to detonation (smoke and fire areas), deaths, heatmaps of positions and deaths.</span></p>
+          </div>
+          <div class="card">
+            <div class="feature-icon ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg></div>
+            <h3><span data-lang="ru">Повтор раунда</span><span data-lang="en">Round replay</span></h3>
+            <p><span data-lang="ru">Воспроизведение ×0,5–×8: все игроки с направлением взгляда, киллфид, урон, деньги, бомба и счёт.</span><span data-lang="en">Playback at ×0.5–×8: all players with view direction, kill feed, damage, money, bomb and score.</span></p>
+          </div>
+          <div class="card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8L3 5Z"/></svg></div>
+            <h3><span data-lang="ru">Фильтры</span><span data-lang="en">Filters</span></h3>
+            <p><span data-lang="ru">Раунд, сторона, закупка команды (пистолетка, эко, форс, фулл-бай) и тип гранаты.</span><span data-lang="en">Round, side, team buy (pistol, eco, force, full buy) and grenade type.</span></p>
+          </div>
+          <div class="card">
+            <div class="feature-icon ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div>
+            <h3><span data-lang="ru">Условия → действия</span><span data-lang="en">Conditions → actions</span></h3>
+            <p><span data-lang="ru">Сторона, закупка и счёт против маршрута, позиции, гранат, агрессии, первой дуэли и урона.</span><span data-lang="en">Side, buy and score versus route, position, grenades, aggression, opening duel and damage.</span></p>
+          </div>
+          <div class="card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div>
+            <h3><span data-lang="ru">Профиль игрока</span><span data-lang="en">Player profile</span></h3>
+            <p><span data-lang="ru">Роль на каждой стороне с обоснованием, паттерны с уверенностью по малой выборке, ADR и индекс предсказуемости.</span><span data-lang="en">Role on each side with reasons, patterns with small-sample confidence, ADR and a predictability index.</span></p>
+          </div>
+          <div class="card">
+            <div class="feature-icon ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M14 3v6h6"/><path d="M9 15h6"/></svg></div>
+            <h3><span data-lang="ru">Экспорт</span><span data-lang="en">Export</span></h3>
+            <p><span data-lang="ru">Профиль в Markdown или JSON — чтобы поделиться с командой или сохранить заметки к сопернику.</span><span data-lang="en">The profile to Markdown or JSON — to share with your team or keep notes on an opponent.</span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Карты -->
+    <section id="maps">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow"><span data-lang="ru">Карты</span><span data-lang="en">Maps</span></p>
+          <h2><span data-lang="ru">Радары для 10 карт</span><span data-lang="en">Radars for 10 maps</span></h2>
+        </div>
+        <ul class="maps">
+          <li><img src="assets/maps/de_mirage.webp" alt="" width="320" height="320" loading="lazy">Mirage</li>
+          <li><img src="assets/maps/de_inferno.webp" alt="" width="320" height="320" loading="lazy">Inferno</li>
+          <li><img src="assets/maps/de_dust2.webp" alt="" width="320" height="320" loading="lazy">Dust II</li>
+          <li><img src="assets/maps/de_nuke.webp" alt="" width="320" height="320" loading="lazy">Nuke</li>
+          <li><img src="assets/maps/de_ancient.webp" alt="" width="320" height="320" loading="lazy">Ancient</li>
+          <li><img src="assets/maps/de_anubis.webp" alt="" width="320" height="320" loading="lazy">Anubis</li>
+          <li><img src="assets/maps/de_train.webp" alt="" width="320" height="320" loading="lazy">Train</li>
+          <li><img src="assets/maps/de_overpass.webp" alt="" width="320" height="320" loading="lazy">Overpass</li>
+          <li><img src="assets/maps/de_vertigo.webp" alt="" width="320" height="320" loading="lazy">Vertigo</li>
+          <li><img src="assets/maps/de_cache.webp" alt="" width="320" height="320" loading="lazy">Cache</li>
+        </ul>
+        <p class="maps-note">
+          <span data-lang="ru">Другие карты тоже открываются — радар рисуется на сетке с масштабом по позициям игроков. Свою карту можно добавить: <a href="usage.html#faq-map">как это сделать</a>.</span>
+          <span data-lang="en">Other maps open too — the radar is drawn on a grid scaled to player positions. You can add your own map: <a href="usage.html#faq-map">here's how</a>.</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- Приватность -->
+    <section id="privacy">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow"><span data-lang="ru">Приватность</span><span data-lang="en">Privacy</span></p>
+          <h2><span data-lang="ru">Ваши демки остаются у вас</span><span data-lang="en">Your demos stay with you</span></h2>
+        </div>
+        <div class="privacy">
+          <div class="card">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span data-lang="ru">Работает офлайн</span><span data-lang="en">Works offline</span></h3>
+            <p><span data-lang="ru">Демки разбираются на вашем компьютере. Файлы, ники и SteamID никуда не отправляются.</span><span data-lang="en">Demos are parsed on your computer. Files, nicknames and SteamIDs are never sent anywhere.</span></p>
+          </div>
+          <div class="card">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span data-lang="ru">Проверка обновлений</span><span data-lang="en">Update check</span></h3>
+            <p><span data-lang="ru">Один запрос к GitHub при запуске, чтобы сообщить о новой версии. Отключается в настройках.</span><span data-lang="en">One request to GitHub on start to tell you about a new version. Can be turned off in Settings.</span></p>
+          </div>
+          <div class="card">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span data-lang="ru">Анонимная статистика</span><span data-lang="en">Anonymous statistics</span></h3>
+            <p><span data-lang="ru">Только запуск и загрузка демки (карта, время разбора) — без постоянного ID. Отключается одним флажком.</span><span data-lang="en">Only app start and demo load (map, parse time) — no persistent ID. One checkbox turns it off.</span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Что нового -->
+    <section id="releases">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow"><span data-lang="ru">Что нового</span><span data-lang="en">What's new</span></p>
+          <h2><span data-lang="ru">Релизы</span><span data-lang="en">Releases</span></h2>
+        </div>
+        <ul class="releases" data-releases>
+          <li><a href="https://github.com/Pank0REKT/demreview-cs2/releases" ><span class="ver"><span data-lang="ru">Все релизы на GitHub</span><span data-lang="en">All releases on GitHub</span></span></a></li>
+        </ul>
+        <p class="releases-more">
+          <a href="https://github.com/Pank0REKT/demreview-cs2/blob/main/CHANGELOG.md"><span data-lang="ru">Полный список изменений →</span><span data-lang="en">Full changelog →</span></a>
+        </p>
+      </div>
+    </section>
+
+    <!-- Скачать -->
+    <div class="container">
+      <div class="cta" id="download">
+        <h2><span data-lang="ru">Скачать DemReview</span><span data-lang="en">Download DemReview</span></h2>
+        <p class="lead"><span data-lang="ru">Распакуйте архив и запустите — устанавливать ничего не нужно.</span><span data-lang="en">Unpack the archive and run it — nothing to install.</span></p>
+        <div class="download" data-download>
+          <div class="download-buttons">
+            <a class="btn btn-primary" href="https://github.com/Pank0REKT/demreview-cs2/releases/latest" data-releases-link>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+              <span data-lang="ru">Скачать</span><span data-lang="en">Download</span>
+            </a>
+          </div>
+          <p class="download-meta">
+            <span data-lang="ru">Windows 10/11 и Linux · бесплатно</span><span data-lang="en">Windows 10/11 and Linux · free</span>
+          </p>
+        </div>
+        <div class="cta-notes">
+          <p class="note"><span data-lang="ru"><strong>Windows:</strong> программа не подписана, поэтому SmartScreen может предупредить при первом запуске — «Подробнее → Выполнить в любом случае».</span><span data-lang="en"><strong>Windows:</strong> the app is not code-signed, so SmartScreen may warn on first start — <em>More info → Run anyway</em>.</span></p>
+          <p class="note"><span data-lang="ru"><strong>Проверка файлов:</strong> к каждому релизу приложен <code>SHA256SUMS.txt</code>. На Linux нужен графический сеанс с X11 или XWayland.</span><span data-lang="en"><strong>Verify downloads:</strong> each release has <code>SHA256SUMS.txt</code>. Linux needs a desktop session with X11 or XWayland.</span></p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div>
+        <p><span data-lang="ru">DemReview — бесплатный проект с открытым кодом под лицензией MIT. Автор — <a href="https://github.com/Pank0REKT">@Pank0REKT</a>.</span><span data-lang="en">DemReview is free and open source under the MIT License. Made by <a href="https://github.com/Pank0REKT">@Pank0REKT</a>.</span></p>
+        <p class="disclaimer"><span data-lang="ru">Не связан с Valve и не одобрен ею. Counter-Strike и изображения карт — © Valve Corporation.</span><span data-lang="en">Not affiliated with or endorsed by Valve. Counter-Strike and map images © Valve Corporation.</span></p>
+      </div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/Pank0REKT/demreview-cs2">GitHub</a></li>
+        <li><a href="https://github.com/Pank0REKT/demreview-cs2/issues"><span data-lang="ru">Сообщить об ошибке</span><span data-lang="en">Report a bug</span></a></li>
+        <li><a href="https://github.com/Pank0REKT/demreview-cs2/releases"><span data-lang="ru">Релизы</span><span data-lang="en">Releases</span></a></li>
+        <li><a href="https://github.com/Pank0REKT/demreview-cs2/blob/main/LICENSE">MIT</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <dialog class="lightbox">
+    <form method="dialog"><button type="submit" aria-label="Close">×</button></form>
+    <img alt="">
+  </dialog>
+
+  <script src="assets/site.js" defer></script>
+</body>
+</html>
