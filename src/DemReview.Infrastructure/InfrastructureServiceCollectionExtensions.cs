@@ -1,7 +1,9 @@
 using DemReview.Application;
+using DemReview.Application.Analytics;
 using DemReview.Application.Maps;
 using DemReview.Application.Parsing;
 using DemReview.Application.Updates;
+using DemReview.Infrastructure.Analytics;
 using DemReview.Infrastructure.Maps;
 using DemReview.Infrastructure.Parsing;
 using DemReview.Infrastructure.Platform;
@@ -22,6 +24,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IMapConfigProvider, EmbeddedMapConfigProvider>();
         services.AddSingleton<IMapImageProvider, LocalMapImageProvider>();
         services.AddSingleton<IUpdateChecker, GitHubUpdateChecker>();
+        services.AddSingleton<IAnalytics, AptabaseAnalytics>();
         return services;
     }
 

@@ -12,7 +12,13 @@
          для всех платформ (~600 МБ). При публикации RID задаётся явно (-r win-x64 / linux-x64). -->
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">$(NETCoreSdkRuntimeIdentifier)</RuntimeIdentifier>
     <SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
+    <!-- Ключ статистики Aptabase: в релизе — из секрета GitHub (переменная окружения APTABASE_APP_KEY).
+         В репозитории ключа нет, поэтому сборки из исходников статистику не отправляют. -->
+    <AptabaseAppKey Condition="'$(AptabaseAppKey)' == ''">$(APTABASE_APP_KEY)</AptabaseAppKey>
   </PropertyGroup>
+  <ItemGroup Condition="'$(AptabaseAppKey)' != ''">
+    <AssemblyMetadata Include="AptabaseAppKey" Value="$(AptabaseAppKey)" />
+  </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>

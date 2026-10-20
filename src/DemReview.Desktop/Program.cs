@@ -86,12 +86,14 @@ internal static class Program
         return builder.Build();
     }
 
-    /// <summary>Версия и адрес репозитория — из метаданных сборки (Directory.Build.props).</summary>
+    /// <summary>Версия, адрес репозитория (Directory.Build.props) и ключ статистики (DemReview.Desktop.csproj) — из метаданных сборки.</summary>
     private static AppInfo CreateAppInfo()
     {
         var assembly = typeof(Program).Assembly;
-        var repository = assembly.GetCustomAttributes<AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == "RepositoryUrl")?.Value;
-        return new AppInfo(assembly.GetName().Version ?? new Version(0, 0, 0), repository ?? "");
+        var metadata = assembly.GetCustomAttributes<AssemblyMetadataAttribute>().ToList();
+        var repository = metadata.FirstOrDefault(a => a.Key == "RepositoryUrl")?.Value;
+        var analyticsKey = metadata.FirstOrDefault(a => a.Key == "AptabaseAppKey")?.Value;
+        return new AppInfo(assembly.GetName().Version ?? new Version(0, 0, 0), repository ?? "", analyticsKey);
     }
 
     private static Serilog.ILogger CreateLogger(IPlatformService platform) =>

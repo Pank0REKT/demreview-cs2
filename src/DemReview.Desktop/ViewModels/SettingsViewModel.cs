@@ -11,7 +11,7 @@ namespace DemReview.Desktop.ViewModels;
 
 public sealed record LanguageOption(UiLanguage Language, string Name);
 
-/// <summary>Вкладка «Настройки»: язык интерфейса, кеш разобранных демок, каталоги, обновления.</summary>
+/// <summary>Вкладка «Настройки»: язык интерфейса, кеш разобранных демок, каталоги, обновления, статистика.</summary>
 public partial class SettingsViewModel : ViewModelBase
 {
     private readonly LanguageService _language;
@@ -29,6 +29,7 @@ public partial class SettingsViewModel : ViewModelBase
         _app = app;
         _settings = settings;
         CheckForUpdates = settings.Current.CheckForUpdates;
+        SendUsageStatistics = settings.Current.SendUsageStatistics;
         _logger = logger;
         SelectedLanguage = Languages.First(l => l.Language == Loc.Language);
     }
@@ -54,6 +55,15 @@ public partial class SettingsViewModel : ViewModelBase
     public string MapsDirectory => _platform.MapsDirectory;
 
     public string Version => _app.VersionText;
+
+    /// <summary>Анонимная статистика использования; выключение действует сразу.</summary>
+    [ObservableProperty]
+    public partial bool SendUsageStatistics { get; set; }
+
+    /// <summary>Ключ статистики задан в сборке (только релизы) — иначе отправлять нечего и флажок неактивен.</summary>
+    public bool HasAnalytics => _app.HasAnalytics;
+
+    partial void OnSendUsageStatisticsChanged(bool value) => _settings.Update(s => s with { SendUsageStatistics = value });
 
     partial void OnSelectedLanguageChanged(LanguageOption value)
     {

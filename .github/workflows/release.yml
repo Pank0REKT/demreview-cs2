@@ -26,6 +26,9 @@ jobs:
         run: dotnet test --solution DemReview.slnx -c Release
 
       - name: Publish
+        env:
+          # Ключ статистики Aptabase (Settings → Secrets and variables → Actions); без него статистика выключена.
+          APTABASE_APP_KEY: ${{ secrets.APTABASE_APP_KEY }}
         run: |
           for rid in win-x64 linux-x64; do
             dotnet publish src/DemReview.Desktop/DemReview.Desktop.csproj -c Release -r "$rid" --self-contained \

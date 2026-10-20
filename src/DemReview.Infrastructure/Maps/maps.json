@@ -8,6 +8,8 @@
     { "name": "de_ancient",  "displayName": "Ancient",  "pos_x": -2953, "pos_y": 2164, "scale": 5.0 },
     { "name": "de_anubis",   "displayName": "Anubis",   "pos_x": -2796, "pos_y": 3328, "scale": 5.22 },
     { "name": "de_train",    "displayName": "Train",    "pos_x": -2308, "pos_y": 2078, "scale": 4.082 },
-    { "name": "de_overpass", "displayName": "Overpass", "pos_x": -4831, "pos_y": 1781, "scale": 5.2 }
+    { "name": "de_overpass", "displayName": "Overpass", "pos_x": -4831, "pos_y": 1781, "scale": 5.2 },
+    { "name": "de_vertigo",  "displayName": "Vertigo",  "pos_x": -3168, "pos_y": 1762, "scale": 4.0, "lowerLevelMaxZ": 11700 },
+    { "name": "de_cache",    "displayName": "Cache",    "pos_x": -2000, "pos_y": 3250, "scale": 5.5 }
   ]
 }

@@ -39,6 +39,9 @@ public sealed record AppSettings
     /// <summary>Версия, о которой пользователь попросил больше не напоминать.</summary>
     public string? DismissedUpdateVersion { get; init; }
 
+    /// <summary>Отправлять анонимную статистику: запуск программы и загрузка демки (карта, без имён и файлов).</summary>
+    public bool SendUsageStatistics { get; init; } = true;
+
     public WindowPlacement? MainWindow { get; init; }
 }
 

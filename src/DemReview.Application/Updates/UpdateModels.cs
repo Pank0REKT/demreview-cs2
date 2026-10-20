@@ -2,9 +2,12 @@ using System.Text.RegularExpressions;
 
 namespace DemReview.Application.Updates;
 
-/// <summary>Версия приложения и адрес его репозитория (из метаданных сборки).</summary>
-public sealed partial record AppInfo(Version Version, string RepositoryUrl)
+/// <summary>Версия приложения, адрес его репозитория и ключ статистики (из метаданных сборки).</summary>
+/// <param name="AnalyticsKey">Ключ приложения Aptabase; задаётся только при сборке релиза, иначе статистика не отправляется.</param>
+public sealed partial record AppInfo(Version Version, string RepositoryUrl, string? AnalyticsKey = null)
 {
+    public bool HasAnalytics => !string.IsNullOrWhiteSpace(AnalyticsKey);
+
     /// <summary>Версия для показа: 0.1.0.</summary>
     public string VersionText => Version.ToString(3);
 

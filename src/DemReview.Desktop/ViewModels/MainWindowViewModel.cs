@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DemReview.Application;
+using DemReview.Application.Analytics;
 using DemReview.Application.Export;
 using DemReview.Application.Localization;
 using DemReview.Application.Parsing;
@@ -21,6 +22,7 @@ public partial class MainWindowViewModel(
     StatisticsViewModel statistics,
     ProfileViewModel profile,
     SettingsViewModel settings,
+    IAnalytics analytics,
     ILogger<MainWindowViewModel> logger) : ViewModelBase
 {
     private CancellationTokenSource? _loadCts;
@@ -136,6 +138,7 @@ public partial class MainWindowViewModel(
                 SelectedTabIndex = 0;
         };
         _ = Settings.CheckOnStartupAsync();
+        analytics.Track(AnalyticsEvents.AppStarted, new Dictionary<string, object> { ["language"] = Loc.Language.ToString() });
         return startup.DemoPath is { } path ? LoadFileAsync(path) : Task.CompletedTask;
     }
 

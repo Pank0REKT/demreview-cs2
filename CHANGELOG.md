@@ -2,6 +2,13 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Features
+- Radar images and coordinates for de_vertigo (two levels) and de_cache.
+- Anonymous usage statistics via Aptabase: app start and demo load (map, cache or parse, parse time).
+  No file names, nicknames or persistent user ID. Can be turned off in *Settings → Usage statistics*.
+
 ## [0.1.0] — first public release
 
 ### Features

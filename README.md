@@ -4,7 +4,7 @@
 
 DemReview is a desktop app that analyzes how **one specific player** behaves in a Counter-Strike 2 demo (`.dem`):
 where they go, which grenades they throw, how they react to the situation in a round, and which habits repeat
-often enough to be predictable. It works fully offline on Windows and Linux.
+often enough to be predictable. It works offline on Windows and Linux.
 
 ![Radar with all routes, grenades and deaths of one player](docs/images/radar-routes.png)
 
@@ -66,7 +66,7 @@ Each release has `SHA256SUMS.txt` to verify the downloads.
    grey — low): one demo is a small sample. *Show on radar* overlays the example rounds.
 6. **Export** the profile with Ctrl+E: the format follows the file type (`.md` or `.json`), the text follows the
    interface language.
-7. **Settings:** interface language, the parsed demo cache (size, clearing), data and map folders, update check.
+7. **Settings:** interface language, the parsed demo cache (size, clearing), data and map folders, update check, usage statistics.
 
 ### Keyboard shortcuts
 
@@ -81,7 +81,7 @@ Each release has `SHA256SUMS.txt` to verify the downloads.
 ### Maps
 
 Radar images and coordinates are included for de_mirage, de_inferno, de_dust2, de_nuke, de_ancient, de_anubis,
-de_train and de_overpass (coordinates are verified on real demos for Mirage and Anubis). Other maps are drawn
+de_train, de_overpass, de_vertigo and de_cache (coordinates are verified on real demos for Mirage and Anubis). Other maps are drawn
 on a grid with the scale fitted to player positions. How to add a map: [`maps/README.txt`](maps/README.txt).
 
 ### Data and settings
@@ -98,6 +98,7 @@ Analysis thresholds can be tuned in `settings.json`:
 |---|---|---|
 | `Language` | — | `ru` or `en`; empty — ask on start |
 | `CheckForUpdates` | `true` | Check GitHub for a new release on start |
+| `SendUsageStatistics` | `true` | Send anonymous usage statistics (app start, demo load) |
 | `SampleTickStep` | 16 | Position sampling step, ticks (8–16) |
 | `GrenadeClusterThrowDistance` | 150 | Max distance between throw points in one lineup, units |
 | `GrenadeClusterLandDistance` | 250 | Max distance between detonation points in one lineup, units |
@@ -110,9 +111,16 @@ Analysis thresholds can be tuned in `settings.json`:
 
 ### Updates and privacy
 
-DemReview does not send your data anywhere. The only network request is an optional check of the latest
-release on GitHub at start (*Settings → Updates*). When a new version is out, a banner links to the release page;
-updates are installed manually by downloading the new build.
+DemReview never sends your demos, files or player data. There are two network requests, both optional; without
+a network the app works as usual:
+
+- **Update check** — the latest release on GitHub is checked at start (*Settings → Updates*). When a new version
+  is out, a banner links to the release page; updates are installed manually by downloading the new build.
+- **Anonymous usage statistics** via [Aptabase](https://aptabase.com) — helps to see how many people use the app.
+  Only two events are sent: app start and demo load (map, cache or parse, parse time), plus the app version, OS
+  and system language. File names, nicknames, SteamIDs and a persistent user ID are never sent. Turn it off with
+  the checkbox in *Settings → Usage statistics*. Only release builds send statistics; builds from source have no
+  key and it is off.
 
 ## Building from source
 

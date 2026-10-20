@@ -62,7 +62,7 @@ public class MapCoordinateTests
     public void Embedded_config_contains_all_required_maps()
     {
         var provider = new EmbeddedMapConfigProvider();
-        string[] required = ["de_mirage", "de_inferno", "de_dust2", "de_nuke", "de_ancient", "de_anubis", "de_train", "de_overpass"];
+        string[] required = ["de_mirage", "de_inferno", "de_dust2", "de_nuke", "de_ancient", "de_anubis", "de_train", "de_overpass", "de_vertigo", "de_cache"];
 
         Assert.All(required, name =>
         {

@@ -594,6 +594,14 @@
                                            Text="{l:T 'Один запрос к GitHub при запуске; без сети программа работает как обычно. Новая версия скачивается вручную со страницы релиза.', 'One request to GitHub on startup; without a network the app works as usual. New versions are downloaded manually from the release page.'}" />
                             </StackPanel>
 
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="header" Text="{l:T 'Статистика использования', 'Usage statistics'}" />
+                                <CheckBox Content="{l:T 'Отправлять анонимную статистику использования', 'Send anonymous usage statistics'}"
+                                          IsChecked="{Binding SendUsageStatistics}" IsEnabled="{Binding HasAnalytics}" />
+                                <TextBlock Classes="secondary" TextWrapping="Wrap"
+                                           Text="{l:T 'Отправляются только два события: запуск программы и загрузка демки (карта, из кеша или разбор, время разбора), а также версия программы, ОС и язык системы. Имена файлов, ники, SteamID и постоянный идентификатор пользователя не отправляются. Сервис — Aptabase.', 'Only two events are sent: app start and demo load (map, cache or parse, parse time), plus the app version, OS and system language. File names, nicknames, SteamIDs and a persistent user ID are never sent. Service: Aptabase.'}" />
+                            </StackPanel>
+
                             <TextBlock Classes="secondary" Text="{Binding Version, StringFormat='DemReview {0}'}" />
                         </StackPanel>
                     </ScrollViewer>
