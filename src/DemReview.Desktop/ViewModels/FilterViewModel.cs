@@ -20,6 +20,11 @@ public sealed class FilterOption(Func<string> label, object? value)
 
     public object? Value { get; } = value;
 
+    /// <summary>Вариант стороны T или CT — подпись в цвете стороны.</summary>
+    public bool IsT => Value is Side.T;
+
+    public bool IsCT => Value is Side.CT;
+
     public override string ToString() => Label;
 }
 

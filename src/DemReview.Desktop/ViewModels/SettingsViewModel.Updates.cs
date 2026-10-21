@@ -45,6 +45,9 @@ public partial class SettingsViewModel
         _ => Loc.T("Не удалось проверить обновления (нет сети или GitHub недоступен).", "Could not check for updates (no network or GitHub is unavailable)."),
     };
 
+    /// <summary>Строка состояния в настройках: результат проверки или установленная версия, если проверки не было.</summary>
+    public string UpdateSummaryText => UpdateStatusText.Length > 0 ? UpdateStatusText : $"DemReview {_app.VersionText}";
+
     partial void OnCheckForUpdatesChanged(bool value) => _settings.Update(s => s with { CheckForUpdates = value });
 
     /// <summary>Проверка при запуске: тихо, без сообщений об ошибках; баннер — только для непропущенной версии.</summary>
@@ -85,6 +88,7 @@ public partial class SettingsViewModel
             IsCheckingUpdates = false;
         }
         OnPropertyChanged(nameof(UpdateStatusText));
+        OnPropertyChanged(nameof(UpdateSummaryText));
         return _lastCheck;
     }
 

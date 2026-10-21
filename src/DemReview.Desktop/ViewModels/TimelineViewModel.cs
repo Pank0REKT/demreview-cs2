@@ -36,7 +36,7 @@ public partial class TimelineViewModel : ViewModelBase
     public partial double MaxTick { get; private set; } = 1;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(TimeText))]
+    [NotifyPropertyChangedFor(nameof(TimeText), nameof(CurrentTimeText))]
     public partial double CurrentTick { get; set; }
 
     [ObservableProperty]
@@ -58,6 +58,21 @@ public partial class TimelineViewModel : ViewModelBase
     public string TimeText => Round is null
         ? Loc.T("Выберите раунд в фильтре или в списке раундов — появится таймлайн.", "Pick a round in the filter or in the round list to open the timeline.")
         : $"{Loc.T("Раунд", "Round")} {Round.Number} · {Texts.Time((float)((CurrentTick - MinTick) / _tickRate))} / {Texts.Time((float)((MaxTick - MinTick) / _tickRate))}";
+
+    /// <summary>Текущее время раунда «0:24» рядом с кнопкой воспроизведения.</summary>
+    public string CurrentTimeText => Round is null ? "0:00" : Texts.Time((float)((CurrentTick - MinTick) / _tickRate));
+
+    /// <summary>Длительность раунда «/ 1:12».</summary>
+    public string TotalTimeText => Round is null ? "/ 0:00" : $"/ {Texts.Time((float)((MaxTick - MinTick) / _tickRate))}";
+
+    public string RoundTitle => Round is null ? Loc.T("Все раунды", "All rounds") : $"{Loc.T("Раунд", "Round")} {Round.Number}";
+
+    partial void OnRoundChanged(RoundInfo? value)
+    {
+        OnPropertyChanged(nameof(RoundTitle));
+        OnPropertyChanged(nameof(TotalTimeText));
+        OnPropertyChanged(nameof(CurrentTimeText));
+    }
 
     partial void OnCurrentTickChanged(double value)
     {
@@ -85,6 +100,7 @@ public partial class TimelineViewModel : ViewModelBase
         MaxTick = Math.Max(round.EndTick, round.FreezeEndTick + 1);
         CurrentTick = MinTick;
         OnPropertyChanged(nameof(TimeText));
+        OnPropertyChanged(nameof(TotalTimeText));
         TickChanged?.Invoke((int)CurrentTick);
     }
 

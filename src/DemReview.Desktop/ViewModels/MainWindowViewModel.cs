@@ -90,6 +90,66 @@ public partial class MainWindowViewModel(
 
     public ObservableCollection<PlayerRowViewModel> Players { get; } = [];
 
+    /// <summary>Игроки по командам (сторона на конец матча) с учётом поиска по нику.</summary>
+    public ObservableCollection<PlayerRowViewModel> CtPlayers { get; } = [];
+
+    public ObservableCollection<PlayerRowViewModel> TPlayers { get; } = [];
+
+    /// <summary>Поиск игрока по нику в боковой панели.</summary>
+    [ObservableProperty]
+    public partial string PlayerSearch { get; set; } = "";
+
+    partial void OnPlayerSearchChanged(string value) => FillTeams();
+
+    public string CtTeamName => Match is { } m ? ProfileExporter.TeamName(m.FinalScore.TeamCTName, Side.CT) : "";
+
+    public string TTeamName => Match is { } m ? ProfileExporter.TeamName(m.FinalScore.TeamTName, Side.T) : "";
+
+    public int CtScore => Match?.FinalScore.TeamCTScore ?? 0;
+
+    public int TScore => Match?.FinalScore.TeamTScore ?? 0;
+
+    public string MapName => Match?.MapName ?? "";
+
+    /// <summary>«раундов: 22 · cache.dem» под счётом матча.</summary>
+    public string MatchDetails => Match is not { } m ? ""
+        : $"{Loc.T("раундов", "rounds")}: {m.Rounds.Count} · {Path.GetFileName(CurrentPath)}";
+
+    /// <summary>Ник выбранного игрока для подзаголовков страниц.</summary>
+    public string SelectedPlayerName => SelectedPlayer?.Name ?? Loc.T("игрок не выбран", "no player selected");
+
+    public bool IsRadarTab => SelectedTabIndex == 0;
+
+    public bool IsStatisticsTab => SelectedTabIndex == 1;
+
+    public bool IsProfileTab => SelectedTabIndex == 2;
+
+    public bool IsSettingsTab => SelectedTabIndex == SettingsTabIndex;
+
+    /// <summary>Переход по разделам боковой панели; параметр — номер вкладки строкой (из разметки).</summary>
+    [RelayCommand]
+    private void SelectTab(string index) => SelectedTabIndex = int.Parse(index, System.Globalization.CultureInfo.InvariantCulture);
+
+    [RelayCommand]
+    private void SelectPlayer(PlayerRowViewModel? row)
+    {
+        if (row is not null)
+            SelectedPlayer = row;
+    }
+
+    private void FillTeams()
+    {
+        var search = PlayerSearch.Trim();
+        var visible = Players.Where(p => search.Length == 0 || p.Name.Contains(search, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(p => p.Player.Kills - p.Player.Deaths)
+            .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        CtPlayers.Clear();
+        TPlayers.Clear();
+        foreach (var player in visible)
+            (player.Side == Side.CT ? CtPlayers : TPlayers).Add(player);
+    }
+
     /// <summary>Панель «Кто вы в этой демке?»: предлагается, пока основной игрок не выбран.</summary>
     [ObservableProperty]
     public partial bool IsMainPlayerPromptVisible { get; private set; }
@@ -119,11 +179,29 @@ public partial class MainWindowViewModel(
     {
         OnPropertyChanged(nameof(HasMatch));
         OnPropertyChanged(nameof(MatchSummary));
+        OnPropertyChanged(nameof(CtTeamName));
+        OnPropertyChanged(nameof(TTeamName));
+        OnPropertyChanged(nameof(CtScore));
+        OnPropertyChanged(nameof(TScore));
+        OnPropertyChanged(nameof(MapName));
+        OnPropertyChanged(nameof(MatchDetails));
     }
 
-    partial void OnCurrentPathChanged(string? value) => OnPropertyChanged(nameof(WindowTitle));
+    partial void OnCurrentPathChanged(string? value)
+    {
+        OnPropertyChanged(nameof(WindowTitle));
+        OnPropertyChanged(nameof(MatchDetails));
+    }
 
-    partial void OnSelectedPlayerChanged(PlayerRowViewModel? value) => _ = ShowPlayerAsync(value?.SteamId);
+    partial void OnSelectedPlayerChanged(PlayerRowViewModel? oldValue, PlayerRowViewModel? newValue)
+    {
+        if (oldValue is not null)
+            oldValue.IsSelected = false;
+        if (newValue is not null)
+            newValue.IsSelected = true;
+        OnPropertyChanged(nameof(SelectedPlayerName));
+        _ = ShowPlayerAsync(newValue?.SteamId);
+    }
 
     private async Task ShowPlayerAsync(ulong? steamId)
     {
@@ -149,6 +227,7 @@ public partial class MainWindowViewModel(
         };
         Settings.MainPlayerChanged += OnMainPlayerChanged;
         Settings.MainPlayerPickRequested += ShowMainPlayerPrompt;
+        Settings.PatternThresholdsChanged += Profile.ReloadThresholds;
         _ = Settings.CheckOnStartupAsync();
         analytics.Track(AnalyticsEvents.AppStarted, new Dictionary<string, object> { ["language"] = Loc.Language.ToString() });
         return startup.DemoPath is { } path ? LoadFileAsync(path) : Task.CompletedTask;
@@ -243,6 +322,10 @@ public partial class MainWindowViewModel(
 
     partial void OnSelectedTabIndexChanged(int value)
     {
+        OnPropertyChanged(nameof(IsRadarTab));
+        OnPropertyChanged(nameof(IsStatisticsTab));
+        OnPropertyChanged(nameof(IsProfileTab));
+        OnPropertyChanged(nameof(IsSettingsTab));
         if (value == SettingsTabIndex)
             _ = Settings.RefreshAsync();
     }
@@ -286,6 +369,7 @@ public partial class MainWindowViewModel(
         Players.Clear();
         foreach (var player in match.Players)
             Players.Add(new PlayerRowViewModel(player) { IsMe = player.SteamId == mainSteamId });
+        FillTeams();
 
         var me = Players.FirstOrDefault(p => p.IsMe);
         if (me is not null)
@@ -339,6 +423,7 @@ public partial class MainWindowViewModel(
     {
         foreach (var row in Players)
             row.IsMe = row.SteamId == steamId;
+        Profile.RefreshMainPlayer();
         if (steamId is not null)
             IsMainPlayerPromptVisible = false;
         if (Players.FirstOrDefault(p => p.IsMe) is { } me)

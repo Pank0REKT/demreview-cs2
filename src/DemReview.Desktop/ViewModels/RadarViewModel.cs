@@ -875,7 +875,33 @@ public sealed class RouteRoundRow(RoundRoute route)
     public string ZonesText => route.Zones.Count == 0
         ? Loc.T("нет данных о зонах", "no zone data")
         : string.Join(" → ", route.Zones.Select(z => $"{z.Zone} {Texts.Time(z.Arrival)}"));
+
+    /// <summary>Сколько зон маршрута показывать в карточке раунда; остальные — «ещё N».</summary>
+    private const int VisibleSteps = 6;
+
+    public string Title => $"{Loc.T("Раунд", "Round")} {route.Round}";
+
+    public string SideText => Texts.SideShort(route.Side);
+
+    public bool IsT => route.Side == Side.T;
+
+    public bool Died => route.Died;
+
+    public string FateText => route.Died ? Loc.T("погиб", "died") : Loc.T("выжил", "survived");
+
+    public IReadOnlyList<RouteStep> Steps { get; } = route.Zones.Take(VisibleSteps)
+        .Select((z, i) => new RouteStep(z.Zone, Texts.Time(z.Arrival), i < Math.Min(VisibleSteps, route.Zones.Count) - 1 || route.Zones.Count > VisibleSteps))
+        .ToList();
+
+    public bool HasMoreSteps => route.Zones.Count > VisibleSteps;
+
+    public string MoreStepsText => Loc.T($"ещё {route.Zones.Count - VisibleSteps}", $"{route.Zones.Count - VisibleSteps} more");
+
+    public bool HasNoZones => route.Zones.Count == 0;
 }
+
+/// <summary>Зона маршрута в карточке раунда: «BHalls 0:07 ›».</summary>
+public sealed record RouteStep(string Zone, string Time, bool HasNext);
 
 public sealed class FrequentRouteRow(FrequentRoute route)
 {

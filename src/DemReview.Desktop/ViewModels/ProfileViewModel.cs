@@ -65,7 +65,53 @@ public partial class ProfileViewModel(
 
     public ObservableCollection<SideSummaryRowViewModel> Sides { get; } = [];
 
+    /// <summary>Карточки ролей по сторонам с ключевыми метриками.</summary>
+    public ObservableCollection<RoleCardViewModel> RoleCards { get; } = [];
+
+    /// <summary>Сравнение метрик T и CT.</summary>
+    public ObservableCollection<CompareRowViewModel> Comparison { get; } = [];
+
+    /// <summary>Фильтр паттернов по категории: «Все» и категории, которые есть в профиле.</summary>
+    public ObservableCollection<FilterOption> Categories { get; } = [];
+
+    [ObservableProperty]
+    public partial FilterOption? SelectedCategory { get; set; }
+
+    partial void OnSelectedCategoryChanged(FilterOption? value) => FillPatterns();
+
     public bool HasProfile => Profile is not null;
+
+    public string Name => Profile?.Name ?? "";
+
+    public string Initials => Texts.Initials(Name);
+
+    public bool IsMe => Profile is { } p && p.SteamId == settings.Current.MainPlayerSteamId;
+
+    /// <summary>«de_cache · team_Pank0 · раундов: 22 · 26 / 11 / 3».</summary>
+    public string Subtitle => Profile is not { } p || _match?.FindPlayer(p.SteamId) is not { } player ? ""
+        : $"{p.MapName} · {ProfileExporter.TeamName(player.TeamName, player.FinalSide)} · {Loc.T("раундов", "rounds")}: {p.RoundsAnalyzed} · " +
+          $"{player.Kills} / {player.Deaths} / {player.Assists}";
+
+    /// <summary>Дуга кольца предсказуемости, градусы.</summary>
+    public double PredictabilityAngle => Predictability * 3.6;
+
+    public string PredictabilityLabel => Predictability >= 70 ? Loc.T("Очень предсказуем", "Very predictable")
+        : Predictability >= 50 ? Loc.T("Умеренно предсказуем", "Moderately predictable") : Loc.T("Непредсказуем", "Unpredictable");
+
+    public static string PredictabilityHint => Loc.T("Как часто в похожих ситуациях (сторона + закупка) выбирает тот же маршрут, позицию и стиль.",
+        "How often the player picks the same route, position and style in similar situations (side + buy).");
+
+    public int PatternCount => Profile?.Patterns.Count ?? 0;
+
+    /// <summary>Основной игрок сменился — обновить отметку «Вы».</summary>
+    public void RefreshMainPlayer() => OnPropertyChanged(nameof(IsMe));
+
+    /// <summary>Пороги изменили в настройках — подтянуть значения и пересобрать профиль.</summary>
+    public void ReloadThresholds()
+    {
+        MinSharePercent = (decimal)Math.Round(settings.Current.PatternMinShare * 100);
+        MinExamples = settings.Current.PatternMinExamples;
+    }
 
     public string Title => Profile is { } p ? $"{p.Name} · {p.MapName}" : "";
 
@@ -87,6 +133,13 @@ public partial class ProfileViewModel(
         OnPropertyChanged(nameof(Predictability));
         OnPropertyChanged(nameof(PredictabilityText));
         OnPropertyChanged(nameof(PatternsHeader));
+        OnPropertyChanged(nameof(Name));
+        OnPropertyChanged(nameof(Initials));
+        OnPropertyChanged(nameof(IsMe));
+        OnPropertyChanged(nameof(Subtitle));
+        OnPropertyChanged(nameof(PredictabilityAngle));
+        OnPropertyChanged(nameof(PredictabilityLabel));
+        OnPropertyChanged(nameof(PatternCount));
     }
 
     partial void OnSelectedSortChanged(FilterOption value) => FillPatterns();
@@ -134,6 +187,11 @@ public partial class ProfileViewModel(
             Sides.Clear();
             foreach (var side in profile.Sides)
                 Sides.Add(new SideSummaryRowViewModel(side));
+            RoleCards.Clear();
+            foreach (var role in profile.Roles)
+                RoleCards.Add(new RoleCardViewModel(role, profile.Sides.FirstOrDefault(s => s.Side == role.Side)));
+            FillComparison(profile);
+            FillCategories(profile);
             FillPatterns();
         }
         finally
@@ -198,15 +256,51 @@ public partial class ProfileViewModel(
         if (Profile is not { } profile)
             return;
 
+        var category = SelectedCategory?.Value as PatternCategory?;
         IEnumerable<Pattern> ordered = SelectedSort.Value switch
         {
             "confidence" => profile.Patterns.OrderByDescending(p => p.ConfidenceScore).ThenByDescending(p => p.Share),
             "category" => profile.Patterns.OrderBy(p => p.Category).ThenBy(p => p.Side).ThenByDescending(p => p.Share),
             _ => profile.Patterns.OrderByDescending(p => p.Share).ThenByDescending(p => p.ConfidenceScore),
         };
-        foreach (var pattern in ordered)
+        foreach (var pattern in ordered.Where(p => category is null || p.Category == category))
             Patterns.Add(new PatternRowViewModel(pattern));
     }
+
+    /// <summary>Категории паттернов профиля; выбранная сохраняется, если она есть и в новом профиле.</summary>
+    private void FillCategories(PlayerProfile profile)
+    {
+        var previous = SelectedCategory?.Value as PatternCategory?;
+        Categories.Clear();
+        Categories.Add(new FilterOption("Все", "All", null));
+        foreach (var category in profile.Patterns.Select(p => p.Category).Distinct().Order())
+            Categories.Add(new FilterOption(() => PatternRowViewModel.CategoryTitle(category), category));
+        SelectedCategory = Categories.FirstOrDefault(c => Equals(c.Value, previous)) ?? Categories[0];
+    }
+
+    private void FillComparison(PlayerProfile profile)
+    {
+        Comparison.Clear();
+        if (profile.Sides.FirstOrDefault(s => s.Side == Side.T) is not { } t || profile.Sides.FirstOrDefault(s => s.Side == Side.CT) is not { } ct)
+            return;
+
+        void Add(string label, string tText, string ctText, double tValue, double ctValue) =>
+            Comparison.Add(new CompareRowViewModel(label, tText, ctText, tValue, ctValue));
+
+        Add(Loc.T("Урон за раунд", "Damage per round"), $"{t.DamagePerRound:F0}", $"{ct.DamagePerRound:F0}", t.DamagePerRound, ct.DamagePerRound);
+        Add(Loc.T("Выживание", "Survival"), $"{t.SurvivalShare:P0}", $"{ct.SurvivalShare:P0}", t.SurvivalShare, ct.SurvivalShare);
+        Add(Loc.T("Победы", "Wins"), $"{t.RoundWinShare:P0}", $"{ct.RoundWinShare:P0}", t.RoundWinShare, ct.RoundWinShare);
+        Add(Loc.T("У / С", "K / D"), $"{t.Kills} / {t.Deaths}", $"{ct.Kills} / {ct.Deaths}", t.Kills, ct.Kills);
+        Add(Loc.T("Первый контакт", "First contact"), Contact(t), Contact(ct), t.MedianContactTime ?? 0, ct.MedianContactTime ?? 0);
+        Add(Loc.T("Первая дуэль", "Opening duel"), $"{t.FirstDuelShare:P0}", $"{ct.FirstDuelShare:P0}", t.FirstDuelShare, ct.FirstDuelShare);
+        Add(Loc.T("Гранат за раунд", "Grenades per round"), $"{t.GrenadesPerRound:F1}", $"{ct.GrenadesPerRound:F1}", t.GrenadesPerRound, ct.GrenadesPerRound);
+        Add(Loc.T("Агрессия / пассив", "Aggressive / passive"), $"{t.AggressiveShare:P0} / {t.PassiveShare:P0}", $"{ct.AggressiveShare:P0} / {ct.PassiveShare:P0}",
+            t.AggressiveShare, ct.AggressiveShare);
+        Add(Loc.T("До союзника", "To teammate"), $"{t.MedianTeammateDistance:F0}u", $"{ct.MedianTeammateDistance:F0}u", t.MedianTeammateDistance, ct.MedianTeammateDistance);
+        Add(Loc.T("Раундов", "Rounds"), $"{t.Rounds}", $"{ct.Rounds}", t.Rounds, ct.Rounds);
+    }
+
+    private static string Contact(SideMetrics m) => m.MedianContactTime is { } c ? Labels.Time(c) : "—";
 
     private void Clear()
     {
@@ -214,6 +308,8 @@ public partial class ProfileViewModel(
         Patterns.Clear();
         Roles.Clear();
         Sides.Clear();
+        RoleCards.Clear();
+        Comparison.Clear();
         StatusText = null;
     }
 
@@ -240,6 +336,31 @@ public sealed class PatternRowViewModel(Pattern pattern)
 
     public bool IsLowConfidence => Pattern.Confidence == Confidence.Low;
 
+    public string SideText => Labels.Side(Pattern.Side);
+
+    public bool IsT => Pattern.Side == Side.T;
+
+    public string CategoryText => CategoryTitle(Pattern.Category);
+
+    public string ConfidenceText => ProfileExporter.ConfidenceName(Pattern.Confidence);
+
+    public string CountText => $"{Pattern.Count}";
+
+    public string TotalText => Loc.T($"из {Pattern.Total}", $"of {Pattern.Total}");
+
+    public string PercentText => $"{Pattern.Share:P0}";
+
+    public double Share => Pattern.Share;
+
+    public string RoundsText => string.Join(", ", Pattern.Rounds);
+
+    /// <summary>Категория с заглавной буквы — для бейджей и фильтра.</summary>
+    public static string CategoryTitle(PatternCategory category)
+    {
+        var text = Category(category);
+        return text.Length == 0 ? text : char.ToUpper(text[0], System.Globalization.CultureInfo.CurrentCulture) + text[1..];
+    }
+
     public static string Category(PatternCategory category) => category switch
     {
         PatternCategory.Route => Loc.T("маршрут", "route"),
@@ -260,6 +381,56 @@ public sealed class RoleRowViewModel(RoleAssessment role)
     public string Confidence => Loc.T($"уверенность: {ProfileExporter.ConfidenceName(role.Confidence)}", $"confidence: {ProfileExporter.ConfidenceName(role.Confidence)}");
 
     public string Reasons => string.Join(" · ", role.Reasons);
+}
+
+/// <summary>Карточка роли на стороне: название, пояснение, уверенность и ключевые метрики.</summary>
+public sealed class RoleCardViewModel(RoleAssessment role, SideMetrics? m)
+{
+    private readonly string[] _name = ProfileExporter.RoleName(role.Role).Split(" — ", 2);
+
+    public string SideText => Labels.Side(role.Side);
+
+    public bool IsT => role.Side == Side.T;
+
+    /// <summary>«Support».</summary>
+    public string RoleTitle => _name[0].Length == 0 ? "" : char.ToUpperInvariant(_name[0][0]) + _name[0][1..];
+
+    /// <summary>«гранаты и поддержка».</summary>
+    public string RoleHint => _name.Length > 1 ? _name[1] : "";
+
+    public string ConfidenceText => Loc.T($"{ProfileExporter.ConfidenceName(role.Confidence)} уверенность", $"{ProfileExporter.ConfidenceName(role.Confidence)} confidence");
+
+    public Confidence Confidence => role.Confidence;
+
+    public string Reasons => string.Join(" · ", role.Reasons);
+
+    public IReadOnlyList<MetricTile> Metrics { get; } = m is null ? [] :
+    [
+        new(Loc.T("Урон / раунд", "Damage / round"), $"{m.DamagePerRound:F0}"),
+        new(Loc.T("Гранат / раунд", "Grenades / round"), $"{m.GrenadesPerRound:F1}"),
+        new(Loc.T("Первый контакт", "First contact"), m.MedianContactTime is { } c ? $"~{Labels.Time(c)}" : "—"),
+        new(Loc.T("Первая дуэль", "Opening duel"), $"{m.FirstDuelShare:P0}"),
+        new(Loc.T("До союзника", "To teammate"), $"{m.MedianTeammateDistance:F0}u"),
+        new(Loc.T("Одна позиция", "Holds one spot"), $"{m.AnchorShare:P0}"),
+    ];
+}
+
+public sealed record MetricTile(string Label, string Value);
+
+/// <summary>Строка сравнения T и CT: значения и доли полос (большее значение — полная полоса).</summary>
+public sealed class CompareRowViewModel(string label, string tText, string ctText, double tValue, double ctValue)
+{
+    private readonly double _max = Math.Max(Math.Max(tValue, ctValue), 1e-9);
+
+    public string Label => label;
+
+    public string TText => tText;
+
+    public string CtText => ctText;
+
+    public double TFraction => Math.Max(0, tValue) / _max;
+
+    public double CtFraction => Math.Max(0, ctValue) / _max;
 }
 
 public sealed class SideSummaryRowViewModel(SideMetrics m)

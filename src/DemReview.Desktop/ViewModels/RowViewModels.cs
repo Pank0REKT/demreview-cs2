@@ -28,6 +28,24 @@ public sealed partial class PlayerRowViewModel(PlayerInfo player) : ObservableOb
 
     public string KdaText => $"{Player.Kills} / {Player.Deaths} / {Player.Assists}";
 
+    /// <summary>Выделен в списке игроков.</summary>
+    [ObservableProperty]
+    public partial bool IsSelected { get; set; }
+
+    public bool IsT => Side == Side.T;
+
+    public bool IsCT => Side == Side.CT;
+
+    /// <summary>Две буквы ника для аватара.</summary>
+    public string Initials => Texts.Initials(Name);
+
+    /// <summary>Убийства минус смерти: «+15», «−3», «0».</summary>
+    public string DiffText => Texts.Signed(Player.Kills - Player.Deaths);
+
+    public bool IsDiffPositive => Player.Kills > Player.Deaths;
+
+    public bool IsDiffNegative => Player.Kills < Player.Deaths;
+
     public string SidesByHalfText
     {
         get
@@ -79,6 +97,21 @@ public static class Texts
     public static string GrenadeName(GrenadeType type) => Labels.Grenade(type);
 
     public static string ZoneOrUnknown(string zone) => string.IsNullOrEmpty(zone) ? "?" : zone;
+
+    /// <summary>Две буквы ника для аватара: только буквы и цифры, «?» — если их нет.</summary>
+    public static string Initials(string name)
+    {
+        var letters = new string(name.Where(char.IsLetterOrDigit).Take(2).ToArray()).ToUpperInvariant();
+        return letters.Length > 0 ? letters : "?";
+    }
+
+    /// <summary>Число со знаком: «+3», «−3» (типографский минус), «0».</summary>
+    public static string Signed(int value) => value switch
+    {
+        > 0 => $"+{value}",
+        < 0 => $"−{-value}",
+        _ => "0",
+    };
 
     /// <summary>Название оружия из событий демки (ak47, m4a1_silencer, inferno…) в привычном виде.</summary>
     public static string Weapon(string name) => name switch
