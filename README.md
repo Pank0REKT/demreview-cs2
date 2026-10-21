@@ -4,7 +4,8 @@
 
 DemReview is a desktop app that analyzes how **one specific player** behaves in a Counter-Strike 2 demo (`.dem`):
 where they go, which grenades they throw, how they react to the situation in a round, and which habits repeat
-often enough to be predictable. It works offline on Windows and Linux.
+often enough to be predictable. One demo is a small sample, so DemReview can also build a combined profile from many
+demos of the same player and keep your own profile that grows with every match. It works offline on Windows and Linux.
 
 ![Radar with all routes, grenades and deaths of one player](docs/images/radar-routes.png)
 
@@ -29,12 +30,20 @@ often enough to be predictable. It works offline on Windows and Linux.
 - **Player profile.** Predictability index, role on each side with key metrics and reasons, a T vs CT comparison,
   stable patterns ("On T (full buy): in 7 of 9 rounds takes TSpawn → SideAlley → TopofMid") filtered by category,
   with confidence that accounts for the small sample of one demo. One click shows a pattern's example rounds on the radar.
+- **Library and the profile across many demos.** Add a folder with demos and DemReview parses each one once and keeps
+  the analysis. Pick a player (found in every demo by SteamID), a map and the demos, and patterns, roles, the radar and
+  heatmaps are computed across all the rounds together. The profile is built from the library in seconds, even if the
+  `.dem` files are gone.
+- **My profile.** Every demo you open that you played in is saved to the library automatically, so your own profile
+  grows with each match.
 - **Export** of the profile to Markdown or JSON.
 - **Settings** right in the app, analysis thresholds included.
 - **Russian and English** interface.
 
-| Round replay | Player profile |
+| Library | Combined profile across 3 demos |
 |---|---|
+| ![Library: demos of a player on a map, the main player, folders](docs/images/library.png) | ![Combined profile: 71 rounds from 3 Mirage demos](docs/images/combined-profile.png) |
+| **Round replay** | **Player profile** |
 | ![Kill feed and damage pop-ups on the timeline](docs/images/timeline.png) | ![Predictability, roles, T vs CT and patterns](docs/images/profile.png) |
 | **Statistics** | **Settings** |
 | ![Summary tiles and the player situations table](docs/images/statistics.png) | ![Settings: main player, cache, analysis thresholds](docs/images/settings.png) |
@@ -56,7 +65,7 @@ Each release has `SHA256SUMS.txt` to verify the downloads.
 
 ## How to use
 
-The window has a section bar on the far left (*Radar*, *Stats*, *Profile*, *Settings*, and the open-demo button
+The window has a section bar on the far left (*Radar*, *Stats*, *Profile*, *Library*, *Settings*, and the open-demo button
 at the bottom), the match and its players next to it, and the selected section on the right.
 
 1. **Open a demo:** the *Open demo* button (Ctrl+O), drag a `.dem` file onto the window, or pass the path on the
@@ -78,7 +87,13 @@ at the bottom), the match and its players next to it, and the selected section o
    highlights its example rounds, *On radar* also switches to the radar.
 6. **Export** the profile with Ctrl+E or the *Export profile* button: the format follows the file type
    (`.md` or `.json`), the text follows the interface language.
-7. **Settings:** interface language, main player (your SteamID), the parsed demo cache (fill level, clearing), data and
+7. **Library.** *Add a demo folder* parses every `.dem` in it (subfolders included) into the library; *Rescan* adds new
+   and changed demos from all folders. Pick a player (*My profile* selects you) and a map: the list shows the player's
+   demos there with the score from their side and K / D / A. Tick the demos and press *Build the profile*: all sections
+   (radar, statistics, profile) now show the combined match, with rounds numbered consecutively; the *Demos in the
+   profile* card shows which rounds come from which demo. The profile is built per map, since habits differ from map
+   to map. A single demo opens from the list too, from the file or, if it is gone, from the saved analysis.
+8. **Settings:** interface language, main player (your SteamID), the parsed demo cache (fill level, clearing), data and
    map folders, analysis thresholds, update check, usage statistics.
 
 ### Keyboard shortcuts
@@ -110,6 +125,8 @@ User data lives in `%LOCALAPPDATA%\DemReview` on Windows and `~/.local/share/Dem
 
 - `settings.json` — settings, analysis thresholds and window placement;
 - `demreview.db` — cache of parsed demos (SQLite, last 50; safe to delete or clear in *Settings*);
+- `library.db` — the demo library for combined profiles (SQLite, no limit, not cleared with the cache; cleared on the
+  *Library* page). The `.dem` files themselves are never changed or deleted;
 - `logs/` — logs for the last 14 days.
 
 Analysis thresholds are edited in *Settings → Analysis thresholds* (applied after *Analyze again*, F5; the sampling
@@ -122,6 +139,8 @@ step after a reparse, Shift+F5) or directly in `settings.json`:
 | `SendUsageStatistics` | `true` | Send anonymous usage statistics (app start, demo load) |
 | `MainPlayerSteamId` | — | Your SteamID64: selected automatically and marked *You* in the player list |
 | `MainPlayerPromptDisabled` | `false` | Do not offer to pick yourself when a demo opens |
+| `DemoFolders` | `[]` | Demo folders of the library: *Rescan* parses new demos from them |
+| `SaveMyDemosToLibrary` | `true` | Save every opened demo where the main player plays to the library |
 | `SampleTickStep` | 16 | Position sampling step, ticks (8–16) |
 | `GrenadeClusterThrowDistance` | 150 | Max distance between throw points in one lineup, units |
 | `GrenadeClusterLandDistance` | 250 | Max distance between detonation points in one lineup, units |
@@ -174,8 +193,8 @@ Self-contained single-file builds go to `artifacts/<rid>/`:
 | Project | Purpose |
 |---|---|
 | `DemReview.Domain` | Immutable models: match, rounds, players, position samples, grenades, events |
-| `DemReview.Application` | Analysis: routes, grenades, damage, round context and economy, conditions → actions, heatmaps, filters, patterns, export, localization |
-| `DemReview.Infrastructure` | Demo parsing with [DemoFile.Net](https://github.com/saul/demofile-net), map data, SQLite cache (EF Core), settings, update check, platform services |
+| `DemReview.Application` | Analysis: routes, grenades, damage, round context and economy, conditions → actions, heatmaps, filters, patterns, merging demos into a combined match, export, localization |
+| `DemReview.Infrastructure` | Demo parsing with [DemoFile.Net](https://github.com/saul/demofile-net), map data, SQLite cache and demo library (EF Core), settings, update check, platform services |
 | `DemReview.Desktop` | Avalonia UI (MVVM with CommunityToolkit.Mvvm), radar control, DI host |
 | `DemReview.Tests` | xUnit v3 tests |
 
