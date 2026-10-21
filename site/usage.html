@@ -105,13 +105,15 @@
             <p class="num"><span data-lang="ru">Шаг 1–2</span><span data-lang="en">Steps 1–2</span></p>
             <h3><span data-lang="ru">Откройте демку и выберите игрока</span><span data-lang="en">Open a demo and pick a player</span></h3>
             <ul>
-              <li><span data-lang="ru">«Файл → Открыть демку» (<kbd>Ctrl</kbd>+<kbd>O</kbd>), перетаскивание <code>.dem</code> на окно или «Открыть с помощью → DemReview».</span><span data-lang="en"><em>File → Open demo</em> (<kbd>Ctrl</kbd>+<kbd>O</kbd>), drag a <code>.dem</code> onto the window, or <em>Open with → DemReview</em>.</span></li>
-              <li><span data-lang="ru">Разбор идёт в фоне, отмена — <kbd>Esc</kbd>. Повторное открытие той же демки — из кеша за секунды.</span><span data-lang="en">Parsing runs in the background; <kbd>Esc</kbd> cancels. Reopening the same demo takes seconds thanks to the cache.</span></li>
-              <li><span data-lang="ru"><strong>Выберите игрока</strong> в списке слева — все вкладки покажут только его. Ниже — фильтры: раунд, сторона, закупка, тип гранаты.</span><span data-lang="en"><strong>Pick a player</strong> in the list on the left — every tab now shows only them. Below are filters: round, side, buy, grenade type.</span></li>
+              <li><span data-lang="ru">Кнопка «Открыть демку» (<kbd>Ctrl</kbd>+<kbd>O</kbd>), перетаскивание <code>.dem</code> на окно или «Открыть с помощью → DemReview».</span><span data-lang="en">The <em>Open demo</em> button (<kbd>Ctrl</kbd>+<kbd>O</kbd>), drag a <code>.dem</code> onto the window, or <em>Open with → DemReview</em>.</span></li>
+              <li><span data-lang="ru">Разбор идёт в фоне, прогресс — внизу окна, отмена — <kbd>Esc</kbd>. Повторное открытие той же демки — из кеша за секунды.</span><span data-lang="en">Parsing runs in the background with progress at the bottom of the window; <kbd>Esc</kbd> cancels. Reopening the same demo takes seconds thanks to the cache.</span></li>
+              <li><span data-lang="ru"><strong>Выберите игрока</strong> в панели игроков: команды — отдельными списками, ник можно найти поиском. Все разделы покажут только его.</span><span data-lang="en"><strong>Pick a player</strong> in the player panel: teams are listed separately and the search finds a nickname. Every section now shows only them.</span></li>
+              <li><span data-lang="ru">При первой демке программа предложит отметить себя — дальше вы будете выбраны сразу и отмечены «Вы».</span><span data-lang="en">On the first demo the app offers to mark yourself — from then on you are selected right away and marked <em>You</em>.</span></li>
+              <li><span data-lang="ru">Разделы переключаются в полосе слева: «Радар», «Статистика», «Профиль», «Настройки».</span><span data-lang="en">Sections are switched in the bar on the far left: <em>Radar</em>, <em>Stats</em>, <em>Profile</em>, <em>Settings</em>.</span></li>
             </ul>
           </div>
-          <img class="shot" src="assets/shots/radar-routes.webp" width="1600" height="873" loading="lazy" data-i18n-attr="alt"
-               data-ru-alt="Список игроков, фильтры и радар" data-en-alt="Player list, filters and radar" alt="Player list, filters and radar">
+          <img class="shot" src="assets/shots/radar-routes.webp" width="1600" height="848" loading="lazy" data-i18n-attr="alt"
+               data-ru-alt="Панель игроков, фильтры и радар" data-en-alt="Player panel, filters and radar" alt="Player panel, filters and radar">
         </div>
 
         <div class="guide-step flip">
@@ -119,12 +121,13 @@
             <p class="num"><span data-lang="ru">Шаг 3</span><span data-lang="en">Step 3</span></p>
             <h3><span data-lang="ru">Радар и повтор раунда</span><span data-lang="en">Radar and round replay</span></h3>
             <ul>
-              <li><span data-lang="ru">Слои включаются справа: маршруты, гранаты, смерти, тепловая карта. Зум — колесом, сдвиг — перетаскиванием, сброс — двойным кликом.</span><span data-lang="en">Layers are toggled on the right: routes, grenades, deaths, heatmap. Zoom with the wheel, pan by dragging, double-click to reset.</span></li>
-              <li><span data-lang="ru">Выберите раунд в списке «Раунды» — появится таймлайн: «Пуск» или ползунок, скорость ×0,5–×8.</span><span data-lang="en">Select a round in the <em>Rounds</em> list to open the timeline: press <em>Play</em> or drag the slider, speed ×0.5–×8.</span></li>
-              <li><span data-lang="ru">Наведите мышь на игрока — ник, оружие и HP. Списки «Частые», «Гранаты» и «Тайминги» подсвечивают свои раунды и раскидки.</span><span data-lang="en">Hover a player to see the nickname, weapon and HP. The <em>Frequent</em>, <em>Grenades</em> and <em>Timings</em> lists highlight their rounds and lineups.</span></li>
+              <li><span data-lang="ru">Фильтры — над картой: сторона, раунд, закупка, тип гранаты.</span><span data-lang="en">Filters are above the map: side, round, buy, grenade type.</span></li>
+              <li><span data-lang="ru">Слои включаются справа: маршруты, гранаты, смерти, тепловая карта. Зум — колесом или кнопками «+» и «−», сдвиг — перетаскиванием, сброс — двойным кликом.</span><span data-lang="en">Layers are toggled on the right: routes, grenades, deaths, heatmap. Zoom with the wheel or the +/− buttons, pan by dragging, double-click to reset.</span></li>
+              <li><span data-lang="ru">Выберите раунд в списке «Раунды» — появится таймлайн: кнопка воспроизведения или ползунок, скорость ×0,5–×8.</span><span data-lang="en">Select a round in the <em>Rounds</em> list to open the timeline: press play or drag the slider, speed ×0.5–×8.</span></li>
+              <li><span data-lang="ru">Наведите мышь на игрока — ник, оружие и HP. Вкладки «Частые», «Гранаты» и «Тайминги» подсвечивают свои раунды и раскидки.</span><span data-lang="en">Hover a player to see the nickname, weapon and HP. The <em>Frequent</em>, <em>Grenades</em> and <em>Timings</em> tabs highlight their rounds and lineups.</span></li>
             </ul>
           </div>
-          <img class="shot" src="assets/shots/timeline.webp" width="1600" height="873" loading="lazy" data-i18n-attr="alt"
+          <img class="shot" src="assets/shots/timeline.webp" width="1600" height="848" loading="lazy" data-i18n-attr="alt"
                data-ru-alt="Повтор раунда с киллфидом" data-en-alt="Round replay with kill feed" alt="Round replay with kill feed">
         </div>
 
@@ -133,13 +136,14 @@
             <p class="num"><span data-lang="ru">Шаг 4</span><span data-lang="en">Step 4</span></p>
             <h3><span data-lang="ru">Статистика</span><span data-lang="en">Statistics</span></h3>
             <ul>
+              <li><span data-lang="ru">Плитки сверху — сводка: раунды, победы команды, урон за раунд и первый контакт, всего и по сторонам. Сторона и закупка переключаются прямо на странице.</span><span data-lang="en">The tiles on top sum it up: rounds, team wins, damage per round and first contact, overall and per side. Side and buy are switched right on the page.</span></li>
               <li><span data-lang="ru"><strong>«Ситуации игрока»</strong> — каждый раунд: сторона, закупка, счёт и что игрок сделал.</span><span data-lang="en"><strong>Player situations</strong> — every round: side, buy, score and what the player did.</span></li>
               <li><span data-lang="ru"><strong>«Условия → действия»</strong> — частотные таблицы: как часто решение следует за условием.</span><span data-lang="en"><strong>Conditions → actions</strong> — frequency tables: how often a decision follows a condition.</span></li>
               <li><span data-lang="ru"><strong>«Раунды матча»</strong> — закупки обеих команд по раундам.</span><span data-lang="en"><strong>Match rounds</strong> — both teams' buys per round.</span></li>
             </ul>
           </div>
-          <img class="shot" src="assets/shots/statistics.webp" width="1600" height="873" loading="lazy" data-i18n-attr="alt"
-               data-ru-alt="Таблица «условия → действия»" data-en-alt="Conditions → actions table" alt="Conditions → actions table">
+          <img class="shot" src="assets/shots/statistics.webp" width="1600" height="848" loading="lazy" data-i18n-attr="alt"
+               data-ru-alt="Статистика: плитки-сводка и таблица ситуаций игрока" data-en-alt="Statistics: summary tiles and the player situations table" alt="Statistics: summary tiles and the player situations table">
         </div>
 
         <div class="guide-step flip">
@@ -147,14 +151,31 @@
             <p class="num"><span data-lang="ru">Шаг 5–6</span><span data-lang="en">Steps 5–6</span></p>
             <h3><span data-lang="ru">Профиль игрока и экспорт</span><span data-lang="en">Player profile and export</span></h3>
             <ul>
-              <li><span data-lang="ru">Паттерн показывается, если встречается не реже <strong>60%</strong> случаев и минимум в <strong>3 раундах</strong>; оба порога меняются на вкладке.</span><span data-lang="en">A pattern is shown if it happens in at least <strong>60%</strong> of cases and in at least <strong>3 rounds</strong>; both thresholds can be changed on the tab.</span></li>
+              <li><span data-lang="ru">Сверху — индекс предсказуемости, роль на каждой стороне с ключевыми метриками и сравнение T и CT.</span><span data-lang="en">On top: the predictability index, the role on each side with key metrics, and a T vs CT comparison.</span></li>
+              <li><span data-lang="ru">Паттерн показывается, если встречается не реже <strong>60%</strong> случаев и минимум в <strong>3 раундах</strong>; оба порога меняются на странице или в «Настройках». Чипы категорий сужают список.</span><span data-lang="en">A pattern is shown if it happens in at least <strong>60%</strong> of cases and in at least <strong>3 rounds</strong>; both thresholds can be changed on the page or in Settings. Category chips narrow the list.</span></li>
               <li><span data-lang="ru">Смотрите на «N из M» и цвет точки: зелёный — высокая уверенность, жёлтый — средняя, серый — низкая. Одна демка — малая выборка.</span><span data-lang="en">Look at "N of M" and the dot color: green — high confidence, yellow — medium, grey — low. One demo is a small sample.</span></li>
-              <li><span data-lang="ru">«Показать на радаре» накладывает раунды-примеры паттерна.</span><span data-lang="en"><em>Show on radar</em> overlays the pattern's example rounds.</span></li>
-              <li><span data-lang="ru"><strong>Экспорт</strong> — <kbd>Ctrl</kbd>+<kbd>E</kbd>: Markdown или JSON по расширению файла, текст на языке интерфейса.</span><span data-lang="en"><strong>Export</strong> — <kbd>Ctrl</kbd>+<kbd>E</kbd>: Markdown or JSON by file extension, text in the interface language.</span></li>
+              <li><span data-lang="ru">Клик по паттерну подсвечивает раунды-примеры на радаре, «На радаре» — ещё и переключает на него.</span><span data-lang="en">Clicking a pattern highlights its example rounds on the radar; <em>On radar</em> also switches to it.</span></li>
+              <li><span data-lang="ru"><strong>Экспорт</strong> — <kbd>Ctrl</kbd>+<kbd>E</kbd> или кнопка «Экспорт профиля»: Markdown или JSON по расширению файла, текст на языке интерфейса.</span><span data-lang="en"><strong>Export</strong> — <kbd>Ctrl</kbd>+<kbd>E</kbd> or the <em>Export profile</em> button: Markdown or JSON by file extension, text in the interface language.</span></li>
             </ul>
           </div>
-          <img class="shot" src="assets/shots/profile.webp" width="1600" height="873" loading="lazy" data-i18n-attr="alt"
+          <img class="shot" src="assets/shots/profile.webp" width="1600" height="848" loading="lazy" data-i18n-attr="alt"
                data-ru-alt="Профиль игрока с паттернами" data-en-alt="Player profile with patterns" alt="Player profile with patterns">
+        </div>
+
+        <div class="guide-step">
+          <div>
+            <p class="num"><span data-lang="ru">Шаг 7</span><span data-lang="en">Step 7</span></p>
+            <h3><span data-lang="ru">Настройки</span><span data-lang="en">Settings</span></h3>
+            <ul>
+              <li><span data-lang="ru">Язык интерфейса переключается сразу, вместе с формулировками паттернов и экспортом.</span><span data-lang="en">The interface language switches right away, along with pattern wording and export.</span></li>
+              <li><span data-lang="ru"><strong>Основной игрок</strong> — ваш SteamID: введите его вручную или выберите себя в открытой демке.</span><span data-lang="en"><strong>Main player</strong> — your SteamID: type it in or pick yourself in the open demo.</span></li>
+              <li><span data-lang="ru"><strong>Кеш и папки</strong> — сколько демок сохранено, очистка кеша, папки данных, журналов и карт.</span><span data-lang="en"><strong>Cache and folders</strong> — how many demos are cached, clearing the cache, the data, log and map folders.</span></li>
+              <li><span data-lang="ru"><strong>Пороги анализа</strong> — типы закупки, агрессия, паттерны, раскидки, шаг выборки. Применяются после <kbd>F5</kbd>, шаг выборки — после <kbd>Shift</kbd>+<kbd>F5</kbd>.</span><span data-lang="en"><strong>Analysis thresholds</strong> — buy types, aggression, patterns, lineups, sampling step. They apply after <kbd>F5</kbd>; the sampling step after <kbd>Shift</kbd>+<kbd>F5</kbd>.</span></li>
+              <li><span data-lang="ru"><strong>Обновления и приватность</strong> — проверка новых версий и анонимная статистика, обе отключаются.</span><span data-lang="en"><strong>Updates and privacy</strong> — the new-version check and anonymous statistics; both can be turned off.</span></li>
+            </ul>
+          </div>
+          <img class="shot" src="assets/shots/settings.webp" width="1600" height="848" loading="lazy" data-i18n-attr="alt"
+               data-ru-alt="Настройки: основной игрок, кеш и пороги анализа" data-en-alt="Settings: main player, cache and analysis thresholds" alt="Settings: main player, cache and analysis thresholds">
         </div>
       </div>
     </section>
@@ -185,22 +206,22 @@
       <div class="container" style="max-width: 760px;">
         <div class="section-head">
           <h2><span data-lang="ru">Настройки и данные</span><span data-lang="en">Settings and data</span></h2>
-          <p class="lead"><span data-lang="ru">Вкладка «Настройки»: язык, кеш разобранных демок, папки данных и карт, проверка обновлений и статистика использования.</span><span data-lang="en">The Settings tab: language, parsed demo cache, data and map folders, update check and usage statistics.</span></p>
+          <p class="lead"><span data-lang="ru">Раздел «Настройки»: язык, основной игрок, кеш разобранных демок, папки данных и карт, пороги анализа, проверка обновлений и статистика использования.</span><span data-lang="en">The Settings section: language, main player, parsed demo cache, data and map folders, analysis thresholds, update check and usage statistics.</span></p>
         </div>
         <div class="table-wrap">
           <table>
             <thead><tr><th><span data-lang="ru">Что</span><span data-lang="en">What</span></th><th><span data-lang="ru">Где</span><span data-lang="en">Where</span></th></tr></thead>
             <tbody>
               <tr><td><span data-lang="ru">Папка данных</span><span data-lang="en">Data folder</span></td><td>Windows: <code>%LOCALAPPDATA%\DemReview</code><br>Linux: <code>~/.local/share/DemReview</code></td></tr>
-              <tr><td><code>settings.json</code></td><td><span data-lang="ru">Настройки, размер и положение окна, пороги анализа</span><span data-lang="en">Settings, window placement, analysis thresholds</span></td></tr>
+              <tr><td><code>settings.json</code></td><td><span data-lang="ru">Настройки, пороги анализа, размер и положение окна</span><span data-lang="en">Settings, analysis thresholds, window placement</span></td></tr>
               <tr><td><code>demreview.db</code></td><td><span data-lang="ru">Кеш разобранных демок (последние 50); очищается в «Настройках»</span><span data-lang="en">Parsed demo cache (last 50); cleared in Settings</span></td></tr>
               <tr><td><code>logs/</code></td><td><span data-lang="ru">Журналы за 14 дней — приложите к сообщению об ошибке</span><span data-lang="en">Logs for 14 days — attach them to a bug report</span></td></tr>
             </tbody>
           </table>
         </div>
         <p class="maps-note">
-          <span data-lang="ru">Пороги анализа (типы закупки, агрессия, раскидки, шаг выборки) — в <code>settings.json</code>; полный список ключей — в <a href="https://github.com/Pank0REKT/demreview-cs2/blob/main/README.ru.md#данные-и-настройки">README</a>.</span>
-          <span data-lang="en">Analysis thresholds (buy types, aggression, lineups, sampling step) live in <code>settings.json</code>; see the full list of keys in the <a href="https://github.com/Pank0REKT/demreview-cs2#data-and-settings">README</a>.</span>
+          <span data-lang="ru">Пороги анализа (типы закупки, агрессия, паттерны, раскидки, шаг выборки) правятся в «Настройках → Пороги анализа» и хранятся в <code>settings.json</code>; полный список ключей — в <a href="https://github.com/Pank0REKT/demreview-cs2/blob/main/README.ru.md#данные-и-настройки">README</a>.</span>
+          <span data-lang="en">Analysis thresholds (buy types, aggression, patterns, lineups, sampling step) are edited in <em>Settings → Analysis thresholds</em> and stored in <code>settings.json</code>; see the full list of keys in the <a href="https://github.com/Pank0REKT/demreview-cs2#data-and-settings">README</a>.</span>
         </p>
       </div>
     </section>
@@ -241,7 +262,7 @@
             <summary><span data-lang="ru">Почему паттернов мало или уверенность низкая?</span><span data-lang="en">Why are there few patterns, or low confidence?</span></summary>
             <div class="answer">
               <p><span data-lang="ru">Одна демка — это 20–30 раундов, из них на каждой стороне вдвое меньше. Программа учитывает малую выборку и не выдаёт случайные совпадения за привычки.</span><span data-lang="en">One demo is 20–30 rounds, and half that per side. The app accounts for the small sample and doesn't present coincidences as habits.</span></p>
-              <p><span data-lang="ru">Пороги (60% и 3 раунда) можно снизить на вкладке «Профиль игрока», но тогда чаще будут попадаться случайности.</span><span data-lang="en">You can lower the thresholds (60% and 3 rounds) on the <em>Player profile</em> tab, but you'll see more coincidences.</span></p>
+              <p><span data-lang="ru">Пороги (60% и 3 раунда) можно снизить в «Профиле» или в «Настройках», но тогда чаще будут попадаться случайности.</span><span data-lang="en">You can lower the thresholds (60% and 3 rounds) in <em>Profile</em> or in <em>Settings</em>, but you'll see more coincidences.</span></p>
             </div>
           </details>
           <details id="faq-map">
@@ -250,7 +271,7 @@
               <p><span data-lang="ru">Без изображения радар рисуется на сетке — всё остальное работает. Чтобы добавить подложку:</span><span data-lang="en">Without an image the radar is drawn on a grid — everything else works. To add a background:</span></p>
               <ul>
                 <li><span data-lang="ru">возьмите из файлов игры <code>game/csgo/panorama/images/overheadmaps/&lt;карта&gt;_radar_psd.png</code>;</span><span data-lang="en">take <code>game/csgo/panorama/images/overheadmaps/&lt;map&gt;_radar_psd.png</code> from the game files;</span></li>
-                <li><span data-lang="ru">переименуйте в <code>&lt;карта&gt;.png</code> и положите в папку <code>maps</code> рядом с программой («Настройки → Папки»).</span><span data-lang="en">rename it to <code>&lt;map&gt;.png</code> and put it in the <code>maps</code> folder next to the app (<em>Settings → Folders</em>).</span></li>
+                <li><span data-lang="ru">переименуйте в <code>&lt;карта&gt;.png</code> и положите в папку <code>maps</code> рядом с программой («Настройки → Кеш и папки»).</span><span data-lang="en">rename it to <code>&lt;map&gt;.png</code> and put it in the <code>maps</code> folder next to the app (<em>Settings → Cache and folders</em>).</span></li>
               </ul>
               <p><span data-lang="ru">Для точного совмещения нужны координаты карты в коде — подробности в <a href="https://github.com/Pank0REKT/demreview-cs2/blob/main/maps/README.txt">maps/README.txt</a>. Или <a href="https://github.com/Pank0REKT/demreview-cs2/discussions/1">попросите добавить карту</a>.</span><span data-lang="en">Exact alignment needs the map's coordinates in the code — see <a href="https://github.com/Pank0REKT/demreview-cs2/blob/main/maps/README.txt">maps/README.txt</a>. Or <a href="https://github.com/Pank0REKT/demreview-cs2/discussions/1">ask for the map to be added</a>.</span></p>
             </div>
@@ -272,7 +293,7 @@
           <details>
             <summary><span data-lang="ru">Нашёл ошибку или есть идея</span><span data-lang="en">I found a bug or have an idea</span></summary>
             <div class="answer">
-              <p><span data-lang="ru"><strong>Ошибка</strong> — напишите в <a href="https://github.com/Pank0REKT/demreview-cs2/issues">Issues на GitHub</a>. Приложите журнал из папки <code>logs</code> (открывается в «Настройках → Папки») и, если можно, ссылку на демку.</span><span data-lang="en"><strong>Bug</strong> — open an <a href="https://github.com/Pank0REKT/demreview-cs2/issues">issue on GitHub</a>. Attach the log from the <code>logs</code> folder (open it from <em>Settings → Folders</em>) and, if possible, a link to the demo.</span></p>
+              <p><span data-lang="ru"><strong>Ошибка</strong> — напишите в <a href="https://github.com/Pank0REKT/demreview-cs2/issues">Issues на GitHub</a>. Приложите журнал из папки <code>logs</code> (открывается в «Настройках → Кеш и папки») и, если можно, ссылку на демку.</span><span data-lang="en"><strong>Bug</strong> — open an <a href="https://github.com/Pank0REKT/demreview-cs2/issues">issue on GitHub</a>. Attach the log from the <code>logs</code> folder (open it from <em>Settings → Cache and folders</em>) and, if possible, a link to the demo.</span></p>
               <p><span data-lang="ru"><strong>Идея или предложение</strong> — оставьте в <a href="https://github.com/Pank0REKT/demreview-cs2/discussions/1">обсуждении идей</a>.</span><span data-lang="en"><strong>Idea or suggestion</strong> — post it in the <a href="https://github.com/Pank0REKT/demreview-cs2/discussions/1">ideas discussion</a>.</span></p>
             </div>
           </details>
