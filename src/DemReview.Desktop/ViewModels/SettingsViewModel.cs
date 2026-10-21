@@ -149,7 +149,7 @@ public partial class SettingsViewModel : ViewModelBase
     [RelayCommand]
     private void OpenMapsFolder() => _platform.OpenFolder(_platform.MapsDirectory);
 
-    private static string SizeText(long bytes) => bytes >= 1024 * 1024
+    internal static string SizeText(long bytes) => bytes >= 1024 * 1024
         ? Loc.T($"{bytes / 1024.0 / 1024:F1} МБ", $"{bytes / 1024.0 / 1024:F1} MB")
         : Loc.T($"{bytes / 1024.0:F0} КБ", $"{bytes / 1024.0:F0} KB");
 

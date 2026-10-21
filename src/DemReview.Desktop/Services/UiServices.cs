@@ -40,6 +40,9 @@ public interface IFileDialogService
 
     /// <summary>Диалог сохранения профиля (Markdown или JSON); возвращает локальный путь или null.</summary>
     Task<string?> PickProfileSavePathAsync(string suggestedName);
+
+    /// <summary>Выбор папки с демками; возвращает локальный путь или null.</summary>
+    Task<string?> PickDemoFolderAsync();
 }
 
 public sealed class AvaloniaFileDialogService(MainWindowAccessor windowAccessor) : IFileDialogService
@@ -80,5 +83,19 @@ public sealed class AvaloniaFileDialogService(MainWindowAccessor windowAccessor)
         });
 
         return file?.TryGetLocalPath();
+    }
+
+    public async Task<string?> PickDemoFolderAsync()
+    {
+        if (windowAccessor.Window?.StorageProvider is not { } storage)
+            return null;
+
+        var folders = await storage.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = Loc.T("Папка с демками CS2", "CS2 demo folder"),
+            AllowMultiple = false,
+        });
+
+        return folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
     }
 }

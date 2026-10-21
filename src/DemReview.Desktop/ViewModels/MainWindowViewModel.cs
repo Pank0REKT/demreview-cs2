@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using DemReview.Application;
 using DemReview.Application.Analytics;
 using DemReview.Application.Export;
+using DemReview.Application.Library;
 using DemReview.Application.Localization;
 using DemReview.Application.Parsing;
 using DemReview.Desktop.Services;
@@ -22,6 +23,8 @@ public partial class MainWindowViewModel(
     StatisticsViewModel statistics,
     ProfileViewModel profile,
     SettingsViewModel settings,
+    LibraryViewModel library,
+    IDemoLibrary demoLibrary,
     IAnalytics analytics,
     ILogger<MainWindowViewModel> logger) : ViewModelBase
 {
@@ -65,7 +68,9 @@ public partial class MainWindowViewModel(
 
     public SettingsViewModel Settings { get; } = settings;
 
-    /// <summary>Вкладка центральной области: 0 — радар, 1 — статистика, 2 — профиль, 3 — настройки.</summary>
+    public LibraryViewModel Library { get; } = library;
+
+    /// <summary>Вкладка центральной области: 0 — радар, 1 — статистика, 2 — профиль, 3 — библиотека, 4 — настройки.</summary>
     [ObservableProperty]
     public partial int SelectedTabIndex { get; set; }
 
@@ -111,9 +116,16 @@ public partial class MainWindowViewModel(
 
     public string MapName => Match?.MapName ?? "";
 
-    /// <summary>«раундов: 22 · cache.dem» под счётом матча.</summary>
-    public string MatchDetails => Match is not { } m ? ""
-        : $"{Loc.T("раундов", "rounds")}: {m.Rounds.Count} · {Path.GetFileName(CurrentPath)}";
+    /// <summary>«раундов: 22 · cache.dem» под счётом матча; для сводного профиля — «демок: 5 · раундов: 112».</summary>
+    public string MatchDetails => Match switch
+    {
+        null => "",
+        { IsCombined: true } m => $"{Loc.T("демок", "demos")}: {m.Parts.Count} · {Loc.T("раундов", "rounds")}: {m.Rounds.Count}",
+        { } m => $"{Loc.T("раундов", "rounds")}: {m.Rounds.Count} · {Path.GetFileName(CurrentPath)}",
+    };
+
+    /// <summary>Открыт сводный матч из нескольких демок библиотеки.</summary>
+    public bool IsCombined => Match?.IsCombined == true;
 
     /// <summary>Ник выбранного игрока для подзаголовков страниц.</summary>
     public string SelectedPlayerName => SelectedPlayer?.Name ?? Loc.T("игрок не выбран", "no player selected");
@@ -123,6 +135,8 @@ public partial class MainWindowViewModel(
     public bool IsStatisticsTab => SelectedTabIndex == 1;
 
     public bool IsProfileTab => SelectedTabIndex == 2;
+
+    public bool IsLibraryTab => SelectedTabIndex == LibraryTabIndex;
 
     public bool IsSettingsTab => SelectedTabIndex == SettingsTabIndex;
 
@@ -168,7 +182,9 @@ public partial class MainWindowViewModel(
 
     public bool HasSelectedPlayer => SelectedPlayer is not null;
 
-    public string WindowTitle => CurrentPath is null ? "DemReview" : $"{Path.GetFileName(CurrentPath)} — DemReview";
+    public string WindowTitle => Match is { IsCombined: true } m
+        ? Loc.T($"Сводный профиль · {m.MapName} — DemReview", $"Combined profile · {m.MapName} — DemReview")
+        : CurrentPath is null ? "DemReview" : $"{Path.GetFileName(CurrentPath)} — DemReview";
 
     public string MatchSummary => Match is not { } m
         ? ""
@@ -185,6 +201,8 @@ public partial class MainWindowViewModel(
         OnPropertyChanged(nameof(TScore));
         OnPropertyChanged(nameof(MapName));
         OnPropertyChanged(nameof(MatchDetails));
+        OnPropertyChanged(nameof(IsCombined));
+        OnPropertyChanged(nameof(WindowTitle));
     }
 
     partial void OnCurrentPathChanged(string? value)
@@ -228,6 +246,9 @@ public partial class MainWindowViewModel(
         Settings.MainPlayerChanged += OnMainPlayerChanged;
         Settings.MainPlayerPickRequested += ShowMainPlayerPrompt;
         Settings.PatternThresholdsChanged += Profile.ReloadThresholds;
+        Library.CombinedReady += ShowCombined;
+        Library.OpenDemoRequested += entry => _ = OpenLibraryDemoAsync(entry);
+        _ = Library.InitializeAsync();
         _ = Settings.CheckOnStartupAsync();
         analytics.Track(AnalyticsEvents.AppStarted, new Dictionary<string, object> { ["language"] = Loc.Language.ToString() });
         return startup.DemoPath is { } path ? LoadFileAsync(path) : Task.CompletedTask;
@@ -291,6 +312,7 @@ public partial class MainWindowViewModel(
             var match = await loader.LoadAsync(path, progress, cts.Token, bypassCache);
             ShowMatch(match, path);
             StatusText = LoadedText(path);
+            _ = Library.RememberMyDemoAsync(match, path);
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested)
         {
@@ -325,12 +347,17 @@ public partial class MainWindowViewModel(
         OnPropertyChanged(nameof(IsRadarTab));
         OnPropertyChanged(nameof(IsStatisticsTab));
         OnPropertyChanged(nameof(IsProfileTab));
+        OnPropertyChanged(nameof(IsLibraryTab));
         OnPropertyChanged(nameof(IsSettingsTab));
         if (value == SettingsTabIndex)
             _ = Settings.RefreshAsync();
     }
 
-    public const int SettingsTabIndex = 3;
+    public const int ProfileTabIndex = 2;
+
+    public const int LibraryTabIndex = 3;
+
+    public const int SettingsTabIndex = 4;
 
     [RelayCommand]
     private void OpenSettings() => SelectedTabIndex = SettingsTabIndex;
@@ -340,13 +367,14 @@ public partial class MainWindowViewModel(
     {
         ErrorMessage = null;
         Settings.RefreshLanguage();
+        Library.RefreshLanguage();
         if (IsBusy)
             return;
 
-        if (Match is { } match && CurrentPath is { } path)
+        if (Match is { } match)
         {
-            ShowMatch(match, path);
-            StatusText = LoadedText(path);
+            ShowMatch(match, CurrentPath);
+            StatusText = CurrentPath is { } path ? LoadedText(path) : CombinedText(match);
         }
         else
         {
@@ -354,7 +382,47 @@ public partial class MainWindowViewModel(
         }
     }
 
-    private void ShowMatch(MatchData match, string path)
+    private static string CombinedText(MatchData match) => Loc.T(
+        $"Сводный профиль: {match.MapName}, демок: {match.Parts.Count}, раундов: {match.Rounds.Count}",
+        $"Combined profile: {match.MapName}, demos: {match.Parts.Count}, rounds: {match.Rounds.Count}");
+
+    /// <summary>Сводный матч из библиотеки: показать профиль игрока по всем выбранным демкам.</summary>
+    private void ShowCombined(MatchData match, ulong steamId)
+    {
+        _loadCts?.Cancel();
+        ErrorMessage = null;
+        SelectedPlayer = null;
+        ShowMatch(match, path: null);
+        SelectedPlayer = Players.FirstOrDefault(p => p.SteamId == steamId);
+        StatusText = CombinedText(match);
+        SelectedTabIndex = ProfileTabIndex;
+    }
+
+    /// <summary>Демка из библиотеки: из файла, а если его уже нет — из сохранённого анализа.</summary>
+    private async Task OpenLibraryDemoAsync(LibraryEntry entry)
+    {
+        if (File.Exists(entry.FullPath))
+        {
+            await LoadFileAsync(entry.FullPath);
+            SelectedTabIndex = ProfileTabIndex;
+            return;
+        }
+
+        if (await Task.Run(() => demoLibrary.Load(entry.Id)) is not { } match)
+        {
+            ErrorMessage = Loc.T($"Демки {entry.FileName} нет ни на диске, ни в библиотеке.", $"{entry.FileName} is neither on disk nor in the library.");
+            return;
+        }
+
+        _loadCts?.Cancel();
+        ErrorMessage = null;
+        ShowMatch(match, entry.FullPath);
+        StatusText = Loc.T($"Открыто из библиотеки: {entry.FileName}", $"Opened from the library: {entry.FileName}");
+        SelectedTabIndex = ProfileTabIndex;
+    }
+
+    /// <param name="path">Файл демки; null — сводный матч из нескольких демок.</param>
+    private void ShowMatch(MatchData match, string? path)
     {
         var previousSteamId = SelectedPlayer?.SteamId;
 
@@ -367,7 +435,7 @@ public partial class MainWindowViewModel(
 
         var mainSteamId = Settings.MainPlayerSteamId;
         Players.Clear();
-        foreach (var player in match.Players)
+        foreach (var player in match.Players.Where(p => !match.IsCombined || p.SteamId == mainSteamId || p.SteamId == previousSteamId || DemoCount(match, p) >= 2))
             Players.Add(new PlayerRowViewModel(player) { IsMe = player.SteamId == mainSteamId });
         FillTeams();
 
@@ -381,8 +449,13 @@ public partial class MainWindowViewModel(
         MainPlayerCandidates.Clear();
         foreach (var player in Players.Where(p => !p.Player.IsBot).OrderBy(p => p.Side).ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase))
             MainPlayerCandidates.Add(player);
-        IsMainPlayerPromptVisible = Settings.ShouldPromptForMainPlayer && path != _mainPlayerPromptSkippedPath && MainPlayerCandidates.Count > 0;
+        IsMainPlayerPromptVisible = Settings.ShouldPromptForMainPlayer && !match.IsCombined && path != _mainPlayerPromptSkippedPath &&
+                                    MainPlayerCandidates.Count > 0;
     }
+
+    /// <summary>В скольких демках сводного матча играл игрок — в списке остаются те, кто встречается хотя бы в двух.</summary>
+    private static int DemoCount(MatchData match, PlayerInfo player) =>
+        match.Parts.Count(part => player.SideByRound.Keys.Any(r => r >= part.FirstRound && r <= part.LastRound));
 
     /// <summary>«Это я» на панели выбора: запомнить и сразу показать себя.</summary>
     [RelayCommand]
@@ -392,6 +465,8 @@ public partial class MainWindowViewModel(
             return;
         Settings.SetMainPlayer(row.SteamId, row.Name);
         SelectedPlayer = row;
+        if (Match is { } match && CurrentPath is { } path && File.Exists(path))
+            _ = Library.RememberMyDemoAsync(match, path);
     }
 
     [RelayCommand]
@@ -424,6 +499,7 @@ public partial class MainWindowViewModel(
         foreach (var row in Players)
             row.IsMe = row.SteamId == steamId;
         Profile.RefreshMainPlayer();
+        Library.RefreshMainPlayer();
         if (steamId is not null)
             IsMainPlayerPromptVisible = false;
         if (Players.FirstOrDefault(p => p.IsMe) is { } me)

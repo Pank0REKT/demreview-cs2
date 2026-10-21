@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using DemReview.Application.Analytics;
+using DemReview.Application.Library;
 using DemReview.Application.Localization;
 using DemReview.Domain;
 using Microsoft.Extensions.Logging;
@@ -17,6 +18,7 @@ public interface IMatchLoader
 public sealed class MatchLoader(
     IDemoParser parser,
     IMatchCache cache,
+    IDemoLibrary library,
     ISettingsService settings,
     IAnalytics analytics,
     ILogger<MatchLoader> logger) : IMatchLoader
@@ -30,7 +32,7 @@ public sealed class MatchLoader(
         var options = new ParseOptions(settings.Current.SampleTickStep);
         var key = DemoFileKey.FromFile(path, options.SampleTickStep);
         // Чтение кеша (SQLite, распаковка) — тоже вне UI-потока.
-        var cached = bypassCache ? null : await Task.Run(() => cache.TryGet(key, out var m) ? m : null, cancellationToken)
+        var cached = bypassCache ? null : await Task.Run(() => FromCacheOrLibrary(key), cancellationToken)
             .ConfigureAwait(false);
         if (cached is not null)
         {
@@ -50,6 +52,16 @@ public sealed class MatchLoader(
         cache.Store(key, match);
         logger.LogInformation("Разобрано: карта {Map}, раундов {Rounds}, игроков {Players}", match.MapName, match.Rounds.Count, match.Players.Count);
         TrackLoaded(match, fromCache: false, stopwatch.Elapsed);
+        return match;
+    }
+
+    private MatchData? FromCacheOrLibrary(DemoFileKey key)
+    {
+        if (cache.TryGet(key, out var match))
+            return match;
+        if (!library.TryGet(key, out match))
+            return null;
+        cache.Store(key, match);
         return match;
     }
 

@@ -92,7 +92,14 @@
                             <TextBlock Text="{l:T 'Профиль', 'Profile'}" />
                         </StackPanel>
                     </Button>
-                    <Button Classes="nav" Classes.active="{Binding IsSettingsTab}" Command="{Binding SelectTabCommand}" CommandParameter="3">
+                    <Button Classes="nav" Classes.active="{Binding IsLibraryTab}" Command="{Binding SelectTabCommand}" CommandParameter="3"
+                            ToolTip.Tip="{l:T 'Библиотека демок и сводный профиль по нескольким матчам', 'Demo library and the combined profile across matches'}">
+                        <StackPanel Spacing="4">
+                            <controls:Icon Width="22" Height="22" HorizontalAlignment="Center" Data="{StaticResource IconLibrary}" />
+                            <TextBlock Text="{l:T 'Библиотека', 'Library'}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav" Classes.active="{Binding IsSettingsTab}" Command="{Binding SelectTabCommand}" CommandParameter="4">
                         <StackPanel Spacing="4">
                             <controls:Icon Width="22" Height="22" HorizontalAlignment="Center" Data="{StaticResource IconSettings}" />
                             <TextBlock Text="{l:T 'Настройки', 'Settings'}" />
@@ -115,7 +122,10 @@
                                     <TextBlock Classes="mono subtle" FontSize="11" Text="{Binding MapName}" />
                                 </Border>
                             </Grid>
-                            <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding IsCombined}">
+                                <Border Classes="badge neutral"><TextBlock Text="{l:T 'Сводный профиль', 'Combined profile'}" /></Border>
+                            </StackPanel>
+                            <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="8" IsVisible="{Binding !IsCombined}">
                                 <TextBlock Classes="t" FontSize="12" Text="{Binding TTeamName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                                 <TextBlock Grid.Column="1" Classes="mono" FontSize="16" FontWeight="SemiBold">
                                     <Run Text="{Binding TScore}" /><Run Text=" : " /><Run Text="{Binding CtScore}" />
@@ -146,7 +156,7 @@
                             <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Margin="6,4,6,6">
                                 <Border Classes="badge ct"><TextBlock Text="CT" /></Border>
                                 <TextBlock Grid.Column="1" Classes="caption" Text="{Binding CtTeamName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="2" Classes="mono" FontWeight="SemiBold" Text="{Binding CtScore}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="2" Classes="mono" FontWeight="SemiBold" Text="{Binding CtScore}" VerticalAlignment="Center" IsVisible="{Binding !IsCombined}" />
                             </Grid>
                             <ItemsControl ItemsSource="{Binding CtPlayers}" ItemTemplate="{StaticResource PlayerRowTemplate}" />
                         </StackPanel>
@@ -154,7 +164,7 @@
                             <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Margin="6,4,6,6">
                                 <Border Classes="badge t"><TextBlock Text="T" /></Border>
                                 <TextBlock Grid.Column="1" Classes="caption" Text="{Binding TTeamName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="2" Classes="mono" FontWeight="SemiBold" Text="{Binding TScore}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="2" Classes="mono" FontWeight="SemiBold" Text="{Binding TScore}" VerticalAlignment="Center" IsVisible="{Binding !IsCombined}" />
                             </Grid>
                             <ItemsControl ItemsSource="{Binding TPlayers}" ItemTemplate="{StaticResource PlayerRowTemplate}" />
                         </StackPanel>
@@ -205,7 +215,7 @@
                         <StackPanel Spacing="4">
                             <TextBlock Classes="h2" Text="{l:T 'Кто вы в этой демке?', 'Which player are you in this demo?'}" />
                             <TextBlock Classes="hint"
-                                       Text="{l:T 'Выберите себя — DemReview запомнит ваш SteamID. В следующих демках вы будете выбраны сразу и отмечены в списке игроков: не придётся искать себя среди десяти ников. А когда появится профиль по нескольким демкам, из ваших матчей будет собираться личный профиль — привычки, роли и ошибки за много игр.', 'Pick yourself and DemReview will remember your SteamID. In the next demos you will be selected right away and marked in the player list, so you will not have to look for yourself among ten nicknames. And once the multi-demo profile arrives, your matches will build up a personal profile: habits, roles and mistakes across many games.'}" />
+                                       Text="{l:T 'Выберите себя — DemReview запомнит ваш SteamID. В следующих демках вы будете выбраны сразу и отмечены в списке игроков: не придётся искать себя среди десяти ников. А демки с вашим участием сохраняются в «Библиотеку» — из них собирается личный профиль: привычки, роли и ошибки за много игр.', 'Pick yourself and DemReview will remember your SteamID. In the next demos you will be selected right away and marked in the player list, so you will not have to look for yourself among ten nicknames. And demos you played in are saved to the Library, building up a personal profile: habits, roles and mistakes across many games.'}" />
                         </StackPanel>
                         <ItemsControl ItemsSource="{Binding MainPlayerCandidates}">
                             <ItemsControl.ItemsPanel>
@@ -954,6 +964,40 @@
                                 </StackPanel>
                             </Border>
 
+                            <!-- Демки сводного профиля -->
+                            <Border Classes="card" Padding="18" IsVisible="{Binding IsCombined}">
+                                <StackPanel Spacing="12">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="caption" Text="{l:T 'ДЕМКИ В ПРОФИЛЕ', 'DEMOS IN THE PROFILE'}" />
+                                        <TextBlock Classes="hint" FontSize="12.5"
+                                                   Text="{l:T 'Раунды всех демок пронумерованы подряд — по диапазону видно, из какой демки раунд-пример паттерна.', 'Rounds of all demos are numbered consecutively; the range shows which demo a pattern example round comes from.'}" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Parts}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate><WrapPanel ItemSpacing="8" LineSpacing="8" /></ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:MatchPartRowViewModel">
+                                                <Border Classes="inset" Padding="12,8" MinWidth="230">
+                                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                                        <StackPanel Spacing="2">
+                                                            <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" MaxWidth="260" />
+                                                            <TextBlock Classes="subtle" FontSize="11.5">
+                                                                <Run Text="{Binding DateText}" />
+                                                                <Run Text="·" />
+                                                                <Run Classes="mono" Text="{Binding RoundsText}" />
+                                                            </TextBlock>
+                                                        </StackPanel>
+                                                        <TextBlock Grid.Column="1" Classes="mono" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"
+                                                                   Classes.positive="{Binding IsWin}" Classes.negative="{Binding IsLoss}" Text="{Binding ScoreText}" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
                             <!-- Паттерны -->
                             <StackPanel Spacing="12">
                                 <WrapPanel ItemSpacing="14" LineSpacing="8">
@@ -1035,12 +1079,244 @@
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>
-                                <TextBlock Classes="hint" FontSize="12.5"
+                                <TextBlock Classes="hint" FontSize="12.5" IsVisible="{Binding IsCombined}"
+                                           Text="{l:T 'Паттерны посчитаны по всем раундам выбранных демок. Клик по паттерну подсвечивает раунды-примеры на радаре, «На радаре» — ещё и переключает на него.', 'Patterns are computed over all rounds of the selected demos. Clicking a pattern highlights its example rounds on the radar; “On radar” also switches to it.'}" />
+                                <TextBlock Classes="hint" FontSize="12.5" IsVisible="{Binding !IsCombined}"
                                            Text="{l:T 'Одна демка — малая выборка: смотрите на «N из M» и уверенность. Клик по паттерну подсвечивает раунды-примеры на радаре, «На радаре» — ещё и переключает на него.', 'One demo is a small sample: look at “N of M” and confidence. Clicking a pattern highlights its example rounds on the radar; “On radar” also switches to it.'}" />
                             </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
+
+                <!-- ===== Библиотека и сводный профиль ===== -->
+                <DockPanel IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsLibraryTab}" DataContext="{Binding Library}" x:DataType="vm:LibraryViewModel">
+                    <Grid DockPanel.Dock="Top" Margin="24,20,24,16" ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                        <StackPanel>
+                            <TextBlock Classes="h1" Text="{l:T 'Библиотека', 'Library'}" />
+                            <TextBlock Classes="subtle" FontSize="13" Margin="0,2,0,0" Text="{Binding Summary}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Button Command="{Binding RescanCommand}" IsVisible="{Binding HasFolders}"
+                                    ToolTip.Tip="{l:T 'Разобрать новые и изменённые демки во всех папках', 'Parse new and changed demos in all folders'}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <controls:Icon Width="16" Height="16" Data="{StaticResource IconRefresh}" />
+                                    <TextBlock Text="{l:T 'Обновить', 'Rescan'}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="accent" Command="{Binding AddFolderCommand}">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <controls:Icon Width="16" Height="16" StrokeThickness="2" Data="{StaticResource IconOpen}" />
+                                    <TextBlock Text="{l:T 'Добавить папку с демками', 'Add a demo folder'}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Прогресс импорта и сборки профиля -->
+                    <Border DockPanel.Dock="Top" Classes="card" Margin="24,0,24,14" Padding="16,12" IsVisible="{Binding IsBusy}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                            <StackPanel Spacing="8">
+                                <TextBlock FontSize="13" Text="{Binding ProgressText}" TextTrimming="CharacterEllipsis" />
+                                <ProgressBar Classes="bar thick" Minimum="0" Maximum="100" Value="{Binding ProgressPercent}" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Classes="ghost small" VerticalAlignment="Center" Content="{l:T 'Остановить', 'Stop'}" Command="{Binding CancelCommand}" />
+                        </Grid>
+                    </Border>
+                    <TextBlock DockPanel.Dock="Top" Classes="hint" Margin="28,0,24,14" TextWrapping="Wrap" Text="{Binding StatusText}"
+                               IsVisible="{Binding StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+                    <ScrollViewer>
+                        <Grid ColumnDefinitions="*,14,340" Margin="24,0,24,32">
+                            <!-- Пустая библиотека -->
+                            <Border Classes="card" Padding="24" IsVisible="{Binding !HasEntries}" VerticalAlignment="Top">
+                                <StackPanel Spacing="10" MaxWidth="640" HorizontalAlignment="Left">
+                                    <TextBlock Classes="h2" Text="{l:T 'Профиль по нескольким демкам', 'Profile across many demos'}" />
+                                    <TextBlock Classes="hint"
+                                               Text="{l:T 'Одна демка — малая выборка, несколько демок дают уверенные выводы. Добавьте папку с демками: DemReview разберёт их один раз и сохранит анализ здесь. Дальше сводный профиль строится из библиотеки за секунды — даже если сами файлы .dem уже удалены.', 'One demo is a small sample; several demos give confident conclusions. Add a demo folder: DemReview parses the demos once and keeps the analysis here. After that the combined profile is built from the library in seconds, even if the .dem files themselves are gone.'}" />
+                                    <TextBlock Classes="hint"
+                                               Text="{l:T 'Если выбран основной игрок, каждая открытая демка с вашим участием тоже сохраняется сюда — так собирается «Мой профиль».', 'If the main player is set, every opened demo you played in is saved here too; that is how “My profile” builds up.'}" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Сводный профиль -->
+                            <Border Classes="card" Padding="20" IsVisible="{Binding HasEntries}" VerticalAlignment="Top">
+                                <StackPanel Spacing="16">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="h2" Text="{l:T 'Сводный профиль', 'Combined profile'}" />
+                                        <TextBlock Classes="hint"
+                                                   Text="{l:T 'Игрок находится в каждой демке по SteamID; паттерны, роли и тепловые карты считаются по всем выбранным матчам вместе. Чем больше раундов, тем выше уверенность в каждом паттерне.', 'The player is found in each demo by SteamID; patterns, roles and heatmaps are computed across all selected matches together. More rounds mean more confidence in every pattern.'}" />
+                                    </StackPanel>
+
+                                    <!-- Игрок -->
+                                    <Grid ColumnDefinitions="90,*,Auto" ColumnSpacing="12">
+                                        <TextBlock Classes="muted" FontSize="13.5" Text="{l:T 'Игрок', 'Player'}" VerticalAlignment="Center" />
+                                        <ComboBox Grid.Column="1" HorizontalAlignment="Stretch" MaxDropDownHeight="420"
+                                                  ItemsSource="{Binding Players}" SelectedItem="{Binding SelectedPlayer}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:LibraryPlayerOption">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <Border Classes="avatar" Classes.me="{Binding IsMe}" Width="22" Height="22" CornerRadius="11">
+                                                            <TextBlock Text="{Binding Initials}" FontSize="9" />
+                                                        </Border>
+                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                        <Border Classes="badge me" IsVisible="{Binding IsMe}"><TextBlock Text="{l:T 'Вы', 'You'}" /></Border>
+                                                        <TextBlock Classes="subtle" FontSize="12" Text="{Binding CountText}" VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                        <Button Grid.Column="2" Command="{Binding ShowMyProfileCommand}" IsEnabled="{Binding HasMainPlayer}"
+                                                ToolTip.Tip="{l:T 'Основной игрок задаётся в «Настройках» или выбором себя в демке', 'The main player is set in Settings or by picking yourself in a demo'}">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <controls:Icon Width="16" Height="16" Data="{StaticResource IconProfile}" />
+                                                <TextBlock Text="{l:T 'Мой профиль', 'My profile'}" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+
+                                    <!-- Карта -->
+                                    <Grid ColumnDefinitions="90,*" ColumnSpacing="12">
+                                        <TextBlock Classes="muted" FontSize="13.5" Text="{l:T 'Карта', 'Map'}" VerticalAlignment="Center" />
+                                        <ListBox Grid.Column="1" Theme="{StaticResource ChipList}" ItemsSource="{Binding Maps}" SelectedItem="{Binding SelectedMap}">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:LibraryMapOption">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="{Binding Tooltip}">
+                                                        <TextBlock Text="{Binding MapName}" />
+                                                        <TextBlock Classes="mono" Opacity="0.6" Text="{Binding CountText}" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </Grid>
+                                    <TextBlock Classes="hint" FontSize="12.5" Margin="102,-8,0,0"
+                                               Text="{l:T 'Профиль строится по одной карте: привычки игрока на Mirage и на Nuke обычно сильно отличаются.', 'The profile is built per map: a player’s habits on Mirage and on Nuke are usually very different.'}" />
+
+                                    <!-- Демки -->
+                                    <StackPanel Spacing="8">
+                                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                                            <TextBlock Classes="caption" Text="{l:T 'ДЕМКИ ИГРОКА НА КАРТЕ', 'PLAYER DEMOS ON THE MAP'}" VerticalAlignment="Center" />
+                                            <Button Grid.Column="1" Classes="ghost small" Content="{l:T 'Все', 'All'}" Command="{Binding SelectAllCommand}" />
+                                            <Button Grid.Column="2" Classes="ghost small" Content="{l:T 'Ни одной', 'None'}" Command="{Binding SelectNoneCommand}" />
+                                        </Grid>
+                                        <ItemsControl ItemsSource="{Binding Demos}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:LibraryDemoRowViewModel">
+                                                    <Border Classes="inset" Padding="12,8" Margin="0,0,0,6" ToolTip.Tip="{Binding Tooltip}">
+                                                        <Grid ColumnDefinitions="Auto,*,Auto,110,Auto,Auto" ColumnSpacing="12">
+                                                            <CheckBox IsChecked="{Binding IsIncluded}" VerticalAlignment="Center" MinWidth="0" />
+                                                            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                    <TextBlock FontSize="13.5" FontWeight="SemiBold" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" MaxWidth="360" />
+                                                                    <Border Classes="badge neutral" IsVisible="{Binding FileMissing}">
+                                                                        <TextBlock Text="{l:T 'файла нет', 'file gone'}" />
+                                                                    </Border>
+                                                                </StackPanel>
+                                                                <TextBlock Classes="subtle" FontSize="11.5">
+                                                                    <Run Text="{Binding DateText}" />
+                                                                    <Run Text="·" />
+                                                                    <Run Text="{Binding RoundsText}" />
+                                                                </TextBlock>
+                                                            </StackPanel>
+                                                            <TextBlock Grid.Column="2" Classes="mono" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"
+                                                                       Classes.positive="{Binding IsWin}" Classes.negative="{Binding IsLoss}" Text="{Binding ScoreText}" />
+                                                            <TextBlock Grid.Column="3" Classes="mono subtle" FontSize="12.5" VerticalAlignment="Center" TextAlignment="Right"
+                                                                       Text="{Binding KdaText}" ToolTip.Tip="{l:T 'Убийства / смерти / помощь', 'Kills / deaths / assists'}" />
+                                                            <Button Grid.Column="4" Classes="icon-button" Command="{Binding $parent[ItemsControl].((vm:LibraryViewModel)DataContext).OpenDemoCommand}"
+                                                                    CommandParameter="{Binding}" ToolTip.Tip="{l:T 'Открыть только эту демку', 'Open only this demo'}">
+                                                                <controls:Icon Width="16" Height="16" Data="{StaticResource IconExternal}" />
+                                                            </Button>
+                                                            <Button Grid.Column="5" Classes="icon-button" Command="{Binding $parent[ItemsControl].((vm:LibraryViewModel)DataContext).RemoveDemoCommand}"
+                                                                    CommandParameter="{Binding}" ToolTip.Tip="{l:T 'Убрать из библиотеки (файл не удаляется)', 'Remove from the library (the file is kept)'}">
+                                                                <controls:Icon Width="16" Height="16" Data="{StaticResource IconTrash}" />
+                                                            </Button>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+
+                                    <Border Classes="divider" />
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                                        <StackPanel Spacing="2" VerticalAlignment="Center">
+                                            <TextBlock FontSize="13.5" FontWeight="SemiBold" Text="{Binding SelectionText}" />
+                                            <TextBlock Classes="hint" FontSize="12.5" TextWrapping="Wrap" Text="{Binding SelectionHint}" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Classes="accent" Command="{Binding BuildProfileCommand}" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <controls:Icon Width="16" Height="16" StrokeThickness="2" Data="{StaticResource IconProfile}" />
+                                                <TextBlock Text="{l:T 'Построить профиль', 'Build the profile'}" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Папки, мой профиль, хранилище -->
+                            <StackPanel Grid.Column="2" Spacing="14">
+                                <Border Classes="card" Padding="18">
+                                    <StackPanel Spacing="12">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Classes="caption" Text="{l:T 'ПАПКИ С ДЕМКАМИ', 'DEMO FOLDERS'}" />
+                                            <TextBlock Classes="hint" FontSize="12.5"
+                                                       Text="{l:T 'Демки разбираются один раз, включая подпапки. «Обновить» добавит новые матчи.', 'Demos are parsed once, subfolders included. Rescan adds new matches.'}" />
+                                        </StackPanel>
+                                        <TextBlock Classes="subtle" FontSize="12.5" IsVisible="{Binding !HasFolders}" Text="{l:T 'Папок пока нет.', 'No folders yet.'}" />
+                                        <ItemsControl ItemsSource="{Binding Folders}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:LibraryFolderViewModel">
+                                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="4" Margin="0,0,0,8">
+                                                        <StackPanel Spacing="2" VerticalAlignment="Center">
+                                                            <TextBlock Classes="mono" FontSize="12" Text="{Binding Path}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Path}" />
+                                                            <TextBlock Classes="subtle" FontSize="11.5" Text="{Binding CountText}" />
+                                                        </StackPanel>
+                                                        <Button Grid.Column="1" Classes="icon-button compact" IsEnabled="{Binding Exists}"
+                                                                Command="{Binding $parent[ItemsControl].((vm:LibraryViewModel)DataContext).OpenFolderCommand}" CommandParameter="{Binding}"
+                                                                ToolTip.Tip="{l:T 'Открыть папку', 'Open the folder'}">
+                                                            <controls:Icon Width="15" Height="15" Data="{StaticResource IconExternal}" />
+                                                        </Button>
+                                                        <Button Grid.Column="2" Classes="icon-button compact"
+                                                                Command="{Binding $parent[ItemsControl].((vm:LibraryViewModel)DataContext).RemoveFolderCommand}" CommandParameter="{Binding}"
+                                                                ToolTip.Tip="{l:T 'Не следить за папкой (разобранные демки останутся в библиотеке)', 'Stop watching the folder (parsed demos stay in the library)'}">
+                                                            <controls:Icon Width="15" Height="15" Data="{StaticResource IconClose}" />
+                                                        </Button>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Classes="card" Padding="18">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock Classes="caption" Text="{l:T 'МОЙ ПРОФИЛЬ', 'MY PROFILE'}" />
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                            <TextBlock FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center"
+                                                       Text="{l:T 'Сохранять в библиотеку каждую открытую демку, где я играю', 'Save every opened demo I play in to the library'}" />
+                                            <ToggleSwitch Grid.Column="1" IsChecked="{Binding SaveMyDemos}" />
+                                        </Grid>
+                                        <TextBlock Classes="hint" FontSize="12.5" TextWrapping="Wrap"
+                                                   Text="{l:T 'Сводка каждой новой демки добавляется к прошлым — со временем получается подробный профиль вашей игры. Себя можно выбрать в демке или указать SteamID в «Настройках».', 'The summary of every new demo is added to the previous ones; over time this builds a detailed profile of your play. Pick yourself in a demo or enter your SteamID in Settings.'}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Classes="card" Padding="18" IsVisible="{Binding HasEntries}">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock Classes="caption" Text="{l:T 'ХРАНИЛИЩЕ', 'STORAGE'}" />
+                                        <TextBlock Classes="hint" FontSize="12.5" TextWrapping="Wrap"
+                                                   Text="{l:T 'Библиотека хранится отдельно от кеша и не очищается вместе с ним. Файлы .dem не изменяются и не удаляются.', 'The library is kept separately from the cache and is not cleared with it. The .dem files are never changed or deleted.'}" />
+                                        <Button Classes="danger outlined" HorizontalAlignment="Left" Command="{Binding ClearLibraryCommand}">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <controls:Icon Width="15" Height="15" Data="{StaticResource IconTrash}" />
+                                                <TextBlock Text="{Binding ClearButtonText}" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </ScrollViewer>
+                </DockPanel>
 
                 <!-- ===== Настройки ===== -->
                 <DockPanel IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsSettingsTab}" DataContext="{Binding Settings}" x:DataType="vm:SettingsViewModel">
@@ -1097,7 +1373,7 @@
                                 <StackPanel Spacing="16">
                                     <StackPanel Spacing="4">
                                         <TextBlock Classes="h2" Text="{l:T 'Основной игрок', 'Main player'}" />
-                                        <TextBlock Classes="hint" Text="{l:T 'Выбирается сразу при открытии демки и отмечается «Вы» в списке игроков; позже из ваших демок будет собираться личный профиль. SteamID хранится только на этом компьютере.', 'Selected as soon as a demo opens and marked “You” in the player list; later your demos will build up a personal profile. The SteamID is stored only on this computer.'}" />
+                                        <TextBlock Classes="hint" Text="{l:T 'Выбирается сразу при открытии демки и отмечается «Вы» в списке игроков; демки с вашим участием сохраняются в «Библиотеку» и собираются в личный профиль. SteamID хранится только на этом компьютере.', 'Selected as soon as a demo opens and marked “You” in the player list; demos you played in are saved to the Library and build up a personal profile. The SteamID is stored only on this computer.'}" />
                                     </StackPanel>
                                     <Border Classes="inset" Padding="14">
                                         <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="12">

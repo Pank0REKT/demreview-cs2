@@ -17,6 +17,14 @@ public sealed record MatchData(
     IReadOnlyList<BombEvent> Bombs,
     IReadOnlyList<DamageEvent> Damages)
 {
+    /// <summary>Демки, из которых склеен сводный матч (раунды перенумерованы подряд); пусто — обычная одиночная демка.</summary>
+    public IReadOnlyList<MatchPart> Parts { get; init; } = [];
+
+    public bool IsCombined => Parts.Count > 0;
+
+    /// <summary>Демка сводного матча, к которой относится раунд.</summary>
+    public MatchPart? PartOf(int round) => Parts.FirstOrDefault(p => round >= p.FirstRound && round <= p.LastRound);
+
     public IEnumerable<GrenadeThrow> GrenadesOf(ulong steamId) => Grenades.Where(g => g.ThrowerSteamId == steamId);
 
     public PlayerInfo? FindPlayer(ulong steamId) => Players.FirstOrDefault(p => p.SteamId == steamId);
@@ -25,6 +33,13 @@ public sealed record MatchData(
         Tracks.TryGetValue(steamId, out var track) ? track : new PlayerTrack(steamId, []);
 
     public RoundInfo? FindRound(int number) => Rounds.FirstOrDefault(r => r.Number == number);
+}
+
+/// <summary>Одна демка в сводном матче: её раунды — <paramref name="FirstRound"/>…<paramref name="LastRound"/> в общей нумерации.</summary>
+/// <param name="RoundOffset">Сколько прибавлено к номерам раундов демки.</param>
+public sealed record MatchPart(string SourcePath, MatchScore Score, int FirstRound, int LastRound, int RoundOffset, DateTime PlayedUtc)
+{
+    public string FileName => Path.GetFileName(SourcePath);
 }
 
 /// <summary>Итоговый счёт. Команды названы по составу на конец матча.</summary>

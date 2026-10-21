@@ -53,9 +53,13 @@ public sealed class ProfileExporter : IProfileExporter
             match = new
             {
                 map = match.MapName,
-                file = Path.GetFileName(match.SourcePath),
-                score = match.FinalScore,
+                file = match.IsCombined ? null : Path.GetFileName(match.SourcePath),
+                score = match.IsCombined ? null : match.FinalScore,
                 rounds = match.Rounds.Count,
+                // Сводный профиль: демки и их раунды в общей нумерации (раунды паттернов — в ней же).
+                demos = match.IsCombined
+                    ? match.Parts.Select(p => new { file = p.FileName, score = p.Score, firstRound = p.FirstRound, lastRound = p.LastRound })
+                    : null,
             },
             player = new { steamId = profile.SteamId.ToString(CultureInfo.InvariantCulture), name = profile.Name },
             predictabilityPercent = profile.PredictabilityPercent,
@@ -89,10 +93,22 @@ public sealed class ProfileExporter : IProfileExporter
         sb.AppendLine(Loc.T($"# Профиль игрока {Escape(profile.Name)}", $"# Player profile: {Escape(profile.Name)}"));
         sb.AppendLine();
         sb.AppendLine(Loc.T($"- **Карта:** {match.MapName}", $"- **Map:** {match.MapName}"));
-        var score = $"{Escape(TeamName(match.FinalScore.TeamTName, Side.T))} {match.FinalScore.TeamTScore} : " +
-                    $"{match.FinalScore.TeamCTScore} {Escape(TeamName(match.FinalScore.TeamCTName, Side.CT))}";
-        sb.AppendLine(Loc.T($"- **Матч:** {score}, раундов: {match.Rounds.Count}", $"- **Match:** {score}, rounds: {match.Rounds.Count}"));
-        sb.AppendLine(Loc.T($"- **Демка:** {Escape(Path.GetFileName(match.SourcePath))}", $"- **Demo:** {Escape(Path.GetFileName(match.SourcePath))}"));
+        if (match.IsCombined)
+        {
+            sb.AppendLine(Loc.T($"- **Демок:** {match.Parts.Count}, раундов: {match.Rounds.Count} (раунды пронумерованы подряд)",
+                $"- **Demos:** {match.Parts.Count}, rounds: {match.Rounds.Count} (rounds are numbered consecutively)"));
+            foreach (var part in match.Parts)
+            {
+                sb.AppendLine(Loc.T($"  - {Escape(part.FileName)}: {Score(part.Score)}, раунды {part.FirstRound}–{part.LastRound}",
+                    $"  - {Escape(part.FileName)}: {Score(part.Score)}, rounds {part.FirstRound}–{part.LastRound}"));
+            }
+        }
+        else
+        {
+            sb.AppendLine(Loc.T($"- **Матч:** {Score(match.FinalScore)}, раундов: {match.Rounds.Count}",
+                $"- **Match:** {Score(match.FinalScore)}, rounds: {match.Rounds.Count}"));
+            sb.AppendLine(Loc.T($"- **Демка:** {Escape(Path.GetFileName(match.SourcePath))}", $"- **Demo:** {Escape(Path.GetFileName(match.SourcePath))}"));
+        }
         sb.AppendLine($"- **SteamID:** {profile.SteamId}");
         sb.AppendLine(Loc.T($"- **Предсказуемость:** {profile.PredictabilityPercent}%", $"- **Predictability:** {profile.PredictabilityPercent}%"));
         sb.AppendLine();
@@ -170,6 +186,9 @@ public sealed class ProfileExporter : IProfileExporter
     };
 
     /// <summary>Экранирование символов Markdown в именах и названиях.</summary>
+    private static string Score(MatchScore score) =>
+        $"{Escape(TeamName(score.TeamTName, Side.T))} {score.TeamTScore} : {score.TeamCTScore} {Escape(TeamName(score.TeamCTName, Side.CT))}";
+
     private static string Escape(string text)
     {
         var sb = new StringBuilder(text.Length);

@@ -264,6 +264,19 @@ h3 { font-size: 19px; margin: 0 0 8px; line-height: 1.3; }
 }
 .roadmap-more { margin-top: auto; color: var(--accent); font-weight: 600; font-size: 15px; }
 .roadmap-footer { text-align: center; margin: 20px 0 0; }
+
+/* Выполненные пункты дорожной карты */
+.status-done {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: var(--good);
+  padding: 3px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--good) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--good) 35%, transparent);
+}
+.status-done::before { content: "✓"; }
+.roadmap-card.is-done { border-color: color-mix(in srgb, var(--good) 35%, var(--border)); }
+.roadmap-card.is-done::before { background: var(--good); opacity: 1; }
+.roadmap-card.is-done .roadmap-tags li { color: var(--good); border-color: color-mix(in srgb, var(--good) 30%, var(--border)); }
 .roadmap-footer .sep { color: var(--muted); margin: 0 10px; }
 
 /* Как это работает */
@@ -434,6 +447,10 @@ td:first-child { white-space: nowrap; }
 }
 .roadmap-item h3 { font-size: 17px; display: flex; gap: 10px; align-items: baseline; }
 .roadmap-item h3::before { content: counter(item); color: var(--accent); font-size: 14px; font-weight: 700; }
+.roadmap-block.is-done { border-color: color-mix(in srgb, var(--good) 40%, var(--border)); }
+.roadmap-block.is-done .roadmap-num { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.roadmap-block.is-done .roadmap-item h3::before { content: "✓"; color: var(--good); }
+.roadmap-item .how { margin-top: 8px; color: var(--text); }
 .roadmap-item p, .roadmap-item li { color: var(--muted); font-size: 15px; }
 .roadmap-item p { margin: 0; }
 .roadmap-item ul { margin: 8px 0 0; padding-left: 20px; }

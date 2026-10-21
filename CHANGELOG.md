@@ -13,6 +13,14 @@ All notable changes are listed here. Versions follow [Semantic Versioning](https
   switches on the page, buy and grenade badges in the table.
 - Player profile: a predictability ring, role cards with key metrics, a T vs CT comparison, category filter for patterns.
 - Settings: analysis thresholds can be edited in the app (no need to edit `settings.json`), cache fill level.
+- Library and the profile across many demos: add a folder with demos (subfolders included) and DemReview parses each
+  demo once and keeps the analysis in a separate library (`library.db`, no 50-demo limit, not cleared with the cache).
+  Pick a player and a map, tick the demos — the combined profile (patterns, roles, radar, heatmaps) is built from the
+  library in seconds, even if the .dem files are gone. *Rescan* adds new matches from the folders.
+- Map filter: the combined profile is built per map; the map list shows how many demos the player has on each.
+- My profile: every opened demo where the main player plays is saved to the library automatically (can be switched
+  off), so your own profile grows with each match.
+- Pistol rounds are detected at the start of every demo in a combined profile.
 
 ## [0.1.2]
 

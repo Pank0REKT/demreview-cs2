@@ -34,8 +34,23 @@ public readonly record struct PlayerSample(
     int EquipmentValue,
     string Place);
 
-/// <summary>Все сэмплы одного игрока, упорядоченные по тику.</summary>
+/// <summary>Все сэмплы одного игрока, упорядоченные по тику (а значит, и по номеру раунда).</summary>
 public sealed record PlayerTrack(ulong SteamId, IReadOnlyList<PlayerSample> Samples)
 {
-    public IEnumerable<PlayerSample> InRound(int round) => Samples.Where(s => s.Round == round);
+    /// <summary>Сэмплы раунда: начало ищется двоичным поиском — в сводном матче из многих демок трек длинный.</summary>
+    public IEnumerable<PlayerSample> InRound(int round)
+    {
+        var (low, high) = (0, Samples.Count);
+        while (low < high)
+        {
+            var middle = (low + high) / 2;
+            if (Samples[middle].Round < round)
+                low = middle + 1;
+            else
+                high = middle;
+        }
+
+        for (var i = low; i < Samples.Count && Samples[i].Round == round; i++)
+            yield return Samples[i];
+    }
 }

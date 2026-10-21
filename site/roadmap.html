@@ -69,11 +69,11 @@
       </div>
 
       <!-- 1. Профиль -->
-      <details class="roadmap-block" id="profile" open>
+      <details class="roadmap-block is-done" id="profile" open>
         <summary>
           <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg></span>
           <span class="roadmap-block-head">
-            <span class="roadmap-num">01 · <span data-lang="ru">3 пункта</span><span data-lang="en">3 items</span></span>
+            <span class="roadmap-num"><span>01 · <span data-lang="ru">3 пункта</span><span data-lang="en">3 items</span></span><span class="status-done"><span data-lang="ru">Готово · v0.2.0</span><span data-lang="en">Done · v0.2.0</span></span></span>
             <h2><span data-lang="ru">Профиль по многим демкам</span><span data-lang="en">Profile across many demos</span></h2>
             <span class="roadmap-block-sub"><span data-lang="ru">Одна демка — малая выборка. Несколько демок — уверенные выводы.</span><span data-lang="en">One demo is a small sample. Several demos give confident conclusions.</span></span>
           </span>
@@ -83,14 +83,17 @@
             <li class="roadmap-item">
               <h3><span data-lang="ru">Профиль по нескольким демкам</span><span data-lang="en">Profile from several demos</span></h3>
               <p><span data-lang="ru">Выберите 3–10 демок одного игрока — DemReview найдёт его в каждой по SteamID и посчитает паттерны, роли и тепловые карты по всем матчам вместе. Чем больше раундов, тем выше уверенность в каждом паттерне.</span><span data-lang="en">Pick 3–10 demos of the same player — DemReview finds them in each one by SteamID and computes patterns, roles and heatmaps across all the matches together. More rounds mean more confidence in every pattern.</span></p>
+              <p class="how"><span data-lang="ru">В 0.2.0: раздел «Библиотека» → «Добавить папку с демками». Каждая демка разбирается один раз и сохраняется, и профиль строится за секунды, даже если файлы .dem уже удалены.</span><span data-lang="en">In 0.2.0: Library → Add a demo folder. Each demo is parsed once and kept, and the profile is built in seconds, even if the .dem files are gone.</span></p>
             </li>
             <li class="roadmap-item">
               <h3><span data-lang="ru">Фильтр по карте</span><span data-lang="en">Map filter</span></h3>
               <p><span data-lang="ru">В общем профиле можно смотреть каждую карту отдельно: привычки игрока на Mirage и на Nuke обычно совсем разные.</span><span data-lang="en">Look at each map separately inside the combined profile: a player's habits on Mirage and on Nuke are usually very different.</span></p>
+              <p class="how"><span data-lang="ru">В 0.2.0: выберите карту — рядом видно, сколько у игрока демок на каждой; отметьте, какие из них включить в профиль.</span><span data-lang="en">In 0.2.0: pick a map (each one shows how many demos the player has there) and tick which demos go into the profile.</span></p>
             </li>
             <li class="roadmap-item">
               <h3><span data-lang="ru">Мой профиль</span><span data-lang="en">My profile</span></h3>
               <p><span data-lang="ru">Добавьте себя как основного игрока: сводка из каждой новой демки будет сохраняться и дополнять предыдущие. Со временем сложится подробный профиль вашей игры.</span><span data-lang="en">Set yourself as the main player: the summary from every new demo is saved and added to the previous ones. Over time this builds a detailed profile of your play.</span></p>
+              <p class="how"><span data-lang="ru">В 0.2.0: каждая открытая демка с вашим участием сама попадает в библиотеку, а кнопка «Мой профиль» сразу выбирает вас.</span><span data-lang="en">In 0.2.0: every demo you open that you played in goes to the library automatically, and the My profile button selects you right away.</span></p>
             </li>
           </ol>
         </div>

@@ -1,5 +1,6 @@
 using DemReview.Application;
 using DemReview.Application.Analytics;
+using DemReview.Application.Library;
 using DemReview.Application.Maps;
 using DemReview.Application.Parsing;
 using DemReview.Application.Updates;
@@ -20,6 +21,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton(CreatePlatformService());
         services.AddSingleton<ISettingsService, JsonSettingsService>();
         services.AddSingleton<IMatchCache, SqliteMatchCache>();
+        services.AddSingleton<IDemoLibrary, SqliteDemoLibrary>();
         services.AddSingleton<IDemoParser, DemoFileDemoParser>();
         services.AddSingleton<IMapConfigProvider, EmbeddedMapConfigProvider>();
         services.AddSingleton<IMapImageProvider, LocalMapImageProvider>();
