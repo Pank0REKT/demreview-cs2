@@ -2,6 +2,18 @@
 
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Features
+- New interface: a dark theme with a section bar (*Radar*, *Stats*, *Profile*, *Settings*) and a player panel with
+  both teams, K / D / A, the kill-death difference and a nickname search. The top menu is gone; the hotkeys stay.
+- Radar: filters above the map, +/− and reset-view buttons, a legend, a timeline with a play button and speed picker,
+  round cards with the first zones of the route.
+- Statistics: summary tiles (rounds, wins, damage per round, first contact — overall and per side), side and buy
+  switches on the page, buy and grenade badges in the table.
+- Player profile: a predictability ring, role cards with key metrics, a T vs CT comparison, category filter for patterns.
+- Settings: analysis thresholds can be edited in the app (no need to edit `settings.json`), cache fill level.
+
 ## [0.1.2]
 
 ### Features

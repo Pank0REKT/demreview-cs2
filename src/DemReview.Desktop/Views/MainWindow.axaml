@@ -7,11 +7,11 @@
         xmlns:situations="using:DemReview.Application.Situations"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
+        mc:Ignorable="d" d:DesignWidth="1440" d:DesignHeight="900"
         x:Class="DemReview.Desktop.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{Binding WindowTitle}"
-        Width="1280" Height="800" MinWidth="900" MinHeight="600"
+        Width="1440" Height="900" MinWidth="1100" MinHeight="640"
         WindowStartupLocation="CenterScreen"
         behaviors:FileDrop.Command="{Binding LoadFileCommand}">
 
@@ -25,644 +25,1226 @@
         <KeyBinding Gesture="Escape" Command="{Binding CancelCommand}" />
     </Window.KeyBindings>
 
-    <DockPanel>
-        <!-- Меню -->
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="{l:T '_Файл', '_File'}">
-                <MenuItem Header="{l:T '_Открыть демку…', '_Open demo…'}" InputGesture="Ctrl+O" Command="{Binding OpenCommand}" />
-                <MenuItem Header="{l:T '_Повторный анализ', '_Analyze again'}" InputGesture="F5" Command="{Binding ReloadCommand}" />
-                <MenuItem Header="{l:T '_Разобрать заново (без кеша)', '_Reparse (skip cache)'}" InputGesture="Shift+F5" Command="{Binding ReparseCommand}" />
-                <MenuItem Header="{l:T '_Экспорт профиля…', '_Export profile…'}" InputGesture="Ctrl+E" Command="{Binding ExportCommand}" />
-                <Separator />
-                <MenuItem Header="{l:T 'О_тменить разбор', '_Cancel parsing'}" InputGesture="Escape" Command="{Binding CancelCommand}" />
-            </MenuItem>
-            <MenuItem Header="{l:T '_Сервис', '_Tools'}">
-                <MenuItem Header="{l:T '_Настройки', '_Settings'}" Command="{Binding OpenSettingsCommand}" />
-                <Separator />
-                <MenuItem Header="{l:T 'Папка с картами (maps)', 'Map images folder (maps)'}" Command="{Binding OpenMapsFolderCommand}" />
-                <MenuItem Header="{l:T 'Папка данных и журналов', 'Data and logs folder'}" Command="{Binding OpenDataFolderCommand}" />
-            </MenuItem>
-        </Menu>
+    <Window.Resources>
+        <DataTemplate x:Key="OptionTemplate" x:DataType="vm:FilterOption">
+            <TextBlock Text="{Binding Label}" />
+        </DataTemplate>
 
-        <!-- Строка состояния: прогресс и отмена -->
-        <Border DockPanel.Dock="Bottom" Padding="12,6" Background="{DynamicResource PanelBackgroundBrush}">
-            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
-                <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                <ProgressBar Grid.Column="1" Width="240" Minimum="0" Maximum="100"
-                             Value="{Binding ProgressPercent}" IsVisible="{Binding IsBusy}" VerticalAlignment="Center" />
-                <Button Grid.Column="2" Content="{l:T 'Отмена (Esc)', 'Cancel (Esc)'}" Command="{Binding CancelCommand}" IsVisible="{Binding IsBusy}" />
-            </Grid>
-        </Border>
+        <!-- Вариант стороны: «T» и «CT» в цветах сторон -->
+        <DataTemplate x:Key="SideOptionTemplate" x:DataType="vm:FilterOption">
+            <TextBlock Text="{Binding Label}" Classes.t="{Binding IsT}" Classes.ct="{Binding IsCT}" />
+        </DataTemplate>
 
-        <!-- Сообщение об ошибке -->
-        <Border DockPanel.Dock="Top" IsVisible="{Binding HasError}" Margin="12,8,12,0" Padding="12,8" CornerRadius="4"
-                Background="#4D2B2B" BorderBrush="#C25050" BorderThickness="1">
-            <Grid ColumnDefinitions="*,Auto">
-                <SelectableTextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" VerticalAlignment="Center" />
-                <Button Grid.Column="1" Content="{l:T 'Закрыть', 'Close'}" Command="{Binding DismissErrorCommand}" Margin="12,0,0,0" />
-            </Grid>
-        </Border>
-
-        <!-- Новая версия на GitHub -->
-        <Border DockPanel.Dock="Top" IsVisible="{Binding Settings.HasUpdateBanner}" Margin="12,8,12,0" Padding="12,6" CornerRadius="4"
-                Background="#1C2A3A" BorderBrush="#5AA0E6" BorderThickness="1">
-            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-                <TextBlock Text="{Binding Settings.UpdateBannerText}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                <Button Grid.Column="1" Content="{l:T 'Открыть страницу релиза', 'Open the release page'}" Command="{Binding Settings.OpenReleaseCommand}" />
-                <Button Grid.Column="2" Content="{l:T 'Не напоминать', 'Do not remind'}" Command="{Binding Settings.DismissUpdateCommand}" />
-            </Grid>
-        </Border>
-
-        <!-- Кто вы в этой демке: выбор основного игрока, пока он не задан -->
-        <Border DockPanel.Dock="Top" IsVisible="{Binding IsMainPlayerPromptVisible}" Margin="12,8,12,0" Padding="14,10" CornerRadius="4"
-                Background="#2E2616" BorderBrush="#E8B04A" BorderThickness="1">
-            <StackPanel Spacing="8">
-                <TextBlock Classes="header" Text="{l:T 'Кто вы в этой демке?', 'Which player are you in this demo?'}" />
-                <TextBlock TextWrapping="Wrap"
-                           Text="{l:T 'Выберите себя — DemReview запомнит ваш SteamID. В следующих демках вы будете выбраны сразу и отмечены в списке игроков: не придётся искать себя среди десяти ников. А когда появится профиль по нескольким демкам, из ваших матчей будет собираться личный профиль — привычки, роли и ошибки за много игр.', 'Pick yourself and DemReview will remember your SteamID. In the next demos you will be selected right away and marked in the player list, so you will not have to look for yourself among ten nicknames. And once the multi-demo profile arrives, your matches will build up a personal profile: habits, roles and mistakes across many games.'}" />
-                <ItemsControl ItemsSource="{Binding MainPlayerCandidates}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:PlayerRowViewModel">
-                            <Button Margin="0,0,6,6" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ChooseMainPlayerCommand}"
-                                    CommandParameter="{Binding}">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                                    <TextBlock Text="{Binding TeamText}" FontSize="12" VerticalAlignment="Center"
-                                               Classes.side-t="{Binding Side, Converter={x:Static vm:SideConverters.IsT}}"
-                                               Classes.side-ct="{Binding Side, Converter={x:Static vm:SideConverters.IsCT}}" />
-                                </StackPanel>
-                            </Button>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-                    <TextBlock Classes="secondary" TextWrapping="Wrap" VerticalAlignment="Center"
-                               Text="{l:T 'SteamID хранится только на этом компьютере и никуда не отправляется. Изменить выбор или ввести SteamID вручную можно в «Настройках».', 'Your SteamID is stored only on this computer and is never sent anywhere. You can change it or enter a SteamID manually in Settings.'}" />
-                    <Button Grid.Column="1" Content="{l:T 'Меня нет в этой демке', 'I am not in this demo'}" Command="{Binding SkipMainPlayerPromptCommand}" />
-                    <Button Grid.Column="2" Content="{l:T 'Не спрашивать', 'Do not ask again'}" Command="{Binding DisableMainPlayerPromptCommand}" />
+        <!-- Строка игрока в боковой панели -->
+        <DataTemplate x:Key="PlayerRowTemplate" x:DataType="vm:PlayerRowViewModel">
+            <Button Classes="player" Classes.selected="{Binding IsSelected}"
+                    Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SelectPlayerCommand}" CommandParameter="{Binding}"
+                    ToolTip.Tip="{Binding SteamIdText}">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                    <Border Classes="avatar" Classes.t="{Binding IsT}" Classes.me="{Binding IsMe}">
+                        <TextBlock Text="{Binding Initials}" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock FontSize="13.5" FontWeight="SemiBold" Text="{Binding Name}" TextTrimming="CharacterEllipsis" MaxWidth="140" />
+                            <Border Classes="badge me" IsVisible="{Binding IsMe}"><TextBlock Text="{l:T 'Вы', 'You'}" /></Border>
+                        </StackPanel>
+                        <TextBlock Classes="mono subtle" FontSize="11.5" Text="{Binding KdaText}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Classes="mono subtle" FontSize="12.5" FontWeight="SemiBold" Text="{Binding DiffText}" VerticalAlignment="Center"
+                               Classes.positive="{Binding IsDiffPositive}" Classes.negative="{Binding IsDiffNegative}" />
                 </Grid>
-            </StackPanel>
+            </Button>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid ColumnDefinitions="64,280,*">
+        <!-- ===== Полоса разделов ===== -->
+        <Border BorderBrush="{StaticResource RailBorderBrush}" BorderThickness="0,0,1,0">
+            <DockPanel Margin="0,16">
+                <Border DockPanel.Dock="Top" Width="38" Height="38" CornerRadius="11" Background="{StaticResource AccentBrush}"
+                        Margin="0,0,0,16" ToolTip.Tip="DemReview">
+                    <controls:Icon Width="22" Height="22" Brush="{StaticResource OnAccentBrush}" StrokeThickness="2" Data="{StaticResource IconLogo}" />
+                </Border>
+                <Button DockPanel.Dock="Bottom" Classes="icon-button" Width="44" Height="44" CornerRadius="11" HorizontalAlignment="Center"
+                        Background="{StaticResource CardBrush}" Command="{Binding OpenCommand}" IsEnabled="{Binding IsIdle}"
+                        ToolTip.Tip="{l:T 'Открыть демку (Ctrl+O)', 'Open a demo (Ctrl+O)'}">
+                    <controls:Icon Width="20" Height="20" Data="{StaticResource IconOpen}" />
+                </Button>
+                <StackPanel Spacing="6" HorizontalAlignment="Center">
+                    <Button Classes="nav" Classes.active="{Binding IsRadarTab}" Command="{Binding SelectTabCommand}" CommandParameter="0">
+                        <StackPanel Spacing="4">
+                            <controls:Icon Width="22" Height="22" HorizontalAlignment="Center" Data="{StaticResource IconRadar}" />
+                            <TextBlock Text="{l:T 'Радар', 'Radar'}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav" Classes.active="{Binding IsStatisticsTab}" Command="{Binding SelectTabCommand}" CommandParameter="1"
+                            IsEnabled="{Binding HasMatch}">
+                        <StackPanel Spacing="4">
+                            <controls:Icon Width="22" Height="22" HorizontalAlignment="Center" Data="{StaticResource IconStats}" />
+                            <TextBlock Text="{l:T 'Статистика', 'Stats'}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav" Classes.active="{Binding IsProfileTab}" Command="{Binding SelectTabCommand}" CommandParameter="2"
+                            IsEnabled="{Binding HasMatch}">
+                        <StackPanel Spacing="4">
+                            <controls:Icon Width="22" Height="22" HorizontalAlignment="Center" Data="{StaticResource IconProfile}" />
+                            <TextBlock Text="{l:T 'Профиль', 'Profile'}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav" Classes.active="{Binding IsSettingsTab}" Command="{Binding SelectTabCommand}" CommandParameter="3">
+                        <StackPanel Spacing="4">
+                            <controls:Icon Width="22" Height="22" HorizontalAlignment="Center" Data="{StaticResource IconSettings}" />
+                            <TextBlock Text="{l:T 'Настройки', 'Settings'}" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
         </Border>
 
-        <Grid ColumnDefinitions="320,4,*">
-            <!-- Левая панель: игроки -->
-            <DockPanel Margin="12,12,0,12">
-                <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="0,0,0,8">
-                    <TextBlock Classes="header" Text="{l:T 'Игроки', 'Players'}" />
-                    <TextBlock Classes="secondary" Text="{Binding MatchSummary}" TextWrapping="Wrap" IsVisible="{Binding HasMatch}" />
-                </StackPanel>
-
-                <!-- Фильтры -->
-                <Border DockPanel.Dock="Bottom" Margin="0,8,0,0" Padding="8" CornerRadius="4" IsVisible="{Binding HasMatch}"
-                        Background="{DynamicResource PanelBackgroundBrush}">
-                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8"
-                          DataContext="{Binding Filter}" x:DataType="vm:FilterViewModel">
-                        <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{l:T 'Фильтры', 'Filters'}" />
-                        <TextBlock Grid.Row="1" Text="{l:T 'Раунд', 'Round'}" VerticalAlignment="Center" />
-                        <ComboBox Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Rounds}"
-                                  SelectedItem="{Binding SelectedRound}" MaxDropDownHeight="400">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="vm:FilterOption"><TextBlock Text="{Binding Label}" /></DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                        <TextBlock Grid.Row="2" Text="{l:T 'Сторона', 'Side'}" VerticalAlignment="Center" />
-                        <ComboBox Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Sides}" SelectedItem="{Binding SelectedSide}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="vm:FilterOption"><TextBlock Text="{Binding Label}" /></DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                        <TextBlock Grid.Row="3" Text="{l:T 'Закупка', 'Buy'}" VerticalAlignment="Center" />
-                        <ComboBox Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Buys}" SelectedItem="{Binding SelectedBuy}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="vm:FilterOption"><TextBlock Text="{Binding Label}" /></DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                        <TextBlock Grid.Row="4" Text="{l:T 'Гранаты', 'Grenades'}" VerticalAlignment="Center" />
-                        <ComboBox Grid.Row="4" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding Grenades}" SelectedItem="{Binding SelectedGrenade}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="vm:FilterOption"><TextBlock Text="{Binding Label}" /></DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                        <Button Grid.Row="5" Grid.ColumnSpan="2" Content="{l:T 'Сбросить фильтры', 'Reset filters'}" Command="{Binding ResetCommand}"
-                                IsEnabled="{Binding IsActive}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+        <!-- ===== Игроки ===== -->
+        <Border Grid.Column="1" Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource RailBorderBrush}" BorderThickness="0,0,1,0">
+            <DockPanel Margin="14,16">
+                <!-- Матч -->
+                <Border DockPanel.Dock="Top" Classes="card" CornerRadius="14" Padding="14" Margin="0,0,0,14">
+                    <Grid>
+                        <StackPanel Spacing="10" IsVisible="{Binding HasMatch}">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="{Binding Radar.MapTitle}" FontSize="17" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                <Border Grid.Column="1" Classes="pill" Padding="7,3" VerticalAlignment="Center">
+                                    <TextBlock Classes="mono subtle" FontSize="11" Text="{Binding MapName}" />
+                                </Border>
+                            </Grid>
+                            <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="8">
+                                <TextBlock Classes="t" FontSize="12" Text="{Binding TTeamName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Classes="mono" FontSize="16" FontWeight="SemiBold">
+                                    <Run Text="{Binding TScore}" /><Run Text=" : " /><Run Text="{Binding CtScore}" />
+                                </TextBlock>
+                                <TextBlock Grid.Column="2" Classes="ct" FontSize="12" Text="{Binding CtTeamName}" TextTrimming="CharacterEllipsis"
+                                           TextAlignment="Right" VerticalAlignment="Center" />
+                            </Grid>
+                            <TextBlock Classes="subtle" FontSize="12" Text="{Binding MatchDetails}" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <StackPanel Spacing="4" IsVisible="{Binding !HasMatch}">
+                            <TextBlock FontSize="15" FontWeight="SemiBold" Text="{l:T 'Демка не открыта', 'No demo open'}" />
+                            <TextBlock Classes="hint" FontSize="12" Text="{l:T 'Список игроков появится после открытия демки.', 'The player list appears after you open a demo.'}" />
+                        </StackPanel>
                     </Grid>
                 </Border>
-                <Grid>
-                    <ListBox ItemsSource="{Binding Players}" SelectedItem="{Binding SelectedPlayer}" IsVisible="{Binding HasMatch}">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate x:DataType="vm:PlayerRowViewModel">
-                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" Margin="0,2">
-                                    <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                                        <Border IsVisible="{Binding IsMe}" Background="#E8B04A" CornerRadius="3" Padding="5,0" VerticalAlignment="Center">
-                                            <TextBlock Text="{l:T 'Вы', 'You'}" Foreground="Black" FontSize="11" FontWeight="Bold" />
-                                        </Border>
-                                    </StackPanel>
-                                    <TextBlock Grid.Column="1" Text="{Binding KdaText}" />
-                                    <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Classes="secondary" Text="{Binding TeamText}"
-                                               Classes.side-t="{Binding Side, Converter={x:Static vm:SideConverters.IsT}}"
-                                               Classes.side-ct="{Binding Side, Converter={x:Static vm:SideConverters.IsCT}}" />
-                                    <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Classes="secondary" Text="{Binding SteamIdText}" />
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                    <TextBlock IsVisible="{Binding !HasMatch}" Classes="secondary" TextWrapping="Wrap" Margin="0,8"
-                               Text="{l:T 'Список игроков появится после открытия демки.', 'The player list appears after you open a demo.'}" />
-                </Grid>
+
+                <!-- Поиск -->
+                <TextBox DockPanel.Dock="Top" Text="{Binding PlayerSearch}" IsVisible="{Binding HasMatch}" Margin="0,0,0,10"
+                         PlaceholderText="{l:T 'Найти игрока', 'Find a player'}">
+                    <TextBox.InnerLeftContent>
+                        <controls:Icon Width="16" Height="16" Margin="12,0,0,0" Brush="{StaticResource SubtleBrush}" StrokeThickness="2" Data="{StaticResource IconSearch}" />
+                    </TextBox.InnerLeftContent>
+                </TextBox>
+
+                <ScrollViewer IsVisible="{Binding HasMatch}">
+                    <StackPanel Spacing="14">
+                        <StackPanel Spacing="4">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Margin="6,4,6,6">
+                                <Border Classes="badge ct"><TextBlock Text="CT" /></Border>
+                                <TextBlock Grid.Column="1" Classes="caption" Text="{Binding CtTeamName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="2" Classes="mono" FontWeight="SemiBold" Text="{Binding CtScore}" VerticalAlignment="Center" />
+                            </Grid>
+                            <ItemsControl ItemsSource="{Binding CtPlayers}" ItemTemplate="{StaticResource PlayerRowTemplate}" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Margin="6,4,6,6">
+                                <Border Classes="badge t"><TextBlock Text="T" /></Border>
+                                <TextBlock Grid.Column="1" Classes="caption" Text="{Binding TTeamName}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="2" Classes="mono" FontWeight="SemiBold" Text="{Binding TScore}" VerticalAlignment="Center" />
+                            </Grid>
+                            <ItemsControl ItemsSource="{Binding TPlayers}" ItemTemplate="{StaticResource PlayerRowTemplate}" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
             </DockPanel>
+        </Border>
 
-            <GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="Transparent" />
+        <!-- ===== Содержимое ===== -->
+        <DockPanel Grid.Column="2">
+            <!-- Строка состояния: прогресс разбора и отмена -->
+            <Border DockPanel.Dock="Bottom" Padding="24,8" BorderBrush="{StaticResource RailBorderBrush}" BorderThickness="0,1,0,0">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                    <TextBlock Classes="subtle" FontSize="12" Text="{Binding StatusText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    <ProgressBar Grid.Column="1" Classes="bar" Width="240" Minimum="0" Maximum="100"
+                                 Value="{Binding ProgressPercent}" IsVisible="{Binding IsBusy}" VerticalAlignment="Center" />
+                    <Button Grid.Column="2" Classes="ghost small" MinHeight="28" Content="{l:T 'Отмена (Esc)', 'Cancel (Esc)'}"
+                            Command="{Binding CancelCommand}" IsVisible="{Binding IsBusy}" />
+                </Grid>
+            </Border>
 
-            <!-- Центр: вкладки -->
-            <TabControl Grid.Column="2" Margin="0,4,12,12" SelectedIndex="{Binding SelectedTabIndex}">
-                <TabItem Header="{l:T 'Радар', 'Radar'}">
-                    <Grid>
-                        <!-- Пустое состояние -->
-                        <Border IsVisible="{Binding !HasMatch}" BorderBrush="{DynamicResource PanelBorderBrush}"
-                                BorderThickness="2" CornerRadius="8" Margin="0,8,0,0">
-                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12">
-                                <TextBlock Classes="header" HorizontalAlignment="Center" Text="{l:T 'Перетащите сюда файл .dem', 'Drop a .dem file here'}" />
-                                <TextBlock Classes="secondary" HorizontalAlignment="Center"
-                                           Text="{l:T 'или откройте его через меню «Файл» (Ctrl+O)', 'or open it from the File menu (Ctrl+O)'}" />
-                                <Button HorizontalAlignment="Center" Content="{l:T 'Открыть демку…', 'Open demo…'}" Command="{Binding OpenCommand}" IsEnabled="{Binding IsIdle}" />
-                            </StackPanel>
-                        </Border>
+            <!-- Баннеры -->
+            <StackPanel DockPanel.Dock="Top" Margin="24,16,24,0" Spacing="10">
+                <Border IsVisible="{Binding HasError}" Classes="card" CornerRadius="12" Padding="14,10"
+                        Background="#1F1414" BorderBrush="{StaticResource DangerBorderBrush}">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <SelectableTextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" VerticalAlignment="Center" Foreground="#F5C2BF" />
+                        <Button Grid.Column="1" Classes="ghost small" Content="{l:T 'Закрыть', 'Close'}" Command="{Binding DismissErrorCommand}" />
+                    </Grid>
+                </Border>
 
-                        <Grid IsVisible="{Binding HasMatch}">
-                        <Grid ColumnDefinitions="*,4,340" DataContext="{Binding Radar}" x:DataType="vm:RadarViewModel">
-                            <!-- Радар и таймлайн -->
-                            <DockPanel>
-                                <Border DockPanel.Dock="Bottom" Padding="8,6" Margin="0,4,0,0" CornerRadius="4"
-                                        Background="{DynamicResource PanelBackgroundBrush}" DataContext="{Binding Timeline}"
-                                        x:DataType="vm:TimelineViewModel">
-                                    <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="10">
-                                        <Button Content="{Binding PlayButtonText}" Command="{Binding PlayPauseCommand}" MinWidth="72" />
-                                        <Slider Grid.Column="1" Minimum="{Binding MinTick}" Maximum="{Binding MaxTick}"
-                                                Value="{Binding CurrentTick}" IsEnabled="{Binding IsEnabled}" VerticalAlignment="Center" />
-                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                            <TextBlock Text="{l:T 'Скорость', 'Speed'}" VerticalAlignment="Center" Classes="secondary" />
-                                            <ComboBox ItemsSource="{Binding Speeds}" SelectedItem="{Binding Speed}" IsEnabled="{Binding IsEnabled}">
-                                                <ComboBox.ItemTemplate>
-                                                    <DataTemplate x:DataType="x:Double">
-                                                        <TextBlock Text="{Binding StringFormat='×{0}'}" />
-                                                    </DataTemplate>
-                                                </ComboBox.ItemTemplate>
-                                            </ComboBox>
+                <Border IsVisible="{Binding Settings.HasUpdateBanner}" Classes="card" CornerRadius="12" Padding="14,8"
+                        Background="#0F1A12" BorderBrush="#1F3A26">
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
+                        <controls:Icon Width="18" Height="18" Brush="{StaticResource PositiveBrush}" StrokeThickness="2" Data="{StaticResource IconCheckCircle}" />
+                        <TextBlock Grid.Column="1" Text="{Binding Settings.UpdateBannerText}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <Button Grid.Column="2" Classes="accent small" Content="{l:T 'Открыть страницу релиза', 'Open the release page'}"
+                                Command="{Binding Settings.OpenReleaseCommand}" />
+                        <Button Grid.Column="3" Classes="ghost small" Content="{l:T 'Не напоминать', 'Do not remind'}"
+                                Command="{Binding Settings.DismissUpdateCommand}" />
+                    </Grid>
+                </Border>
+
+                <!-- Кто вы в этой демке: выбор основного игрока, пока он не задан -->
+                <Border IsVisible="{Binding IsMainPlayerPromptVisible}" Classes="card" Padding="18,16"
+                        BorderBrush="{StaticResource AccentSoftBorderBrush}">
+                    <StackPanel Spacing="12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="h2" Text="{l:T 'Кто вы в этой демке?', 'Which player are you in this demo?'}" />
+                            <TextBlock Classes="hint"
+                                       Text="{l:T 'Выберите себя — DemReview запомнит ваш SteamID. В следующих демках вы будете выбраны сразу и отмечены в списке игроков: не придётся искать себя среди десяти ников. А когда появится профиль по нескольким демкам, из ваших матчей будет собираться личный профиль — привычки, роли и ошибки за много игр.', 'Pick yourself and DemReview will remember your SteamID. In the next demos you will be selected right away and marked in the player list, so you will not have to look for yourself among ten nicknames. And once the multi-demo profile arrives, your matches will build up a personal profile: habits, roles and mistakes across many games.'}" />
+                        </StackPanel>
+                        <ItemsControl ItemsSource="{Binding MainPlayerCandidates}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><WrapPanel ItemSpacing="6" LineSpacing="6" /></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:PlayerRowViewModel">
+                                    <Button Classes="small" Padding="6,0,12,0"
+                                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ChooseMainPlayerCommand}"
+                                            CommandParameter="{Binding}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Border Classes="avatar" Classes.t="{Binding IsT}" Width="24" Height="24" CornerRadius="12">
+                                                <TextBlock Text="{Binding Initials}" FontSize="9.5" />
+                                            </Border>
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
                                         </StackPanel>
-                                        <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Margin="0,4,0,0" TextWrapping="Wrap" FontSize="12">
-                                            <Run Text="{Binding TimeText}" FontWeight="SemiBold" />
-                                            <Run Text="  " />
-                                            <Run Text="{Binding ContextText}" />
-                                        </TextBlock>
-                                    </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                            <TextBlock Classes="subtle" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"
+                                       Text="{l:T 'SteamID хранится только на этом компьютере и никуда не отправляется. Изменить выбор или ввести SteamID вручную можно в «Настройках».', 'Your SteamID is stored only on this computer and is never sent anywhere. You can change it or enter a SteamID manually in Settings.'}" />
+                            <Button Grid.Column="1" Classes="small" Content="{l:T 'Меня нет в этой демке', 'I am not in this demo'}" Command="{Binding SkipMainPlayerPromptCommand}" />
+                            <Button Grid.Column="2" Classes="ghost small" Content="{l:T 'Не спрашивать', 'Do not ask again'}" Command="{Binding DisableMainPlayerPromptCommand}" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <Panel>
+                <!-- ===== Радар ===== -->
+                <DockPanel IsVisible="{Binding IsRadarTab}" Margin="24,20,24,16">
+                    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12" Margin="0,0,0,16">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Classes="h1" Text="{l:T 'Радар', 'Radar'}" />
+                            <TextBlock Classes="subtle" FontSize="13" Margin="0,2,0,0">
+                                <Run Text="{Binding SelectedPlayerName}" />
+                                <Run Text="{l:T '· все маршруты, гранаты и смерти за матч', '· all routes, grenades and deaths in the match'}" />
+                            </TextBlock>
+                        </StackPanel>
+                        <Button Grid.Column="1" Command="{Binding OpenCommand}" IsEnabled="{Binding IsIdle}">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="{l:T 'Открыть демку', 'Open demo'}" FontWeight="Medium" VerticalAlignment="Center" />
+                                <Border Background="{StaticResource CardBorderBrush}" CornerRadius="5" Padding="6,2">
+                                    <TextBlock Classes="mono muted" FontSize="11" Text="Ctrl+O" />
                                 </Border>
-                                <Grid>
-                                    <controls:RadarControl MapImage="{Binding MapImage}" Routes="{Binding Routes}"
-                                                           HighlightedRounds="{Binding HighlightedRounds}"
-                                                           ShowRoutes="{Binding ShowRoutes}" RadarToWorld="{Binding RadarToWorld}"
-                                                           Grenades="{Binding Grenades}" HighlightedGrenades="{Binding HighlightedGrenades}"
-                                                           ShowGrenades="{Binding ShowGrenades}" Heatmap="{Binding Heatmap}"
-                                                           Deaths="{Binding Deaths}" Players="{Binding Players}"
-                                                           DamageTexts="{Binding DamageTexts}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Grid.Column="2" Classes="accent" Command="{Binding Profile.ExportCommand}"
+                                ToolTip.Tip="{l:T 'Экспорт профиля в Markdown или JSON (Ctrl+E)', 'Export the profile to Markdown or JSON (Ctrl+E)'}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <controls:Icon Width="16" Height="16" StrokeThickness="2" Data="{StaticResource IconDownload}" />
+                                <TextBlock Text="{l:T 'Экспорт профиля', 'Export profile'}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
 
-                                    <TextBlock Text="{Binding MapTitle}" Classes="header" Margin="12,8" IsHitTestVisible="False"
-                                               HorizontalAlignment="Left" VerticalAlignment="Top" />
+                    <!-- Пустое состояние -->
+                    <Border IsVisible="{Binding !HasMatch}" Classes="card" BorderBrush="{StaticResource ControlBorderBrush}" Background="{StaticResource RadarCardBrush}">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="14">
+                            <Border Width="64" Height="64" CornerRadius="18" Background="{StaticResource NavActiveBrush}" HorizontalAlignment="Center">
+                                <controls:Icon Width="30" Height="30" Brush="{StaticResource AccentBrush}" Data="{StaticResource IconOpen}" />
+                            </Border>
+                            <TextBlock Classes="h2" FontSize="18" HorizontalAlignment="Center" Text="{l:T 'Перетащите сюда файл .dem', 'Drop a .dem file here'}" />
+                            <TextBlock Classes="subtle" HorizontalAlignment="Center"
+                                       Text="{l:T 'или откройте его кнопкой ниже (Ctrl+O)', 'or open it with the button below (Ctrl+O)'}" />
+                            <Button Classes="accent" HorizontalAlignment="Center" Content="{l:T 'Открыть демку…', 'Open demo…'}"
+                                    Command="{Binding OpenCommand}" IsEnabled="{Binding IsIdle}" />
+                        </StackPanel>
+                    </Border>
 
-                                    <!-- Киллфид (таймлайн): убийства и смерть анализируемого игрока выделены красной рамкой -->
-                                    <ItemsControl ItemsSource="{Binding KillFeed}" IsVisible="{Binding HasKillFeed}" IsHitTestVisible="False"
-                                                  HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,10,0">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate x:DataType="vm:KillFeedEntry">
-                                                <Border Background="{Binding Background}" BorderBrush="{Binding BorderBrush}" BorderThickness="1.5"
-                                                        CornerRadius="3" Padding="8,3" Margin="0,0,0,3" HorizontalAlignment="Right">
-                                                    <StackPanel Orientation="Horizontal" Spacing="6">
-                                                        <TextBlock Text="{Binding Attacker}" Foreground="{Binding AttackerBrush}" FontWeight="SemiBold"
-                                                                   IsVisible="{Binding HasAttacker}" VerticalAlignment="Center" />
-                                                        <TextBlock Text="{Binding Assist}" Foreground="{Binding AssistBrush}" FontSize="12"
-                                                                   IsVisible="{Binding HasAssist}" VerticalAlignment="Center" />
-                                                        <TextBlock Text="{Binding Weapon}" Foreground="#D8DCE2" FontSize="12" VerticalAlignment="Center" />
-                                                        <Border IsVisible="{Binding Headshot}" Background="#D8DCE2" CornerRadius="2" Padding="3,0"
-                                                                VerticalAlignment="Center">
-                                                            <TextBlock Text="HS" Foreground="Black" FontSize="10" FontWeight="Bold" />
-                                                        </Border>
-                                                        <TextBlock Text="{Binding Victim}" Foreground="{Binding VictimBrush}" FontWeight="SemiBold"
-                                                                   VerticalAlignment="Center" />
-                                                    </StackPanel>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                    <DockPanel IsVisible="{Binding HasMatch}">
+                        <!-- Фильтры -->
+                        <WrapPanel DockPanel.Dock="Top" ItemSpacing="10" LineSpacing="10" Margin="0,0,0,16" DataContext="{Binding Filter}" x:DataType="vm:FilterViewModel">
+                            <ListBox Theme="{StaticResource SegmentedList}" ItemsSource="{Binding Sides}" SelectedItem="{Binding SelectedSide}"
+                                     ItemTemplate="{StaticResource SideOptionTemplate}" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Classes="subtle" Text="{l:T 'Раунд', 'Round'}" VerticalAlignment="Center" />
+                                <ComboBox ItemsSource="{Binding Rounds}" SelectedItem="{Binding SelectedRound}" MaxDropDownHeight="400" MinWidth="130"
+                                          ItemTemplate="{StaticResource OptionTemplate}" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Classes="subtle" Text="{l:T 'Закупка', 'Buy'}" VerticalAlignment="Center" />
+                                <ComboBox ItemsSource="{Binding Buys}" SelectedItem="{Binding SelectedBuy}" MinWidth="150"
+                                          ItemTemplate="{StaticResource OptionTemplate}" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Classes="subtle" Text="{l:T 'Гранаты', 'Grenades'}" VerticalAlignment="Center" />
+                                <ComboBox ItemsSource="{Binding Grenades}" SelectedItem="{Binding SelectedGrenade}" MinWidth="150"
+                                          ItemTemplate="{StaticResource OptionTemplate}" />
+                            </StackPanel>
+                            <Button Classes="ghost" MinHeight="38" Content="{l:T 'Сбросить', 'Reset'}" Command="{Binding ResetCommand}" IsEnabled="{Binding IsActive}" />
+                        </WrapPanel>
 
-                                    <Border IsVisible="{Binding HasMapHint}" Margin="12,40,12,0" Padding="10,6" CornerRadius="4"
-                                            HorizontalAlignment="Left" VerticalAlignment="Top" Background="#CC1C1F24"
-                                            BorderBrush="{DynamicResource PanelBorderBrush}" BorderThickness="1">
-                                        <StackPanel Spacing="6">
-                                            <TextBlock Text="{Binding MapHint}" TextWrapping="Wrap" MaxWidth="520" FontSize="12" />
-                                            <Button Content="{l:T 'Открыть папку maps', 'Open the maps folder'}" Command="{Binding OpenMapsFolderCommand}" FontSize="12" />
-                                        </StackPanel>
-                                    </Border>
-
-                                    <!-- Режим раундов-примеров паттерна -->
-                                    <Border IsVisible="{Binding HasFocus}" Margin="12,0,12,34" Padding="10,6" CornerRadius="4"
-                                            HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="#E61C2A3A"
-                                            BorderBrush="#5AA0E6" BorderThickness="1" MaxWidth="720">
-                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                                            <TextBlock Text="{Binding FocusText}" TextWrapping="Wrap" FontSize="12" VerticalAlignment="Center" />
-                                            <Button Grid.Column="1" Content="{l:T 'Показать все', 'Show all'}" Command="{Binding ClearSelectionCommand}" FontSize="12" />
+                        <Grid ColumnDefinitions="*,16,360" DataContext="{Binding Radar}" x:DataType="vm:RadarViewModel">
+                            <!-- Радар -->
+                            <Border Classes="card" Background="{StaticResource RadarCardBrush}" ClipToBounds="True">
+                                <DockPanel>
+                                    <!-- Сводка момента и масштаб -->
+                                    <Border DockPanel.Dock="Top" Padding="14,10" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,1">
+                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                            <TextBlock FontSize="13.5" FontWeight="SemiBold" Text="{Binding Timeline.RoundTitle}" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="1" Classes="muted" FontSize="12.5" Text="{Binding Timeline.ContextText}"
+                                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Timeline.ContextText}" />
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                                                <Button Classes="icon-button compact" Click="OnZoomIn" ToolTip.Tip="{l:T 'Приблизить', 'Zoom in'}">
+                                                    <controls:Icon Width="16" Height="16" StrokeThickness="2" Data="{StaticResource IconPlus}" />
+                                                </Button>
+                                                <Button Classes="icon-button compact" Click="OnZoomOut" ToolTip.Tip="{l:T 'Отдалить', 'Zoom out'}">
+                                                    <controls:Icon Width="16" Height="16" StrokeThickness="2" Data="{StaticResource IconMinus}" />
+                                                </Button>
+                                                <Button Classes="icon-button compact" Click="OnResetView" ToolTip.Tip="{l:T 'Сбросить вид (двойной клик)', 'Reset view (double-click)'}">
+                                                    <controls:Icon Width="15" Height="15" StrokeThickness="2" Data="{StaticResource IconFit}" />
+                                                </Button>
+                                            </StackPanel>
                                         </Grid>
                                     </Border>
 
-                                    <TextBlock Classes="secondary" Margin="12,8" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                               IsHitTestVisible="False"
-                                               Text="{l:T 'Колесо — масштаб · перетаскивание — сдвиг · двойной клик — сброс · наведите на игрока — ник', 'Wheel — zoom · drag — pan · double-click — reset · hover a player — nickname'}" />
-                                </Grid>
-                            </DockPanel>
-
-                            <GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="Transparent" />
-
-                            <!-- Панель маршрутов -->
-                            <DockPanel Grid.Column="2" Margin="8,8,0,0">
-                                <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
-                                    <TextBlock Classes="header" Text="{l:T 'Слои', 'Layers'}" />
-                                    <WrapPanel>
-                                        <CheckBox Content="{l:T 'Маршруты', 'Routes'}" IsChecked="{Binding ShowRoutes}" Margin="0,0,12,0" />
-                                        <CheckBox Content="{l:T 'Гранаты', 'Grenades'}" IsChecked="{Binding ShowGrenades}" Margin="0,0,12,0" />
-                                        <CheckBox Content="{l:T 'Смерти', 'Deaths'}" IsChecked="{Binding ShowDeaths}" />
-                                    </WrapPanel>
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <CheckBox Content="{l:T 'Тепловая карта:', 'Heatmap:'}" IsChecked="{Binding ShowHeatmap}" />
-                                        <ComboBox ItemsSource="{x:Static vm:RadarViewModel.HeatmapModes}" SelectedItem="{Binding SelectedHeatmapMode}"
-                                                  IsEnabled="{Binding ShowHeatmap}" MinWidth="110">
-                                            <ComboBox.ItemTemplate>
-                                                <DataTemplate x:DataType="vm:FilterOption">
-                                                    <TextBlock Text="{Binding Label}" />
-                                                </DataTemplate>
-                                            </ComboBox.ItemTemplate>
-                                        </ComboBox>
-                                    </StackPanel>
-                                    <TextBlock Classes="secondary" TextWrapping="Wrap"
-                                               Text="{l:T 'Раунд, сторона, закупка и тип гранаты — фильтры слева под списком игроков.', 'Round, side, buy and grenade type filters are on the left under the player list.'}" />
-                                    <Button Content="{l:T 'Снять выделение', 'Clear selection'}" Command="{Binding ClearSelectionCommand}" />
-                                </StackPanel>
-
-                                <TabControl Padding="0">
-                                    <TabItem Header="{l:T 'Раунды', 'Rounds'}" FontSize="14">
-                                        <ListBox ItemsSource="{Binding RoundRows}" SelectedItem="{Binding SelectedRound}">
-                                            <ListBox.ItemTemplate>
-                                                <DataTemplate x:DataType="vm:RouteRoundRow">
-                                                    <StackPanel Spacing="2">
-                                                        <TextBlock Text="{Binding Header}" FontWeight="SemiBold" />
-                                                        <TextBlock Text="{Binding ZonesText}" Classes="secondary" TextWrapping="Wrap" />
-                                                    </StackPanel>
-                                                </DataTemplate>
-                                            </ListBox.ItemTemplate>
-                                        </ListBox>
-                                    </TabItem>
-                                    <TabItem Header="{l:T 'Частые', 'Frequent'}" FontSize="14">
+                                    <!-- Таймлайн -->
+                                    <Border DockPanel.Dock="Bottom" Padding="14,10" Background="{StaticResource CardBrush}"
+                                            BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,1,0,0"
+                                            DataContext="{Binding Timeline}" x:DataType="vm:TimelineViewModel">
                                         <Grid>
-                                            <TextBlock IsVisible="{Binding !FrequentRoutes.Count}" Classes="secondary" Margin="4,8" TextWrapping="Wrap"
-                                                       Text="{l:T 'Повторяющихся маршрутов (одинаковые первые 3 зоны минимум в 2 раундах) нет.', 'No repeated routes (same first 3 zones in at least 2 rounds).'}" />
-                                            <ListBox ItemsSource="{Binding FrequentRoutes}" SelectedItem="{Binding SelectedFrequentRoute}">
+                                            <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="14" IsVisible="{Binding IsEnabled}">
+                                                <Button Width="44" Height="44" CornerRadius="22" Padding="0" Classes="accent" HorizontalContentAlignment="Center"
+                                                        Command="{Binding PlayPauseCommand}" ToolTip.Tip="{Binding PlayButtonText}">
+                                                    <Panel>
+                                                        <controls:Icon Width="18" Height="18" IsVisible="{Binding !IsPlaying}" IsFilled="True" Data="{StaticResource IconPlay}" />
+                                                        <controls:Icon Width="18" Height="18" IsVisible="{Binding IsPlaying}" IsFilled="True" Data="{StaticResource IconPause}" />
+                                                    </Panel>
+                                                </Button>
+                                                <TextBlock Grid.Column="1" Classes="mono" FontSize="13" VerticalAlignment="Center">
+                                                    <Run Text="{Binding CurrentTimeText}" />
+                                                    <Run Text="{Binding TotalTimeText}" Foreground="{StaticResource SubtleBrush}" />
+                                                </TextBlock>
+                                                <Slider Grid.Column="2" Minimum="{Binding MinTick}" Maximum="{Binding MaxTick}"
+                                                        Value="{Binding CurrentTick}" VerticalAlignment="Center" />
+                                                <ListBox Grid.Column="3" Theme="{StaticResource SegmentedList}" Padding="3" CornerRadius="9"
+                                                         ItemsSource="{Binding Speeds}" SelectedItem="{Binding Speed}">
+                                                    <ListBox.ItemTemplate>
+                                                        <DataTemplate x:DataType="x:Double">
+                                                            <TextBlock Classes="mono" FontSize="12" Text="{Binding StringFormat='×{0}'}" />
+                                                        </DataTemplate>
+                                                    </ListBox.ItemTemplate>
+                                                    <ListBox.Styles>
+                                                        <Style Selector="ListBoxItem">
+                                                            <Setter Property="Padding" Value="9,6" />
+                                                            <Setter Property="CornerRadius" Value="6" />
+                                                        </Style>
+                                                    </ListBox.Styles>
+                                                </ListBox>
+                                            </Grid>
+                                            <TextBlock IsVisible="{Binding !IsEnabled}" Classes="subtle" FontSize="12.5" TextWrapping="Wrap"
+                                                       VerticalAlignment="Center" Text="{Binding TimeText}" />
+                                        </Grid>
+                                    </Border>
+
+                                    <Grid>
+                                        <controls:RadarControl x:Name="RadarView" MapImage="{Binding MapImage}" Routes="{Binding Routes}"
+                                                               HighlightedRounds="{Binding HighlightedRounds}"
+                                                               ShowRoutes="{Binding ShowRoutes}" RadarToWorld="{Binding RadarToWorld}"
+                                                               Grenades="{Binding Grenades}" HighlightedGrenades="{Binding HighlightedGrenades}"
+                                                               ShowGrenades="{Binding ShowGrenades}" Heatmap="{Binding Heatmap}"
+                                                               Deaths="{Binding Deaths}" Players="{Binding Players}"
+                                                               DamageTexts="{Binding DamageTexts}" />
+
+                                        <!-- Киллфид (таймлайн): убийства и смерть анализируемого игрока выделены рамкой -->
+                                        <ItemsControl ItemsSource="{Binding KillFeed}" IsVisible="{Binding HasKillFeed}" IsHitTestVisible="False"
+                                                      HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,14,14,0">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:KillFeedEntry">
+                                                    <Border Background="{Binding Background}" BorderBrush="{Binding BorderBrush}" BorderThickness="1"
+                                                            CornerRadius="8" Padding="10,5" Margin="0,0,0,4" HorizontalAlignment="Right">
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <TextBlock Text="{Binding Attacker}" Foreground="{Binding AttackerBrush}" FontWeight="SemiBold" FontSize="12"
+                                                                       IsVisible="{Binding HasAttacker}" VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding Assist}" Foreground="{Binding AssistBrush}" FontSize="11.5"
+                                                                       IsVisible="{Binding HasAssist}" VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding Weapon}" Classes="subtle" FontSize="12" VerticalAlignment="Center" />
+                                                            <Border IsVisible="{Binding Headshot}" Background="#D8DCE2" CornerRadius="3" Padding="3,0"
+                                                                    VerticalAlignment="Center">
+                                                                <TextBlock Text="HS" Foreground="Black" FontSize="10" FontWeight="Bold" />
+                                                            </Border>
+                                                            <TextBlock Text="{Binding Victim}" Foreground="{Binding VictimBrush}" FontWeight="SemiBold" FontSize="12"
+                                                                       VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <Border IsVisible="{Binding HasMapHint}" Classes="overlay" Margin="14,14,14,0" Padding="12,8"
+                                                HorizontalAlignment="Left" VerticalAlignment="Top">
+                                            <StackPanel Spacing="8">
+                                                <TextBlock Text="{Binding MapHint}" TextWrapping="Wrap" MaxWidth="520" FontSize="12" />
+                                                <Button Classes="small" HorizontalAlignment="Left" Content="{l:T 'Открыть папку maps', 'Open the maps folder'}"
+                                                        Command="{Binding OpenMapsFolderCommand}" />
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Режим раундов-примеров паттерна -->
+                                        <Border IsVisible="{Binding HasFocus}" Classes="overlay" Margin="14,0,14,56" Padding="12,8"
+                                                HorizontalAlignment="Left" VerticalAlignment="Bottom" BorderBrush="{StaticResource AccentSoftBorderBrush}" MaxWidth="720">
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                                <TextBlock Text="{Binding FocusText}" TextWrapping="Wrap" FontSize="12" VerticalAlignment="Center" />
+                                                <Button Grid.Column="1" Classes="small" Content="{l:T 'Показать все', 'Show all'}" Command="{Binding ClearSelectionCommand}" />
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Легенда -->
+                                        <Border Classes="overlay" Margin="14" Padding="12,8" HorizontalAlignment="Left" VerticalAlignment="Bottom" IsHitTestVisible="False">
+                                            <WrapPanel ItemSpacing="12" LineSpacing="4">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <Border Width="14" Height="3" CornerRadius="2" Background="{StaticResource TBrush}" VerticalAlignment="Center" />
+                                                    <TextBlock Classes="muted" FontSize="12" Text="{l:T 'Маршруты T', 'T routes'}" />
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <Border Width="14" Height="3" CornerRadius="2" Background="{StaticResource CtLineBrush}" VerticalAlignment="Center" />
+                                                    <TextBlock Classes="muted" FontSize="12" Text="{l:T 'Маршруты CT', 'CT routes'}" />
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <Ellipse Width="10" Height="10" Stroke="#9AA3B2" StrokeDashArray="2,2" VerticalAlignment="Center" />
+                                                    <TextBlock Classes="muted" FontSize="12" Text="{l:T 'Дым', 'Smoke'}" />
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <Ellipse Width="10" Height="10" Fill="#FF8C1A" VerticalAlignment="Center" />
+                                                    <TextBlock Classes="muted" FontSize="12" Text="{l:T 'Огонь', 'Fire'}" />
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <Ellipse Width="10" Height="10" Fill="#FAF078" VerticalAlignment="Center" />
+                                                    <TextBlock Classes="muted" FontSize="12" Text="{l:T 'Флешка', 'Flash'}" />
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <controls:Icon Width="11" Height="11" VerticalAlignment="Center" Brush="#FF3C3C" StrokeThickness="3" Data="{StaticResource IconClose}" />
+                                                    <TextBlock Classes="muted" FontSize="12" Text="{l:T 'Смерть', 'Death'}" />
+                                                </StackPanel>
+                                            </WrapPanel>
+                                        </Border>
+
+                                        <TextBlock Classes="subtle" FontSize="11.5" Margin="14" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                                   IsHitTestVisible="False" IsVisible="{Binding !HasKillFeed}"
+                                                   Text="{l:T 'Колесо — масштаб · перетаскивание — сдвиг · наведите на игрока — ник', 'Wheel — zoom · drag — pan · hover a player — nickname'}" />
+
+                                        <TextBlock IsVisible="{Binding !RoundRows.Count}" Classes="subtle"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"
+                                                   Text="{l:T 'Выберите игрока в списке слева, чтобы увидеть его маршруты.', 'Select a player in the list on the left to see their routes.'}" />
+                                    </Grid>
+                                </DockPanel>
+                            </Border>
+
+                            <!-- Слои и списки -->
+                            <DockPanel Grid.Column="2">
+                                <Border DockPanel.Dock="Top" Classes="card" Padding="14,12" Margin="0,0,0,14">
+                                    <StackPanel Spacing="2">
+                                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+                                            <TextBlock Classes="caption" Text="{l:T 'СЛОИ', 'LAYERS'}" VerticalAlignment="Center" />
+                                            <Button Grid.Column="1" Classes="ghost small" MinHeight="28" Padding="8,0" FontSize="12"
+                                                    Content="{l:T 'Снять выделение', 'Clear selection'}" Command="{Binding ClearSelectionCommand}" />
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" MinHeight="36">
+                                            <Border Width="10" Height="10" CornerRadius="3" Background="{StaticResource AccentBrush}" />
+                                            <TextBlock Grid.Column="1" FontSize="13.5" Text="{l:T 'Маршруты', 'Routes'}" VerticalAlignment="Center" />
+                                            <ToggleSwitch Grid.Column="2" IsChecked="{Binding ShowRoutes}" />
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" MinHeight="36">
+                                            <Border Width="10" Height="10" CornerRadius="3" Background="#9AA3B2" />
+                                            <TextBlock Grid.Column="1" FontSize="13.5" Text="{l:T 'Гранаты', 'Grenades'}" VerticalAlignment="Center" />
+                                            <ToggleSwitch Grid.Column="2" IsChecked="{Binding ShowGrenades}" />
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" MinHeight="36">
+                                            <Border Width="10" Height="10" CornerRadius="3" Background="#F26A62" />
+                                            <TextBlock Grid.Column="1" FontSize="13.5" Text="{l:T 'Смерти', 'Deaths'}" VerticalAlignment="Center" />
+                                            <ToggleSwitch Grid.Column="2" IsChecked="{Binding ShowDeaths}" />
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10" MinHeight="36">
+                                            <Border Width="10" Height="10" CornerRadius="3" Background="#F0663A" />
+                                            <TextBlock Grid.Column="1" FontSize="13.5" Text="{l:T 'Тепловая карта', 'Heatmap'}" VerticalAlignment="Center" />
+                                            <ComboBox Grid.Column="2" MinHeight="32" FontSize="12.5" ItemsSource="{x:Static vm:RadarViewModel.HeatmapModes}"
+                                                      SelectedItem="{Binding SelectedHeatmapMode}" IsEnabled="{Binding ShowHeatmap}"
+                                                      ItemTemplate="{StaticResource OptionTemplate}" />
+                                            <ToggleSwitch Grid.Column="3" IsChecked="{Binding ShowHeatmap}" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Classes="card" Padding="12">
+                                    <TabControl Theme="{StaticResource SegmentedTabs}" HorizontalContentAlignment="Stretch" Padding="0,10,0,0">
+                                        <TabControl.ItemsPanel>
+                                            <ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate>
+                                        </TabControl.ItemsPanel>
+                                        <TabItem Header="{l:T 'Раунды', 'Rounds'}" FontSize="12.5" Padding="6,7">
+                                            <ListBox Theme="{StaticResource CardList}" ItemsSource="{Binding RoundRows}" SelectedItem="{Binding SelectedRound}">
                                                 <ListBox.ItemTemplate>
-                                                    <DataTemplate x:DataType="vm:FrequentRouteRow">
-                                                        <StackPanel Spacing="2">
-                                                            <TextBlock Text="{Binding Header}" FontWeight="SemiBold" />
-                                                            <TextBlock Text="{Binding ZonesText}" TextWrapping="Wrap" />
-                                                            <TextBlock Text="{Binding RoundsText}" Classes="secondary" TextWrapping="Wrap" />
+                                                    <DataTemplate x:DataType="vm:RouteRoundRow">
+                                                        <StackPanel Spacing="6">
+                                                            <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
+                                                                <TextBlock FontSize="13.5" FontWeight="SemiBold" Text="{Binding Title}" />
+                                                                <Border Grid.Column="1" Classes="badge" Classes.t="{Binding IsT}" Classes.ct="{Binding !IsT}">
+                                                                    <TextBlock Text="{Binding SideText}" />
+                                                                </Border>
+                                                                <TextBlock Grid.Column="3" FontSize="11.5" FontWeight="Medium" Text="{Binding FateText}"
+                                                                           Classes.negative="{Binding Died}" Classes.positive="{Binding !Died}" VerticalAlignment="Center" />
+                                                            </Grid>
+                                                            <ItemsControl ItemsSource="{Binding Steps}">
+                                                                <ItemsControl.ItemsPanel>
+                                                                    <ItemsPanelTemplate><WrapPanel ItemSpacing="6" LineSpacing="2" /></ItemsPanelTemplate>
+                                                                </ItemsControl.ItemsPanel>
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate x:DataType="vm:RouteStep">
+                                                                        <TextBlock FontSize="12" Foreground="{StaticResource Text2Brush}">
+                                                                            <Run Text="{Binding Zone}" />
+                                                                            <Run Classes="mono" FontSize="11" Foreground="{StaticResource SubtleBrush}" Text="{Binding Time}" />
+                                                                        </TextBlock>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                            <TextBlock Classes="subtle" FontSize="12" Text="{Binding MoreStepsText}" IsVisible="{Binding HasMoreSteps}" />
+                                                            <TextBlock Classes="subtle" FontSize="12" Text="{Binding ZonesText}" IsVisible="{Binding HasNoZones}" />
                                                         </StackPanel>
                                                     </DataTemplate>
                                                 </ListBox.ItemTemplate>
                                             </ListBox>
-                                        </Grid>
-                                    </TabItem>
-                                    <TabItem Header="{l:T 'Гранаты', 'Grenades'}" FontSize="14">
-                                        <DockPanel>
-                                            <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="4,4,4,8">
-                                                <ItemsControl ItemsSource="{Binding GrenadeSummary}">
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate x:DataType="vm:GrenadeSummaryRow">
-                                                            <TextBlock Text="{Binding Text}" FontSize="12" TextWrapping="Wrap" />
+                                        </TabItem>
+                                        <TabItem Header="{l:T 'Частые', 'Frequent'}" FontSize="12.5" Padding="6,7">
+                                            <Grid>
+                                                <TextBlock IsVisible="{Binding !FrequentRoutes.Count}" Classes="hint" Margin="4,8"
+                                                           Text="{l:T 'Повторяющихся маршрутов (одинаковые первые 3 зоны минимум в 2 раундах) нет.', 'No repeated routes (same first 3 zones in at least 2 rounds).'}" />
+                                                <ListBox Theme="{StaticResource CardList}" ItemsSource="{Binding FrequentRoutes}" SelectedItem="{Binding SelectedFrequentRoute}">
+                                                    <ListBox.ItemTemplate>
+                                                        <DataTemplate x:DataType="vm:FrequentRouteRow">
+                                                            <StackPanel Spacing="4">
+                                                                <TextBlock FontSize="13.5" FontWeight="SemiBold" Text="{Binding Header}" />
+                                                                <TextBlock FontSize="12" Foreground="{StaticResource Text2Brush}" Text="{Binding ZonesText}" TextWrapping="Wrap" />
+                                                                <TextBlock Classes="subtle mono" FontSize="11.5" Text="{Binding RoundsText}" TextWrapping="Wrap" />
+                                                            </StackPanel>
                                                         </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                                <TextBlock Text="{Binding FlashSummaryText}" Classes="secondary" TextWrapping="Wrap" />
-                                            </StackPanel>
-                                            <TabControl Padding="0">
-                                                <TabItem Header="{l:T 'Раскидки', 'Lineups'}" FontSize="13">
-                                                    <Grid>
-                                                        <TextBlock IsVisible="{Binding !GrenadeClusters.Count}" Classes="secondary" Margin="4,8" TextWrapping="Wrap"
-                                                                   Text="{l:T 'Повторяющихся раскидок (тот же тип, близкие точки броска и падения минимум в 2 бросках) нет.', 'No repeated lineups (same type, close throw and landing points in at least 2 throws).'}" />
-                                                        <ListBox ItemsSource="{Binding GrenadeClusters}" SelectedItem="{Binding SelectedCluster}">
+                                                    </ListBox.ItemTemplate>
+                                                </ListBox>
+                                            </Grid>
+                                        </TabItem>
+                                        <TabItem Header="{l:T 'Гранаты', 'Grenades'}" FontSize="12.5" Padding="6,7">
+                                            <DockPanel>
+                                                <StackPanel DockPanel.Dock="Top" Spacing="3" Margin="2,0,2,10">
+                                                    <ItemsControl ItemsSource="{Binding GrenadeSummary}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:GrenadeSummaryRow">
+                                                                <TextBlock Text="{Binding Text}" FontSize="12" Foreground="{StaticResource Text2Brush}" TextWrapping="Wrap" />
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <TextBlock Text="{Binding FlashSummaryText}" Classes="subtle" FontSize="12" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                                <TabControl Theme="{StaticResource SegmentedTabs}" Padding="0,10,0,0">
+                                                    <TabItem Header="{l:T 'Раскидки', 'Lineups'}" FontSize="12" Padding="12,5">
+                                                        <Grid>
+                                                            <TextBlock IsVisible="{Binding !GrenadeClusters.Count}" Classes="hint" Margin="4,8"
+                                                                       Text="{l:T 'Повторяющихся раскидок (тот же тип, близкие точки броска и падения минимум в 2 бросках) нет.', 'No repeated lineups (same type, close throw and landing points in at least 2 throws).'}" />
+                                                            <ListBox Theme="{StaticResource CardList}" ItemsSource="{Binding GrenadeClusters}" SelectedItem="{Binding SelectedCluster}">
+                                                                <ListBox.ItemTemplate>
+                                                                    <DataTemplate x:DataType="vm:GrenadeClusterRow">
+                                                                        <StackPanel Spacing="3">
+                                                                            <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding Header}" TextWrapping="Wrap" />
+                                                                            <TextBlock FontSize="12" Foreground="{StaticResource Text2Brush}" Text="{Binding RouteText}" TextWrapping="Wrap" />
+                                                                            <TextBlock Classes="subtle mono" FontSize="11.5" Text="{Binding RoundsText}" />
+                                                                        </StackPanel>
+                                                                    </DataTemplate>
+                                                                </ListBox.ItemTemplate>
+                                                            </ListBox>
+                                                        </Grid>
+                                                    </TabItem>
+                                                    <TabItem Header="{l:T 'Все броски', 'All throws'}" FontSize="12" Padding="12,5">
+                                                        <ListBox Theme="{StaticResource CardList}" ItemsSource="{Binding GrenadeThrows}" SelectedItem="{Binding SelectedThrow}">
                                                             <ListBox.ItemTemplate>
-                                                                <DataTemplate x:DataType="vm:GrenadeClusterRow">
-                                                                    <StackPanel Spacing="2">
-                                                                        <TextBlock Text="{Binding Header}" FontWeight="SemiBold" />
-                                                                        <TextBlock Text="{Binding RouteText}" TextWrapping="Wrap" />
-                                                                        <TextBlock Text="{Binding RoundsText}" Classes="secondary" />
+                                                                <DataTemplate x:DataType="vm:GrenadeThrowRow">
+                                                                    <StackPanel Spacing="3">
+                                                                        <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding Header}" TextWrapping="Wrap" />
+                                                                        <TextBlock Classes="subtle" FontSize="12" Text="{Binding Details}" TextWrapping="Wrap" />
                                                                     </StackPanel>
                                                                 </DataTemplate>
                                                             </ListBox.ItemTemplate>
                                                         </ListBox>
-                                                    </Grid>
-                                                </TabItem>
-                                                <TabItem Header="{l:T 'Все броски', 'All throws'}" FontSize="13">
-                                                    <ListBox ItemsSource="{Binding GrenadeThrows}" SelectedItem="{Binding SelectedThrow}">
-                                                        <ListBox.ItemTemplate>
-                                                            <DataTemplate x:DataType="vm:GrenadeThrowRow">
-                                                                <StackPanel Spacing="2">
-                                                                    <TextBlock Text="{Binding Header}" FontWeight="SemiBold" />
-                                                                    <TextBlock Text="{Binding Details}" Classes="secondary" TextWrapping="Wrap" />
-                                                                </StackPanel>
-                                                            </DataTemplate>
-                                                        </ListBox.ItemTemplate>
-                                                    </ListBox>
-                                                </TabItem>
-                                            </TabControl>
-                                        </DockPanel>
-                                    </TabItem>
-                                    <TabItem Header="{l:T 'Тайминги', 'Timings'}" FontSize="14">
-                                        <DataGrid ItemsSource="{Binding ZoneTimings}" IsReadOnly="True" AutoGenerateColumns="False"
-                                                  CanUserSortColumns="True" GridLinesVisibility="Horizontal">
-                                            <DataGrid.Columns>
-                                                <DataGridTextColumn Header="{l:T 'Ст.', 'Side'}" Binding="{Binding Side}" x:DataType="vm:ZoneTimingRow" />
-                                                <DataGridTextColumn Header="{l:T 'Зона', 'Zone'}" Binding="{Binding Zone}" x:DataType="vm:ZoneTimingRow" Width="*" />
-                                                <DataGridTextColumn Header="{l:T 'Медиана', 'Median'}" Binding="{Binding Median}" x:DataType="vm:ZoneTimingRow" />
-                                                <DataGridTextColumn Header="{l:T 'Разброс', 'Range'}" Binding="{Binding Range}" x:DataType="vm:ZoneTimingRow" />
-                                                <DataGridTextColumn Header="{l:T 'Р.', 'Rds'}" Binding="{Binding Rounds}" x:DataType="vm:ZoneTimingRow" />
-                                            </DataGrid.Columns>
-                                        </DataGrid>
-                                    </TabItem>
-                                </TabControl>
+                                                    </TabItem>
+                                                </TabControl>
+                                            </DockPanel>
+                                        </TabItem>
+                                        <TabItem Header="{l:T 'Тайминги', 'Timings'}" FontSize="12.5" Padding="6,7">
+                                            <DataGrid ItemsSource="{Binding ZoneTimings}" IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True" RowHeight="34">
+                                                <DataGrid.Columns>
+                                                    <DataGridTextColumn Header="{l:T 'Ст.', 'Side'}" Binding="{Binding Side}" x:DataType="vm:ZoneTimingRow" />
+                                                    <DataGridTextColumn Header="{l:T 'Зона', 'Zone'}" Binding="{Binding Zone}" x:DataType="vm:ZoneTimingRow" Width="*" />
+                                                    <DataGridTextColumn Header="{l:T 'Медиана', 'Median'}" Binding="{Binding Median}" x:DataType="vm:ZoneTimingRow" />
+                                                    <DataGridTextColumn Header="{l:T 'Разброс', 'Range'}" Binding="{Binding Range}" x:DataType="vm:ZoneTimingRow" />
+                                                    <DataGridTextColumn Header="{l:T 'Р.', 'Rds'}" Binding="{Binding Rounds}" x:DataType="vm:ZoneTimingRow" />
+                                                </DataGrid.Columns>
+                                            </DataGrid>
+                                        </TabItem>
+                                    </TabControl>
+                                </Border>
                             </DockPanel>
-
-                            <TextBlock Grid.ColumnSpan="3" IsVisible="{Binding !RoundRows.Count}" Classes="secondary"
-                                       HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,40" IsHitTestVisible="False"
-                                       Text="{l:T 'Выберите игрока в списке слева, чтобы увидеть его маршруты.', 'Select a player in the list on the left to see their routes.'}" />
                         </Grid>
-                        </Grid>
-                    </Grid>
-                </TabItem>
+                    </DockPanel>
+                </DockPanel>
 
-                <TabItem Header="{l:T 'Статистика', 'Statistics'}" IsEnabled="{Binding HasMatch}">
-                    <TabControl DataContext="{Binding Statistics}" x:DataType="vm:StatisticsViewModel" Padding="0,8,0,0">
-                        <TabItem Header="{l:T 'Ситуации игрока', 'Player situations'}" FontSize="15">
-                            <Grid>
-                                <TextBlock IsVisible="{Binding !HasPlayer}" Classes="secondary" HorizontalAlignment="Center"
-                                           VerticalAlignment="Center" Text="{l:T 'Выберите игрока в списке слева.', 'Select a player in the list on the left.'}" />
-                                <DataGrid IsVisible="{Binding HasPlayer}" ItemsSource="{Binding SituationRows}" IsReadOnly="True"
-                                          AutoGenerateColumns="False" GridLinesVisibility="Horizontal" CanUserSortColumns="True"
-                                          FrozenColumnCount="2">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="{l:T 'Р.', 'Rd'}" Binding="{Binding Round}" x:DataType="vm:SituationRowViewModel" />
-                                        <DataGridTextColumn Header="{l:T 'Ст.', 'Side'}" Binding="{Binding Side}" x:DataType="vm:SituationRowViewModel" />
-                                        <DataGridTextColumn Header="{l:T 'Закупка: своя / команды / соперника', 'Buy: own / team / enemy'}" Binding="{Binding Buy}" x:DataType="vm:SituationRowViewModel" />
-                                        <DataGridTextColumn Header="{l:T 'Экипировка: своя / ср. команды', 'Equipment: own / team avg'}" Binding="{Binding Equipment}" x:DataType="vm:SituationRowViewModel" />
-                                        <DataGridTextColumn Header="{l:T 'Счёт', 'Score'}" Binding="{Binding Score}" x:DataType="vm:SituationRowViewModel" />
-                                        <DataGridTextColumn Header="{l:T 'Маршрут', 'Route'}" Binding="{Binding Route}" x:DataType="vm:SituationRowViewModel" />
-                                        <DataGridTextColumn Header="{l:T 'Итоговая позиция', 'Final position'}" Binding="{Binding FinalZone}" x:DataType="vm:SituationRowViewModel" />
-                                        <DataGridTextColumn Header="{l:T 'Гранаты', 'Grenades'}" Binding="{Binding Grenades}" x:DataType="vm:SituationRowViewModel" />
-                                        <DataGridTextColumn Header="{l:T 'Первый контакт', 'First contact'}" Binding="{Binding Contact}" x:DataType="vm:SituationRowViewModel" />
-                                        <DataGridTextColumn Header="{l:T 'Агрессия', 'Aggression'}" Binding="{Binding Aggression}" x:DataType="vm:SituationRowViewModel" />
-                                        <DataGridTextColumn Header="{l:T 'Первая дуэль', 'Opening duel'}" Binding="{Binding FirstDuel}" x:DataType="vm:SituationRowViewModel" />
-                                        <DataGridTextColumn Header="{l:T 'Урон', 'Damage'}" Binding="{Binding Damage}" x:DataType="vm:SituationRowViewModel" />
-                                        <DataGridTextColumn Header="{l:T 'Итог', 'Outcome'}" Binding="{Binding Outcome}" x:DataType="vm:SituationRowViewModel" />
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                            </Grid>
-                        </TabItem>
+                <!-- ===== Статистика ===== -->
+                <DockPanel IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsStatisticsTab}" Margin="24,20,24,16" DataContext="{Binding Statistics}" x:DataType="vm:StatisticsViewModel">
+                    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+                        <TextBlock Classes="h1" Text="{l:T 'Статистика', 'Statistics'}" />
+                        <TextBlock Classes="subtle" FontSize="13" Margin="0,2,0,0">
+                            <Run Text="{Binding PlayerName}" />
+                            <Run Text="{l:T '· каждый раунд как «условия → решение»', '· every round as “conditions → decision”'}" />
+                        </TextBlock>
+                    </StackPanel>
 
-                        <TabItem Header="{l:T 'Условия → действия', 'Conditions → actions'}" FontSize="15">
-                            <Grid>
-                                <TextBlock IsVisible="{Binding !HasPlayer}" Classes="secondary" HorizontalAlignment="Center"
-                                           VerticalAlignment="Center" Text="{l:T 'Выберите игрока в списке слева.', 'Select a player in the list on the left.'}" />
-                                <DockPanel IsVisible="{Binding HasPlayer}">
-                                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
-                                        <TextBlock Text="{l:T 'Таблица:', 'Table:'}" VerticalAlignment="Center" />
-                                        <ComboBox ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}" MinWidth="280">
+                    <TextBlock IsVisible="{Binding !HasPlayer}" Classes="subtle" HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Text="{l:T 'Выберите игрока в списке слева.', 'Select a player in the list on the left.'}" />
+
+                    <DockPanel IsVisible="{Binding HasPlayer}">
+                        <!-- Плитки -->
+                        <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding Tiles}" Margin="0,0,0,16">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><UniformGrid Rows="1" ColumnSpacing="12" /></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:StatTile">
+                                    <Border Classes="card" CornerRadius="14" Padding="16,14">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Classes="subtle" FontSize="12" Text="{Binding Label}" />
+                                            <TextBlock Classes="mono" FontSize="26" FontWeight="SemiBold" Text="{Binding Value}" />
+                                            <TextBlock FontSize="12" Classes="subtle">
+                                                <Run Classes="t" Text="{Binding TText}" /><Run Text=" · " /><Run Classes="ct" Text="{Binding CtText}" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Фильтры: сторона и закупка -->
+                        <WrapPanel DockPanel.Dock="Top" ItemSpacing="10" LineSpacing="10" Margin="0,0,0,16"
+                                   DataContext="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Filter}" x:DataType="vm:FilterViewModel">
+                            <ListBox Theme="{StaticResource SegmentedList}" ItemsSource="{Binding Sides}" SelectedItem="{Binding SelectedSide}"
+                                     ItemTemplate="{StaticResource SideOptionTemplate}" />
+                            <TextBlock Classes="subtle" Text="{l:T 'Закупка', 'Buy'}" VerticalAlignment="Center" Margin="6,0,0,0" />
+                            <ListBox Theme="{StaticResource ChipList}" ItemsSource="{Binding Buys}" SelectedItem="{Binding SelectedBuy}"
+                                     ItemTemplate="{StaticResource OptionTemplate}" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Classes="subtle" Text="{l:T 'Раунд', 'Round'}" VerticalAlignment="Center" />
+                                <ComboBox ItemsSource="{Binding Rounds}" SelectedItem="{Binding SelectedRound}" MaxDropDownHeight="400" MinWidth="130"
+                                          ItemTemplate="{StaticResource OptionTemplate}" />
+                            </StackPanel>
+                        </WrapPanel>
+
+                        <TabControl Theme="{StaticResource SegmentedTabs}" Padding="0,14,0,0">
+                            <TabItem Header="{l:T 'Ситуации игрока', 'Player situations'}">
+                                <Border Classes="card" ClipToBounds="True">
+                                    <DataGrid ItemsSource="{Binding SituationRows}" IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True"
+                                              FrozenColumnCount="1" Classes="striped">
+                                        <DataGrid.Columns>
+                                            <DataGridTemplateColumn Header="{l:T 'Р.', 'Rd'}" SortMemberPath="Round">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate x:DataType="vm:SituationRowViewModel">
+                                                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="6,0,0,0" VerticalAlignment="Center">
+                                                            <TextBlock Classes="mono muted" Width="20" TextAlignment="Right" Text="{Binding Round}" />
+                                                            <Border Classes="badge" Classes.t="{Binding IsT}" Classes.ct="{Binding !IsT}" MinWidth="24">
+                                                                <TextBlock Text="{Binding Side}" HorizontalAlignment="Center" />
+                                                            </Border>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTextColumn Header="{l:T 'Счёт', 'Score'}" Binding="{Binding ScoreText}" FontFamily="{StaticResource MonoFont}"
+                                                                x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTemplateColumn Header="{l:T 'Закупка · своя / команды / соперника', 'Buy · own / team / enemy'}" SortMemberPath="Buy">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate x:DataType="vm:SituationRowViewModel">
+                                                        <ItemsControl ItemsSource="{Binding Buys}" VerticalAlignment="Center">
+                                                            <ItemsControl.ItemsPanel>
+                                                                <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate>
+                                                            </ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate x:DataType="vm:BuyChip">
+                                                                    <Border Classes="buy" Classes.pistol="{Binding IsPistol}" Classes.eco="{Binding IsEco}"
+                                                                            Classes.force="{Binding IsForce}" Classes.full="{Binding IsFull}" ToolTip.Tip="{Binding Tooltip}">
+                                                                        <TextBlock Text="{Binding Label}" />
+                                                                    </Border>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn Header="{l:T 'Экипировка · своя / ср.', 'Equipment · own / avg'}" SortMemberPath="Equipment">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate x:DataType="vm:SituationRowViewModel">
+                                                        <TextBlock Classes="mono" VerticalAlignment="Center">
+                                                            <Run Text="{Binding OwnEquipment}" />
+                                                            <Run Text="{Binding TeamEquipment}" Foreground="{StaticResource SubtleBrush}" />
+                                                        </TextBlock>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTextColumn Header="{l:T 'Маршрут', 'Route'}" Binding="{Binding Route}" Foreground="{StaticResource Text2Brush}"
+                                                                x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTextColumn Header="{l:T 'Итоговая позиция', 'Final position'}" Binding="{Binding FinalZone}" FontWeight="SemiBold"
+                                                                x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTemplateColumn Header="{l:T 'Гранаты', 'Grenades'}" SortMemberPath="Grenades">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate x:DataType="vm:SituationRowViewModel">
+                                                        <Panel VerticalAlignment="Center">
+                                                            <ItemsControl ItemsSource="{Binding GrenadeChips}">
+                                                                <ItemsControl.ItemsPanel>
+                                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate>
+                                                                </ItemsControl.ItemsPanel>
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate x:DataType="vm:GrenadeChip">
+                                                                        <Border Background="{StaticResource ControlBrush}" CornerRadius="6" Padding="6,2,7,2">
+                                                                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                                                                <Ellipse Width="7" Height="7" Fill="{Binding Brush}" VerticalAlignment="Center" />
+                                                                                <TextBlock FontSize="12" Foreground="{StaticResource Text2Brush}" Text="{Binding Label}" />
+                                                                                <TextBlock Classes="mono subtle" FontSize="12" Text="{Binding CountText}" IsVisible="{Binding HasCount}" />
+                                                                            </StackPanel>
+                                                                        </Border>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                            <TextBlock Text="—" Foreground="{StaticResource FaintBrush}" IsVisible="{Binding HasNoGrenades}" />
+                                                        </Panel>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTemplateColumn Header="{l:T 'Первый контакт', 'First contact'}" SortMemberPath="ContactFraction">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate x:DataType="vm:SituationRowViewModel">
+                                                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                                            <ProgressBar Classes="bar thin" Width="64" Minimum="0" Maximum="1" Value="{Binding ContactFraction}"
+                                                                         Classes.negative="{Binding IsAggressive}" Classes.ct="{Binding IsPassive}"
+                                                                         IsVisible="{Binding HasContact}" VerticalAlignment="Center" />
+                                                            <TextBlock Classes="mono" Text="{Binding ContactTime}" />
+                                                            <TextBlock Classes="mono subtle" FontSize="11.5" Text="{Binding Matchup}" VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                            <DataGridTextColumn Header="{l:T 'Агрессия', 'Aggression'}" Binding="{Binding Aggression}" x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTextColumn Header="{l:T 'Первая дуэль', 'Opening duel'}" Binding="{Binding FirstDuel}" x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTextColumn Header="{l:T 'Урон', 'Damage'}" Binding="{Binding Damage}" FontFamily="{StaticResource MonoFont}"
+                                                                x:DataType="vm:SituationRowViewModel" />
+                                            <DataGridTemplateColumn Header="{l:T 'Итог', 'Outcome'}" SortMemberPath="Outcome">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate x:DataType="vm:SituationRowViewModel">
+                                                        <TextBlock Text="{Binding Outcome}" VerticalAlignment="Center" Margin="0,0,12,0"
+                                                                   Classes.positive="{Binding RoundWon}" Classes.negative="{Binding !RoundWon}" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Border>
+                            </TabItem>
+
+                            <TabItem Header="{l:T 'Условия → действия', 'Conditions → actions'}">
+                                <DockPanel>
+                                    <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10" Margin="0,0,0,12">
+                                        <TextBlock Classes="subtle" Text="{l:T 'Таблица', 'Table'}" VerticalAlignment="Center" />
+                                        <ComboBox Grid.Column="1" ItemsSource="{Binding Tables}" SelectedItem="{Binding SelectedTable}" MinWidth="300">
                                             <ComboBox.ItemTemplate>
                                                 <DataTemplate x:DataType="situations:FrequencyTable">
                                                     <TextBlock Text="{Binding Name}" />
                                                 </DataTemplate>
                                             </ComboBox.ItemTemplate>
                                         </ComboBox>
-                                        <TextBlock Classes="secondary" VerticalAlignment="Center" TextWrapping="Wrap"
+                                        <TextBlock Grid.Column="2" Classes="hint" FontSize="12.5" VerticalAlignment="Center"
                                                    Text="{l:T 'Доля — как часто решение принималось при этом условии. Малая выборка одной демки: смотрите на «из N».', 'Share is how often the decision was made under this condition. One demo is a small sample: look at “of N”.'}" />
-                                    </StackPanel>
-                                    <DataGrid ItemsSource="{Binding FrequencyRows}" IsReadOnly="True" AutoGenerateColumns="False"
-                                              GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                                    </Grid>
+                                    <Border Classes="card" ClipToBounds="True">
+                                        <DataGrid ItemsSource="{Binding FrequencyRows}" IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True"
+                                                  Classes="striped">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="{l:T 'Условие', 'Condition'}" Binding="{Binding Condition}" x:DataType="vm:FrequencyRowViewModel" />
+                                                <DataGridTextColumn Header="{l:T 'Решение', 'Decision'}" Binding="{Binding Decision}" x:DataType="vm:FrequencyRowViewModel" Width="*" />
+                                                <DataGridTextColumn Header="{l:T 'Раз', 'Times'}" Binding="{Binding Count}" FontFamily="{StaticResource MonoFont}" x:DataType="vm:FrequencyRowViewModel" />
+                                                <DataGridTextColumn Header="{l:T 'Доля', 'Share'}" Binding="{Binding Share}" SortMemberPath="ShareValue" FontFamily="{StaticResource MonoFont}"
+                                                                    x:DataType="vm:FrequencyRowViewModel" />
+                                                <DataGridTextColumn Header="{l:T 'Раунды', 'Rounds'}" Binding="{Binding Rounds}" FontFamily="{StaticResource MonoFont}"
+                                                                    Foreground="{StaticResource MutedBrush}" x:DataType="vm:FrequencyRowViewModel" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </Border>
+                                </DockPanel>
+                            </TabItem>
+
+                            <TabItem Header="{l:T 'Раунды матча', 'Match rounds'}">
+                                <Border Classes="card" ClipToBounds="True">
+                                    <DataGrid ItemsSource="{Binding MatchRounds}" IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True"
+                                              Classes="striped">
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="{l:T 'Условие', 'Condition'}" Binding="{Binding Condition}" x:DataType="vm:FrequencyRowViewModel" />
-                                            <DataGridTextColumn Header="{l:T 'Решение', 'Decision'}" Binding="{Binding Decision}" x:DataType="vm:FrequencyRowViewModel" Width="*" />
-                                            <DataGridTextColumn Header="{l:T 'Раз', 'Times'}" Binding="{Binding Count}" x:DataType="vm:FrequencyRowViewModel" />
-                                            <DataGridTextColumn Header="{l:T 'Доля', 'Share'}" Binding="{Binding Share}" SortMemberPath="ShareValue" x:DataType="vm:FrequencyRowViewModel" />
-                                            <DataGridTextColumn Header="{l:T 'Раунды', 'Rounds'}" Binding="{Binding Rounds}" x:DataType="vm:FrequencyRowViewModel" />
+                                            <DataGridTextColumn Header="{l:T 'Раунд', 'Round'}" Binding="{Binding Number}" FontFamily="{StaticResource MonoFont}" x:DataType="vm:RoundRowViewModel" />
+                                            <DataGridTextColumn Header="{l:T 'Счёт до (T : CT)', 'Score before (T : CT)'}" Binding="{Binding ScoreBefore}" FontFamily="{StaticResource MonoFont}"
+                                                                x:DataType="vm:RoundRowViewModel" />
+                                            <DataGridTextColumn Header="{l:T 'Закупка T', 'T buy'}" Binding="{Binding BuyT}" x:DataType="vm:RoundRowViewModel" />
+                                            <DataGridTextColumn Header="{l:T 'Закупка CT', 'CT buy'}" Binding="{Binding BuyCT}" x:DataType="vm:RoundRowViewModel" />
+                                            <DataGridTextColumn Header="{l:T 'Победитель', 'Winner'}" Binding="{Binding Winner}" FontWeight="SemiBold" x:DataType="vm:RoundRowViewModel" />
+                                            <DataGridTextColumn Header="{l:T 'Причина', 'Reason'}" Binding="{Binding Reason}" x:DataType="vm:RoundRowViewModel" Width="*" />
+                                            <DataGridTextColumn Header="{l:T 'Длительность', 'Duration'}" Binding="{Binding Duration}" FontFamily="{StaticResource MonoFont}"
+                                                                x:DataType="vm:RoundRowViewModel" />
+                                            <DataGridTextColumn Header="{l:T 'Овертайм', 'Overtime'}" Binding="{Binding Overtime}" x:DataType="vm:RoundRowViewModel" />
                                         </DataGrid.Columns>
                                     </DataGrid>
-                                </DockPanel>
-                            </Grid>
-                        </TabItem>
+                                </Border>
+                            </TabItem>
+                        </TabControl>
+                    </DockPanel>
+                </DockPanel>
 
-                        <TabItem Header="{l:T 'Раунды матча', 'Match rounds'}" FontSize="15">
-                            <DataGrid ItemsSource="{Binding MatchRounds}" IsReadOnly="True" AutoGenerateColumns="False"
-                                      GridLinesVisibility="Horizontal" CanUserSortColumns="True">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="{l:T 'Раунд', 'Round'}" Binding="{Binding Number}" x:DataType="vm:RoundRowViewModel" />
-                                    <DataGridTextColumn Header="{l:T 'Счёт до (T : CT)', 'Score before (T : CT)'}" Binding="{Binding ScoreBefore}" x:DataType="vm:RoundRowViewModel" />
-                                    <DataGridTextColumn Header="{l:T 'Закупка T', 'T buy'}" Binding="{Binding BuyT}" x:DataType="vm:RoundRowViewModel" />
-                                    <DataGridTextColumn Header="{l:T 'Закупка CT', 'CT buy'}" Binding="{Binding BuyCT}" x:DataType="vm:RoundRowViewModel" />
-                                    <DataGridTextColumn Header="{l:T 'Победитель', 'Winner'}" Binding="{Binding Winner}" x:DataType="vm:RoundRowViewModel" />
-                                    <DataGridTextColumn Header="{l:T 'Причина', 'Reason'}" Binding="{Binding Reason}" x:DataType="vm:RoundRowViewModel" Width="*" />
-                                    <DataGridTextColumn Header="{l:T 'Длительность', 'Duration'}" Binding="{Binding Duration}" x:DataType="vm:RoundRowViewModel" />
-                                    <DataGridTextColumn Header="{l:T 'Овертайм', 'Overtime'}" Binding="{Binding Overtime}" x:DataType="vm:RoundRowViewModel" />
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </TabItem>
-                    </TabControl>
-                </TabItem>
-
-                <TabItem Header="{l:T 'Профиль игрока', 'Player profile'}" IsEnabled="{Binding HasMatch}">
-                    <Grid DataContext="{Binding Profile}" x:DataType="vm:ProfileViewModel">
-                        <TextBlock IsVisible="{Binding !HasProfile}" Classes="secondary" HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   Text="{Binding IsBuilding, Converter={x:Static vm:ProfileConverters.EmptyText}}" />
-                        <DockPanel IsVisible="{Binding HasProfile}" Margin="4,8,0,0">
-                            <!-- Заголовок: имя, предсказуемость, экспорт -->
-                            <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
-                                <StackPanel Spacing="4">
-                                    <TextBlock Classes="header" FontSize="20" Text="{Binding Title}" />
-                                    <StackPanel Orientation="Horizontal" Spacing="10">
-                                        <TextBlock Text="{l:T 'Предсказуемость', 'Predictability'}" VerticalAlignment="Center" />
-                                        <ProgressBar Minimum="0" Maximum="100" Value="{Binding Predictability}" Width="200" VerticalAlignment="Center" />
-                                        <TextBlock Text="{Binding Predictability, StringFormat='{}{0}%'}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <!-- ===== Профиль игрока ===== -->
+                <Grid IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsProfileTab}" DataContext="{Binding Profile}" x:DataType="vm:ProfileViewModel">
+                    <TextBlock IsVisible="{Binding !HasProfile}" Classes="subtle" HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Text="{Binding IsBuilding, Converter={x:Static vm:ProfileConverters.EmptyText}}" />
+                    <ScrollViewer IsVisible="{Binding HasProfile}">
+                        <StackPanel Margin="24,20,24,32" Spacing="18">
+                            <!-- Заголовок -->
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+                                <Border Classes="avatar" Classes.me="{Binding IsMe}" Width="52" Height="52" CornerRadius="26">
+                                    <TextBlock Text="{Binding Initials}" FontSize="17" />
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Classes="h1" FontSize="24" Text="{Binding Name}" />
+                                        <Border Classes="badge me" IsVisible="{Binding IsMe}"><TextBlock Text="{l:T 'Вы', 'You'}" /></Border>
                                     </StackPanel>
-                                    <TextBlock Classes="secondary" Text="{Binding PredictabilityText}" TextWrapping="Wrap" />
+                                    <TextBlock Classes="subtle" FontSize="13" Margin="0,2,0,0" Text="{Binding Subtitle}" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Top">
-                                    <Button Content="{l:T 'Экспорт профиля… (Ctrl+E)', 'Export profile… (Ctrl+E)'}" Command="{Binding ExportCommand}" HorizontalAlignment="Right" />
-                                    <TextBlock Classes="secondary" Text="{Binding StatusText}" TextWrapping="Wrap" MaxWidth="360" />
+                                <StackPanel Grid.Column="2" Spacing="6" VerticalAlignment="Center">
+                                    <Button Classes="accent" Command="{Binding ExportCommand}" HorizontalAlignment="Right">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <controls:Icon Width="16" Height="16" StrokeThickness="2" Data="{StaticResource IconDownload}" />
+                                            <TextBlock Text="{l:T 'Экспорт профиля', 'Export profile'}" VerticalAlignment="Center" />
+                                            <Border Background="#1F10140A" CornerRadius="4" Padding="5,1">
+                                                <TextBlock Classes="mono" FontSize="11" FontWeight="Normal" Text="Ctrl+E" />
+                                            </Border>
+                                        </StackPanel>
+                                    </Button>
+                                    <TextBlock Classes="subtle" FontSize="12" Text="{Binding StatusText}" TextWrapping="Wrap" MaxWidth="360" TextAlignment="Right" />
                                 </StackPanel>
                             </Grid>
 
-                            <!-- Роль -->
-                            <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding Roles}" Margin="0,0,0,8">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:RoleRowViewModel">
-                                        <StackPanel Margin="0,0,0,6">
-                                            <TextBlock>
-                                                <Run Text="{l:T 'Роль ', 'Role '}" />
-                                                <Run Text="{Binding Header}" FontWeight="SemiBold" />
-                                                <Run Text="  " />
-                                                <Run Text="{Binding Confidence}" Foreground="{DynamicResource SecondaryTextBrush}" />
-                                            </TextBlock>
-                                            <TextBlock Classes="secondary" Text="{Binding Reasons}" TextWrapping="Wrap" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                            <!-- Предсказуемость и роли -->
+                            <Grid ColumnDefinitions="320,14,*">
+                                <Border Classes="card" Padding="18">
+                                    <StackPanel Spacing="14">
+                                        <TextBlock Classes="caption" Text="{l:T 'ПРЕДСКАЗУЕМОСТЬ', 'PREDICTABILITY'}" />
+                                        <Grid ColumnDefinitions="104,*" ColumnSpacing="16">
+                                            <Panel Width="104" Height="104">
+                                                <Ellipse Stroke="{StaticResource TrackBrush}" StrokeThickness="10" Margin="0" />
+                                                <Arc Stroke="{StaticResource AccentBrush}" StrokeThickness="10" StrokeLineCap="Round"
+                                                     StartAngle="-90" SweepAngle="{Binding PredictabilityAngle}" />
+                                                <TextBlock Classes="mono" FontSize="24" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                           Text="{Binding Predictability, StringFormat='{}{0}%'}" />
+                                            </Panel>
+                                            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                                <TextBlock FontSize="16" FontWeight="SemiBold" Text="{Binding PredictabilityLabel}" TextWrapping="Wrap" />
+                                                <TextBlock Classes="muted" FontSize="12.5" LineHeight="18" TextWrapping="Wrap" Text="{x:Static vm:ProfileViewModel.PredictabilityHint}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                                <ItemsControl Grid.Column="2" ItemsSource="{Binding RoleCards}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><UniformGrid Rows="1" ColumnSpacing="14" /></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:RoleCardViewModel">
+                                            <Border Classes="card" Padding="18">
+                                                <StackPanel Spacing="12">
+                                                    <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
+                                                        <Border Classes="badge" Classes.t="{Binding IsT}" Classes.ct="{Binding !IsT}">
+                                                            <TextBlock Text="{Binding SideText}" />
+                                                        </Border>
+                                                        <TextBlock Grid.Column="1" FontSize="16" FontWeight="SemiBold" Text="{Binding RoleTitle}" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="2" Classes="muted" FontSize="13" Text="{Binding RoleHint}" VerticalAlignment="Center"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6">
+                                                            <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                                                     Fill="{Binding Confidence, Converter={x:Static vm:ProfileConverters.ConfidenceBrush}}" />
+                                                            <TextBlock Classes="muted" FontSize="12" Text="{Binding ConfidenceText}" VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <ItemsControl ItemsSource="{Binding Metrics}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate><UniformGrid Columns="3" ColumnSpacing="8" RowSpacing="8" /></ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:MetricTile">
+                                                                <Border Classes="tile">
+                                                                    <StackPanel Spacing="2">
+                                                                        <TextBlock Classes="subtle" FontSize="11.5" Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                                                                        <TextBlock Classes="mono" FontSize="18" FontWeight="SemiBold" Text="{Binding Value}" />
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <TextBlock Classes="subtle" FontSize="12" TextWrapping="Wrap" Text="{Binding Reasons}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
 
-                            <!-- Сводка по сторонам -->
-                            <DataGrid DockPanel.Dock="Top" ItemsSource="{Binding Sides}" IsReadOnly="True" AutoGenerateColumns="False"
-                                      GridLinesVisibility="Horizontal" CanUserSortColumns="False" Margin="0,0,0,8" MaxHeight="120">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="{l:T 'Сторона', 'Side'}" Binding="{Binding Side}" x:DataType="vm:SideSummaryRowViewModel" />
-                                    <DataGridTextColumn Header="{l:T 'Раундов', 'Rounds'}" Binding="{Binding Rounds}" x:DataType="vm:SideSummaryRowViewModel" />
-                                    <DataGridTextColumn Header="{l:T 'У / С', 'K / D'}" Binding="{Binding KillsDeaths}" x:DataType="vm:SideSummaryRowViewModel" />
-                                    <DataGridTextColumn Header="{l:T 'Урон/раунд', 'ADR'}" Binding="{Binding Damage}" x:DataType="vm:SideSummaryRowViewModel" />
-                                    <DataGridTextColumn Header="{l:T 'Выживание', 'Survival'}" Binding="{Binding Survival}" x:DataType="vm:SideSummaryRowViewModel" />
-                                    <DataGridTextColumn Header="{l:T 'Победы', 'Wins'}" Binding="{Binding Wins}" x:DataType="vm:SideSummaryRowViewModel" />
-                                    <DataGridTextColumn Header="{l:T 'Первый контакт', 'First contact'}" Binding="{Binding Contact}" x:DataType="vm:SideSummaryRowViewModel" />
-                                    <DataGridTextColumn Header="{l:T 'Первая дуэль', 'Opening duel'}" Binding="{Binding FirstDuel}" x:DataType="vm:SideSummaryRowViewModel" />
-                                    <DataGridTextColumn Header="{l:T 'Гранат/раунд', 'Grenades/round'}" Binding="{Binding Grenades}" x:DataType="vm:SideSummaryRowViewModel" />
-                                    <DataGridTextColumn Header="{l:T 'Агрессия / пассив', 'Aggressive / passive'}" Binding="{Binding Style}" x:DataType="vm:SideSummaryRowViewModel" />
-                                    <DataGridTextColumn Header="{l:T 'До союзника', 'To teammate'}" Binding="{Binding Distance}" x:DataType="vm:SideSummaryRowViewModel" />
-                                </DataGrid.Columns>
-                            </DataGrid>
+                            <!-- T против CT -->
+                            <Border Classes="card" Padding="18,16" IsVisible="{Binding !!Comparison.Count}">
+                                <StackPanel Spacing="6">
+                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="14" Margin="0,0,0,6">
+                                        <TextBlock Classes="caption" Text="{l:T 'T ПРОТИВ CT', 'T VS CT'}" VerticalAlignment="Center" />
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                            <Border Width="10" Height="10" CornerRadius="3" Background="{StaticResource TBrush}" />
+                                            <TextBlock Classes="t" FontSize="12" Text="T" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
+                                            <Border Width="10" Height="10" CornerRadius="3" Background="{StaticResource CtLineBrush}" />
+                                            <TextBlock Classes="ct" FontSize="12" Text="CT" />
+                                        </StackPanel>
+                                    </Grid>
+                                    <ItemsControl ItemsSource="{Binding Comparison}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate><UniformGrid Columns="2" ColumnSpacing="32" /></ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:CompareRowViewModel">
+                                                <Border BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,1" MinHeight="36">
+                                                    <Grid ColumnDefinitions="150,80,*,80" ColumnSpacing="10">
+                                                        <TextBlock Classes="muted" FontSize="13" Text="{Binding Label}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Grid.Column="1" Classes="mono t" FontSize="13" TextAlignment="Right" Text="{Binding TText}" VerticalAlignment="Center" />
+                                                        <Grid Grid.Column="2" ColumnDefinitions="*,2,*" VerticalAlignment="Center">
+                                                            <ProgressBar Classes="bar flat t" Minimum="0" Maximum="1" Value="{Binding TFraction}" FlowDirection="RightToLeft" />
+                                                            <ProgressBar Grid.Column="2" Classes="bar flat ct" Minimum="0" Maximum="1" Value="{Binding CtFraction}" />
+                                                        </Grid>
+                                                        <TextBlock Grid.Column="3" Classes="mono ct" FontSize="13" Text="{Binding CtText}" VerticalAlignment="Center" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
 
                             <!-- Паттерны -->
-                            <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,6">
-                                <TextBlock Classes="header" Text="{Binding PatternsHeader}" VerticalAlignment="Center" Margin="0,0,16,0" />
-                                <TextBlock Text="{l:T 'Сортировка', 'Sort'}" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                <ComboBox ItemsSource="{x:Static vm:ProfileViewModel.SortModes}" SelectedItem="{Binding SelectedSort}" Margin="0,0,16,0">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate x:DataType="vm:FilterOption"><TextBlock Text="{Binding Label}" /></DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
-                                <TextBlock Text="{l:T 'Частота ≥, %', 'Frequency ≥, %'}" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                <NumericUpDown Value="{Binding MinSharePercent}" Minimum="10" Maximum="100" Increment="5" FormatString="0" Width="110" Margin="0,0,16,0" />
-                                <TextBlock Text="{l:T 'Примеров ≥', 'Examples ≥'}" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                <NumericUpDown Value="{Binding MinExamples}" Minimum="1" Maximum="20" Increment="1" FormatString="0" Width="100" />
-                            </WrapPanel>
-                            <TextBlock DockPanel.Dock="Bottom" Classes="secondary" Margin="0,6,0,0" TextWrapping="Wrap"
-                                       Text="{l:T 'Одна демка — малая выборка: смотрите на «N из M» и уверенность. Клик по паттерну подсвечивает раунды-примеры на радаре.', 'One demo is a small sample: look at “N of M” and confidence. Clicking a pattern highlights its example rounds on the radar.'}" />
-                            <Grid>
-                                <TextBlock IsVisible="{Binding !Patterns.Count}" Classes="secondary" Margin="4,8" TextWrapping="Wrap"
+                            <StackPanel Spacing="12">
+                                <WrapPanel ItemSpacing="14" LineSpacing="8">
+                                    <TextBlock FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center">
+                                        <Run Text="{l:T 'Паттерны', 'Patterns'}" />
+                                        <Run Classes="mono" FontWeight="Medium" Foreground="{StaticResource SubtleBrush}" Text="{Binding PatternCount}" />
+                                    </TextBlock>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Classes="subtle" Text="{l:T 'Частота ≥, %', 'Frequency ≥, %'}" VerticalAlignment="Center" />
+                                        <NumericUpDown Value="{Binding MinSharePercent}" Minimum="10" Maximum="100" Increment="5" FormatString="0" Width="120" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Classes="subtle" Text="{l:T 'Примеров ≥', 'Examples ≥'}" VerticalAlignment="Center" />
+                                        <NumericUpDown Value="{Binding MinExamples}" Minimum="1" Maximum="20" Increment="1" FormatString="0" Width="110" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Classes="subtle" Text="{l:T 'Сортировка', 'Sort'}" VerticalAlignment="Center" />
+                                        <ComboBox ItemsSource="{x:Static vm:ProfileViewModel.SortModes}" SelectedItem="{Binding SelectedSort}"
+                                                  ItemTemplate="{StaticResource OptionTemplate}" />
+                                    </StackPanel>
+                                </WrapPanel>
+
+                                <ListBox Theme="{StaticResource ChipList}" ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}"
+                                         ItemTemplate="{StaticResource OptionTemplate}" />
+
+                                <TextBlock IsVisible="{Binding !Patterns.Count}" Classes="hint" Margin="4,8"
                                            Text="{l:T 'Устойчивых паттернов при заданных порогах нет. Попробуйте снизить порог частоты или числа примеров.', 'No stable patterns at these thresholds. Try lowering the frequency or examples threshold.'}" />
-                                <ListBox ItemsSource="{Binding Patterns}" SelectedItem="{Binding SelectedPattern}">
+                                <ListBox Theme="{StaticResource CardList}" ItemsSource="{Binding Patterns}" SelectedItem="{Binding SelectedPattern}"
+                                         ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                                    <ListBox.Styles>
+                                        <Style Selector="ListBoxItem">
+                                            <Setter Property="Background" Value="{StaticResource CardBrush}" />
+                                            <Setter Property="CornerRadius" Value="14" />
+                                            <Setter Property="Padding" Value="16,14" />
+                                            <Setter Property="Margin" Value="0,0,0,8" />
+                                        </Style>
+                                    </ListBox.Styles>
                                     <ListBox.ItemTemplate>
                                         <DataTemplate x:DataType="vm:PatternRowViewModel">
-                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                                                <Ellipse Width="10" Height="10" VerticalAlignment="Top" Margin="0,6,0,0"
-                                                         Fill="{Binding Pattern.Confidence, Converter={x:Static vm:ProfileConverters.ConfidenceBrush}}" />
-                                                <StackPanel Grid.Column="1" Spacing="2">
-                                                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontWeight="SemiBold" />
-                                                    <TextBlock Text="{Binding Details}" Classes="secondary" TextWrapping="Wrap" />
+                                            <Grid ColumnDefinitions="*,160,Auto" ColumnSpacing="18">
+                                                <StackPanel Spacing="6">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <Border Classes="badge" Classes.t="{Binding IsT}" Classes.ct="{Binding !IsT}">
+                                                            <TextBlock Text="{Binding SideText}" />
+                                                        </Border>
+                                                        <Border Classes="badge neutral"><TextBlock Text="{Binding CategoryText}" /></Border>
+                                                        <StackPanel Orientation="Horizontal" Spacing="5">
+                                                            <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                                                     Fill="{Binding Pattern.Confidence, Converter={x:Static vm:ProfileConverters.ConfidenceBrush}}" />
+                                                            <TextBlock Classes="muted" FontSize="12" Text="{Binding ConfidenceText}" VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                    <TextBlock FontSize="14.5" FontWeight="Medium" LineHeight="20" TextWrapping="Wrap" Text="{Binding Text}" />
+                                                    <TextBlock Classes="subtle" FontSize="12" TextWrapping="Wrap">
+                                                        <Run Text="{l:T 'Раунды:', 'Rounds:'}" />
+                                                        <Run Classes="mono" Foreground="{StaticResource MutedBrush}" Text="{Binding RoundsText}" />
+                                                    </TextBlock>
                                                 </StackPanel>
-                                                <Button Grid.Column="2" Content="{l:T 'Показать на радаре', 'Show on radar'}" VerticalAlignment="Center"
+                                                <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <TextBlock Classes="subtle" FontSize="12" VerticalAlignment="Bottom">
+                                                            <Run Classes="mono" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" Text="{Binding CountText}" />
+                                                            <Run Text="{Binding TotalText}" />
+                                                        </TextBlock>
+                                                        <TextBlock Grid.Column="1" Classes="mono subtle" FontSize="12" Text="{Binding PercentText}" VerticalAlignment="Bottom" />
+                                                    </Grid>
+                                                    <ProgressBar Classes="bar" Classes.t="{Binding IsT}" Classes.ct="{Binding !IsT}"
+                                                                 Minimum="0" Maximum="1" Value="{Binding Share}" />
+                                                </StackPanel>
+                                                <Button Grid.Column="2" VerticalAlignment="Center"
                                                         Command="{Binding $parent[ListBox].((vm:ProfileViewModel)DataContext).ShowOnRadarCommand}"
-                                                        CommandParameter="{Binding}" />
+                                                        CommandParameter="{Binding}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <controls:Icon Width="16" Height="16" Data="{StaticResource IconTarget}" />
+                                                        <TextBlock Text="{l:T 'На радаре', 'On radar'}" FontWeight="Medium" VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Button>
                                             </Grid>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
                                 </ListBox>
-                            </Grid>
-                        </DockPanel>
-                    </Grid>
-                </TabItem>
-
-                <TabItem Header="{l:T 'Настройки', 'Settings'}">
-                    <ScrollViewer DataContext="{Binding Settings}" x:DataType="vm:SettingsViewModel">
-                        <StackPanel Margin="8,16" Spacing="24" MaxWidth="1100" HorizontalAlignment="Left">
-                            <StackPanel Spacing="8">
-                                <TextBlock Classes="header" Text="{l:T 'Язык интерфейса', 'Interface language'}" />
-                                <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}" MinWidth="220">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate x:DataType="vm:LanguageOption"><TextBlock Text="{Binding Name}" /></DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
-                                <TextBlock Classes="secondary" TextWrapping="Wrap"
-                                           Text="{l:T 'Интерфейс, формулировки паттернов и экспорт сразу переключаются на выбранный язык.', 'The interface, pattern wording and export switch to the selected language right away.'}" />
+                                <TextBlock Classes="hint" FontSize="12.5"
+                                           Text="{l:T 'Одна демка — малая выборка: смотрите на «N из M» и уверенность. Клик по паттерну подсвечивает раунды-примеры на радаре, «На радаре» — ещё и переключает на него.', 'One demo is a small sample: look at “N of M” and confidence. Clicking a pattern highlights its example rounds on the radar; “On radar” also switches to it.'}" />
                             </StackPanel>
-
-                            <StackPanel Spacing="8">
-                                <TextBlock Classes="header" Text="{l:T 'Основной игрок (вы)', 'Main player (you)'}" />
-                                <TextBlock Text="{Binding MainPlayerText}" />
-                                <TextBlock Classes="secondary" TextWrapping="Wrap"
-                                           Text="{l:T 'Основной игрок выбирается сразу при открытии демки и отмечается в списке игроков; позже из ваших демок будет собираться личный профиль. SteamID хранится только на этом компьютере.', 'The main player is selected as soon as a demo opens and is marked in the player list; later your demos will build up a personal profile. The SteamID is stored only on this computer.'}" />
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBox Text="{Binding MainPlayerInput}" Width="360"
-                                             PlaceholderText="{l:T 'SteamID64, ссылка на профиль, [U:1:…] или STEAM_0:…', 'SteamID64, profile link, [U:1:…] or STEAM_0:…'}" />
-                                    <Button Content="{l:T 'Сохранить', 'Save'}" Command="{Binding SaveMainPlayerCommand}" />
-                                    <Button Content="{l:T 'Выбрать в открытой демке', 'Pick in the open demo'}" Command="{Binding PickMainPlayerCommand}" />
-                                    <Button Content="{l:T 'Сбросить', 'Clear'}" Command="{Binding ClearMainPlayerCommand}" IsEnabled="{Binding HasMainPlayer}" />
-                                </StackPanel>
-                                <TextBlock Classes="secondary" Text="{Binding MainPlayerStatus}" TextWrapping="Wrap" />
-                                <CheckBox Content="{l:T 'Предлагать выбрать себя при открытии демки, пока основной игрок не выбран', 'Offer to pick yourself when a demo opens until the main player is set'}"
-                                          IsChecked="{Binding AskForMainPlayer}" />
-                            </StackPanel>
-
-                            <StackPanel Spacing="8">
-                                <TextBlock Classes="header" Text="{l:T 'Кеш разобранных демок', 'Parsed demo cache'}" />
-                                <TextBlock Text="{Binding CacheText}" />
-                                <TextBlock Classes="secondary" TextWrapping="Wrap"
-                                           Text="{l:T 'Повторное открытие демки из кеша занимает секунды вместо полного разбора. Хранятся последние 50 демок. Очистка не трогает сами файлы .dem.', 'Reopening a cached demo takes seconds instead of a full parse. The last 50 demos are kept. Clearing does not touch the .dem files themselves.'}" />
-                                <Button Content="{l:T 'Очистить кеш', 'Clear cache'}" Command="{Binding ClearCacheCommand}" />
-                                <TextBlock Classes="secondary" Text="{Binding CacheStatus}" TextWrapping="Wrap" />
-                            </StackPanel>
-
-                            <StackPanel Spacing="8">
-                                <TextBlock Classes="header" Text="{l:T 'Папки', 'Folders'}" />
-                                <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="8">
-                                    <TextBlock Text="{l:T 'Данные, настройки и журналы', 'Data, settings and logs'}" VerticalAlignment="Center" />
-                                    <SelectableTextBlock Grid.Column="1" Text="{Binding DataDirectory}" Classes="secondary" VerticalAlignment="Center" TextWrapping="Wrap" />
-                                    <Button Grid.Column="2" Content="{l:T 'Открыть', 'Open'}" Command="{Binding OpenDataFolderCommand}" />
-                                    <TextBlock Grid.Row="1" Text="{l:T 'Изображения карт', 'Map images'}" VerticalAlignment="Center" />
-                                    <SelectableTextBlock Grid.Row="1" Grid.Column="1" Text="{Binding MapsDirectory}" Classes="secondary" VerticalAlignment="Center" TextWrapping="Wrap" />
-                                    <Button Grid.Row="1" Grid.Column="2" Content="{l:T 'Открыть', 'Open'}" Command="{Binding OpenMapsFolderCommand}" />
-                                </Grid>
-                                <TextBlock Classes="secondary" TextWrapping="Wrap"
-                                           Text="{l:T 'Пороги анализа (типы закупки, агрессия, раскидки, шаг выборки) задаются в settings.json в папке данных.', 'Analysis thresholds (buy types, aggression, lineups, sampling step) are set in settings.json in the data folder.'}" />
-                            </StackPanel>
-
-                            <StackPanel Spacing="8">
-                                <TextBlock Classes="header" Text="{l:T 'Обновления', 'Updates'}" />
-                                <CheckBox Content="{l:T 'Проверять новые версии на GitHub при запуске', 'Check GitHub for new versions on startup'}"
-                                          IsChecked="{Binding CheckForUpdates}" IsEnabled="{Binding HasRepository}" />
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <Button Content="{l:T 'Проверить сейчас', 'Check now'}" Command="{Binding CheckUpdatesNowCommand}" IsEnabled="{Binding HasRepository}" />
-                                    <Button Content="{l:T 'Страница проекта', 'Project page'}" Command="{Binding OpenProjectPageCommand}" IsVisible="{Binding HasRepository}" />
-                                </StackPanel>
-                                <TextBlock Classes="secondary" Text="{Binding UpdateStatusText}" TextWrapping="Wrap" />
-                                <TextBlock Classes="secondary" TextWrapping="Wrap"
-                                           Text="{l:T 'Один запрос к GitHub при запуске; без сети программа работает как обычно. Новая версия скачивается вручную со страницы релиза.', 'One request to GitHub on startup; without a network the app works as usual. New versions are downloaded manually from the release page.'}" />
-                            </StackPanel>
-
-                            <StackPanel Spacing="8">
-                                <TextBlock Classes="header" Text="{l:T 'Статистика использования', 'Usage statistics'}" />
-                                <CheckBox Content="{l:T 'Отправлять анонимную статистику использования', 'Send anonymous usage statistics'}"
-                                          IsChecked="{Binding SendUsageStatistics}" IsEnabled="{Binding HasAnalytics}" />
-                                <TextBlock Classes="secondary" TextWrapping="Wrap"
-                                           Text="{l:T 'Отправляются только два события: запуск программы и загрузка демки (карта, из кеша или разбор, время разбора), а также версия программы, ОС и язык системы. Имена файлов, ники, SteamID и постоянный идентификатор пользователя не отправляются. Сервис — Aptabase.', 'Only two events are sent: app start and demo load (map, cache or parse, parse time), plus the app version, OS and system language. File names, nicknames, SteamIDs and a persistent user ID are never sent. Service: Aptabase.'}" />
-                            </StackPanel>
-
-                            <TextBlock Classes="secondary" Text="{Binding Version, StringFormat='DemReview {0}'}" />
                         </StackPanel>
                     </ScrollViewer>
-                </TabItem>
-            </TabControl>
-        </Grid>
-    </DockPanel>
+                </Grid>
+
+                <!-- ===== Настройки ===== -->
+                <DockPanel IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsSettingsTab}" DataContext="{Binding Settings}" x:DataType="vm:SettingsViewModel">
+                    <StackPanel DockPanel.Dock="Top" Margin="24,20,24,16">
+                        <TextBlock Classes="h1" Text="{l:T 'Настройки', 'Settings'}" />
+                        <TextBlock Classes="subtle" FontSize="13" Margin="0,2,0,0">
+                            <Run Text="{Binding Version, StringFormat='DemReview {0}'}" />
+                            <Run Text="{l:T '· данные хранятся только на этом компьютере', '· data is stored only on this computer'}" />
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Разделы -->
+                    <StackPanel DockPanel.Dock="Left" Width="220" Margin="24,0,0,0" Spacing="2">
+                        <StackPanel.Styles>
+                            <Style Selector="Button">
+                                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                                <Setter Property="HorizontalContentAlignment" Value="Left" />
+                                <Setter Property="Padding" Value="12,0" />
+                                <Setter Property="FontSize" Value="13.5" />
+                            </Style>
+                        </StackPanel.Styles>
+                        <Button Classes="ghost" Tag="SectionUi" Click="OnSettingsSection" Content="{l:T 'Интерфейс', 'Interface'}" />
+                        <Button Classes="ghost" Tag="SectionMe" Click="OnSettingsSection" Content="{l:T 'Основной игрок', 'Main player'}" />
+                        <Button Classes="ghost" Tag="SectionCache" Click="OnSettingsSection" Content="{l:T 'Кеш и папки', 'Cache and folders'}" />
+                        <Button Classes="ghost" Tag="SectionAnalysis" Click="OnSettingsSection" Content="{l:T 'Пороги анализа', 'Analysis thresholds'}" />
+                        <Button Classes="ghost" Tag="SectionUpdates" Click="OnSettingsSection" Content="{l:T 'Обновления и приватность', 'Updates and privacy'}" />
+                    </StackPanel>
+
+                    <ScrollViewer x:Name="SettingsScroll" Margin="24,0,0,0">
+                        <StackPanel Spacing="14" MaxWidth="860" HorizontalAlignment="Left" Margin="0,0,24,32">
+                            <!-- Язык -->
+                            <Border x:Name="SectionUi" Classes="card" Padding="20">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="h2" Text="{l:T 'Язык интерфейса', 'Interface language'}" />
+                                        <TextBlock Classes="hint" Text="{l:T 'Интерфейс, формулировки паттернов и экспорт сразу переключаются на выбранный язык.', 'The interface, pattern wording and export switch to the selected language right away.'}" />
+                                    </StackPanel>
+                                    <ListBox Grid.Column="1" Theme="{StaticResource SegmentedList}" VerticalAlignment="Center"
+                                             ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:LanguageOption"><TextBlock Text="{Binding Name}" /></DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                        <ListBox.Styles>
+                                            <Style Selector="ListBoxItem">
+                                                <Setter Property="Padding" Value="16,9" />
+                                            </Style>
+                                        </ListBox.Styles>
+                                    </ListBox>
+                                </Grid>
+                            </Border>
+
+                            <!-- Основной игрок -->
+                            <Border x:Name="SectionMe" Classes="card" Padding="20">
+                                <StackPanel Spacing="16">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="h2" Text="{l:T 'Основной игрок', 'Main player'}" />
+                                        <TextBlock Classes="hint" Text="{l:T 'Выбирается сразу при открытии демки и отмечается «Вы» в списке игроков; позже из ваших демок будет собираться личный профиль. SteamID хранится только на этом компьютере.', 'Selected as soon as a demo opens and marked “You” in the player list; later your demos will build up a personal profile. The SteamID is stored only on this computer.'}" />
+                                    </StackPanel>
+                                    <Border Classes="inset" Padding="14">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="12">
+                                            <Border Classes="avatar" Classes.me="{Binding HasMainPlayer}" Width="40" Height="40" CornerRadius="20">
+                                                <TextBlock Text="{Binding MainPlayerInitials}" FontSize="14" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                                <TextBlock FontSize="14.5" FontWeight="SemiBold" Text="{Binding MainPlayerName}" />
+                                                <TextBox Classes="mono" FontSize="12.5" Text="{Binding MainPlayerInput}" MinHeight="32"
+                                                         PlaceholderText="{l:T 'SteamID64, ссылка на профиль, [U:1:…] или STEAM_0:…', 'SteamID64, profile link, [U:1:…] or STEAM_0:…'}" />
+                                            </StackPanel>
+                                            <Button Grid.Column="2" Content="{l:T 'Сохранить', 'Save'}" Command="{Binding SaveMainPlayerCommand}" />
+                                            <Button Grid.Column="3" Content="{l:T 'Выбрать в открытой демке', 'Pick in the open demo'}" Command="{Binding PickMainPlayerCommand}" />
+                                            <Button Grid.Column="4" Classes="ghost danger" Content="{l:T 'Сбросить', 'Clear'}" Command="{Binding ClearMainPlayerCommand}"
+                                                    IsEnabled="{Binding HasMainPlayer}" />
+                                        </Grid>
+                                    </Border>
+                                    <TextBlock Classes="hint" Text="{Binding MainPlayerStatus}" IsVisible="{Binding MainPlayerStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                                        <TextBlock FontSize="13.5" TextWrapping="Wrap" VerticalAlignment="Center"
+                                                   Text="{l:T 'Предлагать выбрать себя при открытии демки, пока основной игрок не выбран', 'Offer to pick yourself when a demo opens until the main player is set'}" />
+                                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding AskForMainPlayer}" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Кеш и папки -->
+                            <Border x:Name="SectionCache" Classes="card" Padding="20">
+                                <StackPanel Spacing="16">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Classes="h2" Text="{l:T 'Кеш разобранных демок', 'Parsed demo cache'}" />
+                                            <TextBlock Classes="hint" Text="{l:T 'Повторное открытие из кеша — секунды вместо полного разбора. Хранятся последние 50 демок; сами файлы .dem не трогаются.', 'Reopening from the cache takes seconds instead of a full parse. The last 50 demos are kept; the .dem files themselves are never touched.'}" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Classes="danger outlined" VerticalAlignment="Top" Command="{Binding ClearCacheCommand}">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <controls:Icon Width="15" Height="15" Data="{StaticResource IconTrash}" />
+                                                <TextBlock Text="{l:T 'Очистить кеш', 'Clear cache'}" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                    <StackPanel Spacing="8">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock FontSize="13">
+                                                <Run Classes="mono" FontWeight="SemiBold" Text="{Binding CacheCountText}" />
+                                                <Run Foreground="{StaticResource SubtleBrush}" Text="{Binding CacheLimitText}" />
+                                            </TextBlock>
+                                            <TextBlock Grid.Column="1" Classes="mono muted" FontSize="13" Text="{Binding CacheSizeText}" />
+                                        </Grid>
+                                        <ProgressBar Classes="bar thick" Minimum="0" Maximum="{x:Static vm:SettingsViewModel.CacheMaximum}" Value="{Binding CacheEntries}" />
+                                        <TextBlock Classes="hint" FontSize="12.5" Text="{Binding CacheStatus}"
+                                                   IsVisible="{Binding CacheStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <Border Classes="divider" />
+                                        <Grid ColumnDefinitions="210,*,Auto" ColumnSpacing="12" Margin="0,12">
+                                            <TextBlock Classes="muted" FontSize="13.5" Text="{l:T 'Данные, настройки, журналы', 'Data, settings, logs'}" VerticalAlignment="Center" />
+                                            <SelectableTextBlock Grid.Column="1" Classes="mono" FontSize="12.5" Foreground="{StaticResource Text2Brush}"
+                                                                 Text="{Binding DataDirectory}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                            <Button Grid.Column="2" Classes="icon-button" Command="{Binding OpenDataFolderCommand}"
+                                                    ToolTip.Tip="{l:T 'Открыть папку данных', 'Open the data folder'}">
+                                                <controls:Icon Width="16" Height="16" Data="{StaticResource IconExternal}" />
+                                            </Button>
+                                        </Grid>
+                                        <Border Classes="divider" />
+                                        <Grid ColumnDefinitions="210,*,Auto" ColumnSpacing="12" Margin="0,12,0,0">
+                                            <TextBlock Classes="muted" FontSize="13.5" Text="{l:T 'Изображения карт', 'Map images'}" VerticalAlignment="Center" />
+                                            <SelectableTextBlock Grid.Column="1" Classes="mono" FontSize="12.5" Foreground="{StaticResource Text2Brush}"
+                                                                 Text="{Binding MapsDirectory}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                            <Button Grid.Column="2" Classes="icon-button" Command="{Binding OpenMapsFolderCommand}"
+                                                    ToolTip.Tip="{l:T 'Открыть папку карт', 'Open the maps folder'}">
+                                                <controls:Icon Width="16" Height="16" Data="{StaticResource IconExternal}" />
+                                            </Button>
+                                        </Grid>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Пороги анализа -->
+                            <Border x:Name="SectionAnalysis" Classes="card" Padding="20">
+                                <StackPanel Spacing="16">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Classes="h2" Text="{l:T 'Пороги анализа', 'Analysis thresholds'}" />
+                                            <TextBlock Classes="hint" Text="{l:T 'Хранятся в settings.json в папке данных. Изменения применятся после «Анализировать заново» (F5); шаг выборки — после разбора без кеша (Shift+F5).', 'Stored in settings.json in the data folder. Changes apply after “Analyze again” (F5); the sampling step after a reparse without the cache (Shift+F5).'}" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Classes="ghost" VerticalAlignment="Top" Content="{l:T 'По умолчанию', 'Defaults'}"
+                                                Command="{Binding ResetThresholdsCommand}" />
+                                    </Grid>
+                                    <ItemsControl ItemsSource="{Binding Thresholds}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate><UniformGrid Columns="2" ColumnSpacing="10" RowSpacing="10" /></ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:ThresholdViewModel">
+                                                <Border Classes="inset" CornerRadius="11" Padding="12,8">
+                                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                                                        <StackPanel Spacing="2" VerticalAlignment="Center">
+                                                            <TextBlock FontSize="13" Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock Classes="mono subtle" FontSize="11" Text="{Binding Key}" TextTrimming="CharacterEllipsis" />
+                                                        </StackPanel>
+                                                        <NumericUpDown Grid.Column="1" Width="120" Value="{Binding Value}" Minimum="{Binding Minimum}"
+                                                                       Maximum="{Binding Maximum}" Increment="{Binding Increment}" FormatString="0" />
+                                                        <TextBlock Grid.Column="2" Classes="subtle" FontSize="12" MinWidth="34" Text="{Binding Unit}" VerticalAlignment="Center" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Обновления и приватность -->
+                            <Border x:Name="SectionUpdates" Classes="card" Padding="20">
+                                <StackPanel Spacing="14">
+                                    <TextBlock Classes="h2" Text="{l:T 'Обновления и приватность', 'Updates and privacy'}" />
+                                    <Border Classes="inset" Padding="14,10" Background="#0F1A12" BorderBrush="#1F3A26">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="12">
+                                            <controls:Icon Width="18" Height="18" Brush="{StaticResource PositiveBrush}" StrokeThickness="2" Data="{StaticResource IconCheckCircle}" />
+                                            <TextBlock Grid.Column="1" FontSize="13.5" TextWrapping="Wrap" VerticalAlignment="Center" Text="{Binding UpdateSummaryText}" />
+                                            <Button Grid.Column="2" Classes="small" Content="{l:T 'Проверить сейчас', 'Check now'}" Command="{Binding CheckUpdatesNowCommand}"
+                                                    IsEnabled="{Binding HasRepository}" />
+                                            <Button Grid.Column="3" Classes="ghost small" Foreground="{StaticResource AccentBrush}" Content="{l:T 'Страница проекта', 'Project page'}"
+                                                    Command="{Binding OpenProjectPageCommand}" IsVisible="{Binding HasRepository}" />
+                                        </Grid>
+                                    </Border>
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock FontSize="13.5" Text="{l:T 'Проверять новые версии на GitHub при запуске', 'Check GitHub for new versions on startup'}" />
+                                            <TextBlock Classes="hint" FontSize="12.5" Text="{l:T 'Один запрос при запуске; без сети всё работает как обычно. Новая версия скачивается вручную со страницы релиза.', 'One request on startup; without a network everything works as usual. New versions are downloaded manually from the release page.'}" />
+                                        </StackPanel>
+                                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding CheckForUpdates}" IsEnabled="{Binding HasRepository}" />
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock FontSize="13.5" Text="{l:T 'Отправлять анонимную статистику использования', 'Send anonymous usage statistics'}" />
+                                            <TextBlock Classes="hint" FontSize="12.5" Text="{l:T 'Только два события: запуск программы и загрузка демки (карта, из кеша или разбор, время разбора), а также версия программы, ОС и язык системы. Имена файлов, ники, SteamID и постоянный идентификатор пользователя не отправляются. Сервис — Aptabase.', 'Only two events: app start and demo load (map, cache or parse, parse time), plus the app version, OS and system language. File names, nicknames, SteamIDs and a persistent user ID are never sent. Service: Aptabase.'}" />
+                                        </StackPanel>
+                                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding SendUsageStatistics}" IsEnabled="{Binding HasAnalytics}" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Panel>
+        </DockPanel>
+    </Grid>
+
 </Window>

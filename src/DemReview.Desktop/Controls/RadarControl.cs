@@ -59,6 +59,9 @@ public sealed class RadarControl : Control
     public static readonly StyledProperty<Func<Point, Point>?> RadarToWorldProperty =
         AvaloniaProperty.Register<RadarControl, Func<Point, Point>?>(nameof(RadarToWorld));
 
+    /// <summary>Фон вокруг карты — в тон карточки радара.</summary>
+    private static readonly IBrush CanvasBrush = new SolidColorBrush(Color.FromRgb(13, 16, 21));
+
     private double _zoom = 1;
     private Vector _pan;
     private Point? _dragStart;
@@ -182,6 +185,17 @@ public sealed class RadarControl : Control
         InvalidateVisual();
     }
 
+    /// <summary>Зум кнопками «+» и «−» вокруг центра радара.</summary>
+    public void Zoom(double steps)
+    {
+        var center = new Point(Bounds.Width / 2, Bounds.Height / 2);
+        var radarBefore = ScreenToRadar(center);
+        _zoom = Math.Clamp(_zoom * Math.Pow(1.2, steps), MinZoom, MaxZoom);
+        var radarAfter = ScreenToRadar(center);
+        _pan += new Vector((radarAfter.X - radarBefore.X) * Scale, (radarAfter.Y - radarBefore.Y) * Scale);
+        InvalidateVisual();
+    }
+
     // ---------- Преобразование координат ----------
 
     /// <summary>Масштаб «пиксель радара → пиксель экрана» с учётом зума.</summary>
@@ -200,7 +214,7 @@ public sealed class RadarControl : Control
 
     public override void Render(DrawingContext context)
     {
-        context.FillRectangle(Brushes.Black, new Rect(Bounds.Size));
+        context.FillRectangle(CanvasBrush, new Rect(Bounds.Size));
         if (Bounds.Width < 1 || Bounds.Height < 1)
             return;
 
@@ -537,7 +551,8 @@ public sealed class RadarControl : Control
             : $"{radar.X:F0}, {radar.Y:F0}";
         var formatted = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
             Typeface.Default, 12, Brushes.White);
-        var rect = new Rect(8, Bounds.Height - formatted.Height - 12, formatted.Width + 12, formatted.Height + 6);
+        // Слева сверху: снизу слева — легенда радара.
+        var rect = new Rect(8, 8, formatted.Width + 12, formatted.Height + 6);
         context.FillRectangle(new SolidColorBrush(Color.FromArgb(170, 0, 0, 0)), rect);
         context.DrawText(formatted, rect.TopLeft + new Vector(6, 3));
     }

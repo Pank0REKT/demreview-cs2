@@ -86,6 +86,8 @@ public partial class SettingsViewModel
             return;
         _settings.Update(s => s with { MainPlayerName = name });
         OnPropertyChanged(nameof(MainPlayerText));
+        OnPropertyChanged(nameof(MainPlayerName));
+        OnPropertyChanged(nameof(MainPlayerInitials));
     }
 
     private void NotifyMainPlayerChanged(ulong? steamId)
@@ -93,6 +95,8 @@ public partial class SettingsViewModel
         OnPropertyChanged(nameof(MainPlayerSteamId));
         OnPropertyChanged(nameof(HasMainPlayer));
         OnPropertyChanged(nameof(MainPlayerText));
+        OnPropertyChanged(nameof(MainPlayerName));
+        OnPropertyChanged(nameof(MainPlayerInitials));
         OnPropertyChanged(nameof(ShouldPromptForMainPlayer));
         MainPlayerChanged?.Invoke(steamId);
     }

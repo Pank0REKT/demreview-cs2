@@ -14,26 +14,30 @@ often enough to be predictable. It works offline on Windows and Linux.
 
 ## What it shows
 
+- **Players.** Both teams side by side with K / D / A, the kill-death difference and a search by nickname;
+  you are marked *You*.
 - **Radar.** Every route of the player on the map background, grenades from throw to detonation (smoke and fire
-  areas), deaths, heatmaps of positions or deaths. Zoom with the wheel, pan by dragging.
+  areas), deaths, heatmaps of positions or deaths. Zoom with the wheel or the +/− buttons, pan by dragging.
 - **Round replay.** Timeline with playback (×0.5–×8): all players with view direction, nickname on hover,
   a game-style kill feed (the player's kills and death are highlighted), damage pop-ups over victims
   (dealt — yellow, taken — red), grenade damage at the explosion, and the context of the moment: players alive,
   money, buys, bomb, score.
 - **Filters.** Round, side, team buy (pistol, eco, force, full buy), grenade type.
-- **Statistics.** Each round as "conditions → decision": side, buy and score versus route, final position,
-  grenades, aggression, opening duel, damage. Frequency tables show how often each decision follows each condition.
-- **Player profile.** Role on each side with reasons, stable patterns ("On T (full buy): in 7 of 9 rounds takes
-  TSpawn → SideAlley → TopofMid"), confidence that accounts for the small sample of one demo, ADR and a
-  predictability index. One click shows a pattern's example rounds on the radar.
+- **Statistics.** Summary tiles (rounds, wins, damage per round, first contact — overall and per side) and each round
+  as "conditions → decision": side, buy and score versus route, final position, grenades, aggression, opening duel,
+  damage. Frequency tables show how often each decision follows each condition.
+- **Player profile.** Predictability index, role on each side with key metrics and reasons, a T vs CT comparison,
+  stable patterns ("On T (full buy): in 7 of 9 rounds takes TSpawn → SideAlley → TopofMid") filtered by category,
+  with confidence that accounts for the small sample of one demo. One click shows a pattern's example rounds on the radar.
 - **Export** of the profile to Markdown or JSON.
+- **Settings** right in the app, analysis thresholds included.
 - **Russian and English** interface.
 
 | Round replay | Player profile |
 |---|---|
-| ![Kill feed and damage pop-ups on the timeline](docs/images/timeline.png) | ![Roles, side summary and patterns](docs/images/profile.png) |
-
-![Conditions → actions table](docs/images/statistics.png)
+| ![Kill feed and damage pop-ups on the timeline](docs/images/timeline.png) | ![Predictability, roles, T vs CT and patterns](docs/images/profile.png) |
+| **Statistics** | **Settings** |
+| ![Summary tiles and the player situations table](docs/images/statistics.png) | ![Settings: main player, cache, analysis thresholds](docs/images/settings.png) |
 
 ## Download
 
@@ -52,23 +56,30 @@ Each release has `SHA256SUMS.txt` to verify the downloads.
 
 ## How to use
 
-1. **Open a demo:** *File → Open demo* (Ctrl+O), drag a `.dem` file onto the window, or pass the path on the
-   command line (on Windows you can use *Open with → DemReview*). Parsing runs in the background and can be
-   cancelled with Esc.
-2. **Pick a player** in the list on the left. All tabs now show this player. On the first demo DemReview offers to pick
-   yourself as the *main player*: from then on you are selected as soon as a demo opens and marked *You* in the list
-   (you can also enter your SteamID in Settings).
-3. **Radar.** Layers are toggled on the right. Select a round in the *Rounds* list (or in the round filter) to open
-   the timeline: press *Play* or drag the slider. Hover a player to see the nickname, weapon and HP.
-   The *Frequent*, *Grenades* and *Timings* lists highlight their rounds and lineups on the radar.
-4. **Statistics.** *Player situations* lists every round; *Conditions → actions* shows frequency tables;
-   *Match rounds* shows the buys of both teams.
+The window has a section bar on the far left (*Radar*, *Stats*, *Profile*, *Settings*, and the open-demo button
+at the bottom), the match and its players next to it, and the selected section on the right.
+
+1. **Open a demo:** the *Open demo* button (Ctrl+O), drag a `.dem` file onto the window, or pass the path on the
+   command line (on Windows you can use *Open with → DemReview*). Parsing runs in the background with progress at
+   the bottom of the window and can be cancelled with Esc.
+2. **Pick a player** in the player panel: teams are listed separately, and the search box finds a nickname. All sections
+   now show this player. On the first demo DemReview offers to pick yourself as the *main player*: from then on you are
+   selected as soon as a demo opens and marked *You* in the list (you can also enter your SteamID in Settings).
+3. **Radar.** Filters (side, round, buy, grenades) are above the map, layers are toggled on the right. Select a round
+   in the *Rounds* list (or in the round filter) to open the timeline: press play or drag the slider, pick the speed.
+   Hover a player to see the nickname, weapon and HP. The *Frequent*, *Grenades* and *Timings* tabs highlight their
+   rounds and lineups on the radar.
+4. **Statistics.** Tiles sum up the rounds, wins, damage and first contact; side and buy are switched right on the page.
+   *Player situations* lists every round; *Conditions → actions* shows frequency tables; *Match rounds* shows the buys
+   of both teams.
 5. **Player profile.** Patterns are shown when they happen in at least 60% of cases and in at least 3 rounds;
-   both thresholds can be changed on the tab. Watch "N of M" and the confidence dot (green — high, yellow — medium,
-   grey — low): one demo is a small sample. *Show on radar* overlays the example rounds.
-6. **Export** the profile with Ctrl+E: the format follows the file type (`.md` or `.json`), the text follows the
-   interface language.
-7. **Settings:** interface language, main player (your SteamID), the parsed demo cache (size, clearing), data and map folders, update check, usage statistics.
+   both thresholds can be changed on the page or in Settings. Watch "N of M" and the confidence dot (green — high,
+   yellow — medium, grey — low): one demo is a small sample. Category chips narrow the list; clicking a pattern
+   highlights its example rounds, *On radar* also switches to the radar.
+6. **Export** the profile with Ctrl+E or the *Export profile* button: the format follows the file type
+   (`.md` or `.json`), the text follows the interface language.
+7. **Settings:** interface language, main player (your SteamID), the parsed demo cache (fill level, clearing), data and
+   map folders, analysis thresholds, update check, usage statistics.
 
 ### Keyboard shortcuts
 
@@ -97,11 +108,12 @@ Other maps are drawn on a grid with the scale fitted to player positions. How to
 
 User data lives in `%LOCALAPPDATA%\DemReview` on Windows and `~/.local/share/DemReview` on Linux:
 
-- `settings.json` — settings and window placement;
+- `settings.json` — settings, analysis thresholds and window placement;
 - `demreview.db` — cache of parsed demos (SQLite, last 50; safe to delete or clear in *Settings*);
 - `logs/` — logs for the last 14 days.
 
-Analysis thresholds can be tuned in `settings.json`:
+Analysis thresholds are edited in *Settings → Analysis thresholds* (applied after *Analyze again*, F5; the sampling
+step after a reparse, Shift+F5) or directly in `settings.json`:
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -125,12 +137,12 @@ Analysis thresholds can be tuned in `settings.json`:
 DemReview never sends your demos, files or player data. There are two network requests, both optional; without
 a network the app works as usual:
 
-- **Update check** — the latest release on GitHub is checked at start (*Settings → Updates*). When a new version
+- **Update check** — the latest release on GitHub is checked at start (*Settings → Updates and privacy*). When a new version
   is out, a banner links to the release page; updates are installed manually by downloading the new build.
 - **Anonymous usage statistics** via [Aptabase](https://aptabase.com) — helps to see how many people use the app.
   Only two events are sent: app start and demo load (map, cache or parse, parse time), plus the app version, OS
   and system language. File names, nicknames, SteamIDs and a persistent user ID are never sent. Turn it off with
-  the checkbox in *Settings → Usage statistics*. Only release builds send statistics; builds from source have no
+  the switch in *Settings → Updates and privacy*. Only release builds send statistics; builds from source have no
   key and it is off.
 
 ## Building from source
