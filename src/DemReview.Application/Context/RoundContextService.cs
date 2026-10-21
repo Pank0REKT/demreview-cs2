@@ -25,6 +25,11 @@ public sealed class RoundContextService : IRoundContextService
             var previousSides = new Dictionary<ulong, Side>();
             foreach (var round in match.Rounds)
             {
+                // Счёт 0:0 — начало матча (в сводном матче из нескольких демок — начало очередной демки).
+                var matchStart = round.Number == 1 || round.ScoreTBefore + round.ScoreCTBefore == 0;
+                if (matchStart)
+                    previousSides.Clear();
+
                 var lineup = match.Players
                     .Select(p => (Player: p.SteamId, Side: p.SideInRound(round.Number)))
                     .Where(x => x.Side != Side.None && match.TrackOf(x.Player).InRound(round.Number).Any())
@@ -36,7 +41,7 @@ public sealed class RoundContextService : IRoundContextService
                 var known = lineup.Where(x => previousSides.ContainsKey(x.Player)).ToList();
                 var switched = known.Count(x => previousSides[x.Player] != x.Side);
                 var sidesSwitched = known.Count > 0 && switched * 2 > known.Count;
-                var isPistol = !round.IsOvertime && (round.Number == 1 || sidesSwitched);
+                var isPistol = !round.IsOvertime && (matchStart || sidesSwitched);
                 foreach (var (player, side) in lineup)
                     previousSides[player] = side;
 

@@ -51,6 +51,12 @@ public sealed record AppSettings
     /// <summary>Пользователь попросил не предлагать выбрать себя при открытии демки.</summary>
     public bool MainPlayerPromptDisabled { get; init; }
 
+    /// <summary>Папки с демками, добавленные в библиотеку: при обновлении из них разбираются новые демки.</summary>
+    public IReadOnlyList<string> DemoFolders { get; init; } = [];
+
+    /// <summary>Сохранять в библиотеку каждую открытую демку, где играет основной игрок, — из них собирается «Мой профиль».</summary>
+    public bool SaveMyDemosToLibrary { get; init; } = true;
+
     public WindowPlacement? MainWindow { get; init; }
 }
 

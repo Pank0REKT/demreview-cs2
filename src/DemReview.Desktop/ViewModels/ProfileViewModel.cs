@@ -81,14 +81,23 @@ public partial class ProfileViewModel(
 
     public bool HasProfile => Profile is not null;
 
+    /// <summary>Профиль по нескольким демкам из библиотеки.</summary>
+    public bool IsCombined => _match?.IsCombined == true;
+
+    /// <summary>Демки сводного профиля: раунды пронумерованы подряд, у каждой демки — свой диапазон.</summary>
+    public ObservableCollection<MatchPartRowViewModel> Parts { get; } = [];
+
     public string Name => Profile?.Name ?? "";
 
     public string Initials => Texts.Initials(Name);
 
     public bool IsMe => Profile is { } p && p.SteamId == settings.Current.MainPlayerSteamId;
 
-    /// <summary>«de_cache · team_Pank0 · раундов: 22 · 26 / 11 / 3».</summary>
+    /// <summary>«de_cache · team_Pank0 · раундов: 22 · 26 / 11 / 3»; для сводного профиля — «de_cache · демок: 5 · раундов: 112 · …».</summary>
     public string Subtitle => Profile is not { } p || _match?.FindPlayer(p.SteamId) is not { } player ? ""
+        : _match.IsCombined
+            ? $"{p.MapName} · {Loc.T("демок", "demos")}: {_match.Parts.Count} · {Loc.T("раундов", "rounds")}: {p.RoundsAnalyzed} · " +
+              $"{player.Kills} / {player.Deaths} / {player.Assists}"
         : $"{p.MapName} · {ProfileExporter.TeamName(player.TeamName, player.FinalSide)} · {Loc.T("раундов", "rounds")}: {p.RoundsAnalyzed} · " +
           $"{player.Kills} / {player.Deaths} / {player.Assists}";
 
@@ -140,6 +149,7 @@ public partial class ProfileViewModel(
         OnPropertyChanged(nameof(PredictabilityAngle));
         OnPropertyChanged(nameof(PredictabilityLabel));
         OnPropertyChanged(nameof(PatternCount));
+        OnPropertyChanged(nameof(IsCombined));
     }
 
     partial void OnSelectedSortChanged(FilterOption value) => FillPatterns();
@@ -191,6 +201,7 @@ public partial class ProfileViewModel(
             foreach (var role in profile.Roles)
                 RoleCards.Add(new RoleCardViewModel(role, profile.Sides.FirstOrDefault(s => s.Side == role.Side)));
             FillComparison(profile);
+            FillParts(match, id);
             FillCategories(profile);
             FillPatterns();
         }
@@ -300,6 +311,13 @@ public partial class ProfileViewModel(
         Add(Loc.T("Раундов", "Rounds"), $"{t.Rounds}", $"{ct.Rounds}", t.Rounds, ct.Rounds);
     }
 
+    private void FillParts(MatchData match, ulong steamId)
+    {
+        Parts.Clear();
+        foreach (var part in match.Parts)
+            Parts.Add(new MatchPartRowViewModel(part, match.FindPlayer(steamId)));
+    }
+
     private static string Contact(SideMetrics m) => m.MedianContactTime is { } c ? Labels.Time(c) : "—";
 
     private void Clear()
@@ -310,6 +328,7 @@ public partial class ProfileViewModel(
         Sides.Clear();
         RoleCards.Clear();
         Comparison.Clear();
+        Parts.Clear();
         StatusText = null;
     }
 
@@ -446,4 +465,26 @@ public sealed class SideSummaryRowViewModel(SideMetrics m)
     public string Grenades => $"{m.GrenadesPerRound:F1}";
     public string Style => $"{m.AggressiveShare:P0} / {m.PassiveShare:P0}";
     public string Distance => $"{m.MedianTeammateDistance:F0}";
+}
+
+/// <summary>Демка в сводном профиле: счёт со стороны игрока и диапазон раундов в общей нумерации.</summary>
+public sealed class MatchPartRowViewModel(MatchPart part, PlayerInfo? player)
+{
+    private readonly Side _side = player?.SideInRound(part.LastRound) ?? Side.None;
+
+    public string FileName => part.FileName;
+
+    public string DateText => part.PlayedUtc.ToLocalTime().ToString("d", Loc.Culture);
+
+    private int Own => _side == Side.CT ? part.Score.TeamCTScore : part.Score.TeamTScore;
+
+    private int Other => _side == Side.CT ? part.Score.TeamTScore : part.Score.TeamCTScore;
+
+    public string ScoreText => $"{Own} : {Other}";
+
+    public bool IsWin => Own > Other;
+
+    public bool IsLoss => Own < Other;
+
+    public string RoundsText => Loc.T($"раунды {part.FirstRound}–{part.LastRound}", $"rounds {part.FirstRound}–{part.LastRound}");
 }

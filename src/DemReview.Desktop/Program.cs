@@ -79,6 +79,7 @@ internal static class Program
             .AddSingleton<LanguageService>()
             .AddSingleton<ProfileViewModel>()
             .AddSingleton<SettingsViewModel>()
+            .AddSingleton<LibraryViewModel>()
             .AddSingleton<MainWindowViewModel>();
 
         // Сервис платформы уже создан для логгера — регистрируем тот же экземпляр.
