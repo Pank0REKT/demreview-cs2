@@ -610,11 +610,16 @@
                                                         <ListBox Theme="{StaticResource CardList}" ItemsSource="{Binding GrenadeThrows}" SelectedItem="{Binding SelectedThrow}">
                                                             <ListBox.ItemTemplate>
                                                                 <DataTemplate x:DataType="vm:GrenadeThrowRow">
-                                                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="2">
+                                                                    <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="2">
                                                                         <StackPanel Spacing="3">
                                                                             <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding Header}" TextWrapping="Wrap" />
                                                                             <TextBlock Classes="subtle" FontSize="12" Text="{Binding Details}" TextWrapping="Wrap" />
                                                                         </StackPanel>
+                                                                        <Button Grid.Column="3" Classes="icon-button compact" VerticalAlignment="Top"
+                                                                                Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).WatchThrowCommand}" CommandParameter="{Binding Throw}"
+                                                                                ToolTip.Tip="{l:T 'Смотреть бросок: раунд откроется на таймлайне за 2 с до броска, на паузе', 'Watch the throw: the round opens on the timeline 2 s before the throw, paused'}">
+                                                                            <controls:Icon Width="15" Height="15" Data="{StaticResource IconPlay}" />
+                                                                        </Button>
                                                                         <Button Grid.Column="1" Classes="icon-button compact" VerticalAlignment="Top"
                                                                                 Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Grenades.CopyThrowCommand}" CommandParameter="{Binding Throw}"
                                                                                 ToolTip.Tip="{l:T 'Скопировать setpos / setang — встать в точку броска на своём сервере', 'Copy setpos / setang to stand on the throw spot on your own server'}">
@@ -1225,7 +1230,12 @@
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate x:DataType="vm:GrenadeOutcomeRow">
                                                     <Border Classes="inset" Padding="12,8" Margin="0,0,0,6">
-                                                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="4">
+                                                        <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="4">
+                                                            <Button Grid.Column="3" Classes="icon-button" VerticalAlignment="Center"
+                                                                    Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).WatchThrowCommand}" CommandParameter="{Binding Throw}"
+                                                                    ToolTip.Tip="{l:T 'Смотреть на радаре: раунд откроется на таймлайне за 2 с до броска, на паузе — нажмите «Пуск» и смотрите полёт', 'Watch on the radar: the round opens on the timeline 2 s before the throw, paused; press Play to watch the flight'}">
+                                                                <controls:Icon Width="16" Height="16" Data="{StaticResource IconPlay}" />
+                                                            </Button>
                                                             <StackPanel Spacing="3" VerticalAlignment="Center">
                                                                 <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding Header}" />
                                                                 <TextBlock FontSize="12" Foreground="{StaticResource Text2Brush}" Text="{Binding RouteText}" TextWrapping="Wrap" />

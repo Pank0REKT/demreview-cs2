@@ -120,6 +120,13 @@ public partial class TimelineViewModel : ViewModelBase
         _timer.Start();
     }
 
+    /// <summary>Перемотать на тик раунда (с ограничением границами раунда) и остановить воспроизведение.</summary>
+    public void Seek(int tick)
+    {
+        Pause();
+        CurrentTick = Math.Clamp(tick, MinTick, MaxTick);
+    }
+
     public void Pause()
     {
         _timer.Stop();

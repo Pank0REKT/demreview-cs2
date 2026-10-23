@@ -149,6 +149,22 @@ public partial class MainWindowViewModel(
     [RelayCommand]
     private void SelectTab(string index) => SelectedTabIndex = int.Parse(index, System.Globalization.CultureInfo.InvariantCulture);
 
+    /// <summary>
+    /// «Смотреть бросок»: радар с раундом броска на таймлайне, перемотанным незадолго до броска, на паузе.
+    /// Если фильтр скрывает бросок (другой раунд, сторона, закупка, тип гранаты), он сбрасывается.
+    /// </summary>
+    [RelayCommand]
+    private void WatchThrow(GrenadeThrow? grenade)
+    {
+        if (grenade is null)
+            return;
+        if (!Radar.Shows(grenade))
+            Filter.ResetCommand.Execute(null);
+        SelectedTabIndex = 0;
+        if (!Radar.WatchThrow(grenade))
+            StatusText = Loc.T($"Не удалось открыть раунд {grenade.Round} на таймлайне.", $"Could not open round {grenade.Round} on the timeline.");
+    }
+
     [RelayCommand]
     private void SelectPlayer(PlayerRowViewModel? row)
     {

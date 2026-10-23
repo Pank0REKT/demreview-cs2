@@ -466,7 +466,8 @@ public partial class RadarViewModel : ViewModelBase
                     landed,
                     (g.Type == GrenadeType.Smoke ? SmokeRadius : FireRadius) / map.Scale,
                     Palette.Grenade(g.Type),
-                    landed is null ? null : GrenadeDamageLabel(grenadeDamage?.GetValueOrDefault(g.Id), tick));
+                    landed is null ? null : GrenadeDamageLabel(grenadeDamage?.GetValueOrDefault(g.Id), tick),
+                    timelineRound is null ? null : FlyingAt(g, tick));
             })
             .ToList();
 
@@ -510,6 +511,49 @@ public partial class RadarViewModel : ViewModelBase
         if (team > 0)
             text += (text.Length > 0 ? " · " : "") + Loc.T($"своим −{team}", $"team −{team}");
         return text;
+    }
+
+    /// <summary>
+    /// Где летящая граната в этот тик. Траектория в демке не записывается — известны только точка вылета и детонации,
+    /// поэтому позиция интерполируется по прямой (сверху полёт без отскоков почти прямой).
+    /// </summary>
+    private Point? FlyingAt(GrenadeThrow g, int tick)
+    {
+        if (g.DetonateTick is not { } detonate || g.DetonatePosition is not { } land || tick < g.ThrowTick || tick >= detonate)
+            return null;
+        var t = (tick - g.ThrowTick) / (float)Math.Max(1, detonate - g.ThrowTick);
+        return ToRadar(Vector3.Lerp(g.ProjectileStart, land, t));
+    }
+
+    /// <summary>Сколько секунд до броска начинается просмотр броска на таймлайне.</summary>
+    private const float WatchLeadSeconds = 2;
+
+    /// <summary>Подходит ли бросок под текущий фильтр (иначе на радаре его не будет видно).</summary>
+    public bool Shows(GrenadeThrow g) => (_filter.Round is null || _filter.Round == g.Round) && IncludesGrenade(g);
+
+    /// <summary>
+    /// Открыть раунд броска на таймлайне за пару секунд до броска, на паузе, с выделенной гранатой —
+    /// чтобы запустить воспроизведение и посмотреть полёт. false — раунд открыть не удалось.
+    /// </summary>
+    public bool WatchThrow(GrenadeThrow g)
+    {
+        if (_match is not { } match || _steamId is null)
+            return false;
+
+        ClearFocus();
+        if (_filter.Round is null)
+        {
+            if (RoundRows.FirstOrDefault(r => r.Round == g.Round) is not { } row)
+                return false;
+            SelectedRound = row;
+        }
+        if (Timeline.Round?.Number != g.Round)
+            return false;
+
+        HighlightedRounds = new HashSet<int> { g.Round };
+        HighlightedGrenades = new HashSet<int> { g.Id };
+        Timeline.Seek(g.ThrowTick - (int)(WatchLeadSeconds * match.TickRate));
+        return true;
     }
 
     /// <summary>В режиме таймлайна дым исчезает через ~18 с, огонь — через ~7 с.</summary>
