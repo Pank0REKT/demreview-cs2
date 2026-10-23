@@ -931,6 +931,9 @@ public sealed class GrenadeClusterRow(GrenadeCluster cluster, IReadOnlyDictionar
 {
     public GrenadeCluster Cluster { get; } = cluster;
 
+    /// <summary>Бросок, ближе всех к средней точке раскидки, — его сохраняют в библиотеку и копируют setpos.</summary>
+    public GrenadeThrow Representative { get; } = cluster.Throws.MinBy(t => Vector3.DistanceSquared(t.ThrowerPosition, cluster.ThrowPoint))!;
+
     public string Header =>
         $"{Texts.GrenadeName(Cluster.Type)} ×{Cluster.Throws.Count} · {Texts.SideShort(Cluster.Side)} · ~{Texts.Time(Cluster.MedianThrowTime)}";
 

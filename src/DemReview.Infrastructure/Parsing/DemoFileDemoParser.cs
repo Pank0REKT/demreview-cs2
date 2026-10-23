@@ -177,7 +177,7 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
 
             var eye = pawn.EyeAngles;
             var id = builder.ThrowGrenade(type, KeyOf(controller), Tick(), ToVector(pawn.Origin), eye.Pitch, eye.Yaw,
-                pawn.LastPlaceName ?? "", ToVector(projectile.InitialPosition));
+                pawn.LastPlaceName ?? "", ToVector(projectile.InitialPosition), MovementOf(pawn), HorizontalSpeed(pawn));
             var entity = (int)projectile.EntityIndex.Value;
             if (id is { } grenadeId)
                 byEntity[entity] = grenadeId;
@@ -340,8 +340,7 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
         };
     }
 
-    private static PlayerSample CreateSample(CCSPlayerController controller, CCSPlayerPawn pawn, int tick, int round,
-        float timeInRound, Func<string, string> intern)
+    private static MovementFlags MovementOf(CCSPlayerPawn pawn)
     {
         var flags = MovementFlags.None;
         if (pawn.MovementServices is { } movement && (movement.Ducked || movement.Ducking))
@@ -352,8 +351,18 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
             flags |= MovementFlags.Walking;
         if (pawn.IsScoped)
             flags |= MovementFlags.Scoped;
+        return flags;
+    }
 
+    private static float HorizontalSpeed(CCSPlayerPawn pawn)
+    {
         var velocity = pawn.Velocity;
+        return MathF.Sqrt(velocity.X * velocity.X + velocity.Y * velocity.Y);
+    }
+
+    private static PlayerSample CreateSample(CCSPlayerController controller, CCSPlayerPawn pawn, int tick, int round,
+        float timeInRound, Func<string, string> intern)
+    {
         var eye = pawn.EyeAngles;
 
         return new PlayerSample(
@@ -363,8 +372,8 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
             ToVector(pawn.Origin),
             eye.Pitch,
             eye.Yaw,
-            MathF.Sqrt(velocity.X * velocity.X + velocity.Y * velocity.Y),
-            flags,
+            HorizontalSpeed(pawn),
+            MovementOf(pawn),
             intern(WeaponName(pawn.ActiveWeapon)),
             (short)Math.Clamp(pawn.Health, 0, short.MaxValue),
             (short)Math.Clamp(pawn.ArmorValue, 0, short.MaxValue),

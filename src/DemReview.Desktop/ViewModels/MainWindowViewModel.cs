@@ -20,6 +20,7 @@ public partial class MainWindowViewModel(
     IUiDispatcher dispatcher,
     StartupOptions startup,
     RadarViewModel radar,
+    GrenadesViewModel grenades,
     StatisticsViewModel statistics,
     ProfileViewModel profile,
     SettingsViewModel settings,
@@ -60,6 +61,8 @@ public partial class MainWindowViewModel(
 
     public RadarViewModel Radar { get; } = radar;
 
+    public GrenadesViewModel Grenades { get; } = grenades;
+
     public StatisticsViewModel Statistics { get; } = statistics;
 
     public FilterViewModel Filter { get; } = CreateFilter(radar, statistics, logger);
@@ -70,7 +73,7 @@ public partial class MainWindowViewModel(
 
     public LibraryViewModel Library { get; } = library;
 
-    /// <summary>Вкладка центральной области: 0 — радар, 1 — статистика, 2 — профиль, 3 — библиотека, 4 — настройки.</summary>
+    /// <summary>Вкладка центральной области: 0 — радар, 1 — статистика, 2 — профиль, 3 — гранаты, 4 — библиотека, 5 — настройки.</summary>
     [ObservableProperty]
     public partial int SelectedTabIndex { get; set; }
 
@@ -135,6 +138,8 @@ public partial class MainWindowViewModel(
     public bool IsStatisticsTab => SelectedTabIndex == 1;
 
     public bool IsProfileTab => SelectedTabIndex == 2;
+
+    public bool IsGrenadesTab => SelectedTabIndex == GrenadesTabIndex;
 
     public bool IsLibraryTab => SelectedTabIndex == LibraryTabIndex;
 
@@ -225,6 +230,7 @@ public partial class MainWindowViewModel(
     {
         try
         {
+            Grenades.ShowPlayer(steamId);
             await Task.WhenAll(Radar.ShowPlayerAsync(steamId), Statistics.ShowPlayerAsync(steamId), Profile.ShowPlayerAsync(steamId));
         }
         catch (Exception ex)
@@ -249,6 +255,8 @@ public partial class MainWindowViewModel(
         Library.CombinedReady += ShowCombined;
         Library.OpenDemoRequested += entry => _ = OpenLibraryDemoAsync(entry);
         _ = Library.InitializeAsync();
+        Grenades.Notice += text => StatusText = text;
+        _ = Grenades.InitializeAsync();
         _ = Settings.CheckOnStartupAsync();
         analytics.Track(AnalyticsEvents.AppStarted, new Dictionary<string, object> { ["language"] = Loc.Language.ToString() });
         return startup.DemoPath is { } path ? LoadFileAsync(path) : Task.CompletedTask;
@@ -347,6 +355,7 @@ public partial class MainWindowViewModel(
         OnPropertyChanged(nameof(IsRadarTab));
         OnPropertyChanged(nameof(IsStatisticsTab));
         OnPropertyChanged(nameof(IsProfileTab));
+        OnPropertyChanged(nameof(IsGrenadesTab));
         OnPropertyChanged(nameof(IsLibraryTab));
         OnPropertyChanged(nameof(IsSettingsTab));
         if (value == SettingsTabIndex)
@@ -355,9 +364,11 @@ public partial class MainWindowViewModel(
 
     public const int ProfileTabIndex = 2;
 
-    public const int LibraryTabIndex = 3;
+    public const int GrenadesTabIndex = 3;
 
-    public const int SettingsTabIndex = 4;
+    public const int LibraryTabIndex = 4;
+
+    public const int SettingsTabIndex = 5;
 
     [RelayCommand]
     private void OpenSettings() => SelectedTabIndex = SettingsTabIndex;
@@ -368,6 +379,7 @@ public partial class MainWindowViewModel(
         ErrorMessage = null;
         Settings.RefreshLanguage();
         Library.RefreshLanguage();
+        Grenades.RefreshLanguage();
         if (IsBusy)
             return;
 
@@ -432,6 +444,7 @@ public partial class MainWindowViewModel(
         Statistics.SetMatch(match);
         Filter.SetMatch(match);
         Profile.SetMatch(match);
+        _ = SetGrenadesMatchAsync(match);
 
         var mainSteamId = Settings.MainPlayerSteamId;
         Players.Clear();
@@ -451,6 +464,19 @@ public partial class MainWindowViewModel(
             MainPlayerCandidates.Add(player);
         IsMainPlayerPromptVisible = Settings.ShouldPromptForMainPlayer && !match.IsCombined && path != _mainPlayerPromptSkippedPath &&
                                     MainPlayerCandidates.Count > 0;
+    }
+
+    private async Task SetGrenadesMatchAsync(MatchData match)
+    {
+        try
+        {
+            await Grenades.SetMatchAsync(match);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Ошибка анализа гранат");
+            ErrorMessage = Loc.T($"Ошибка анализа гранат: {ex.Message}", $"Grenade analysis failed: {ex.Message}");
+        }
     }
 
     /// <summary>В скольких демках сводного матча играл игрок — в списке остаются те, кто встречается хотя бы в двух.</summary>
