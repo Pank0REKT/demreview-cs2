@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using DemReview.Application.Localization;
@@ -32,6 +33,24 @@ public sealed class UiProgress<T>(IUiDispatcher dispatcher, Action<T> handler) :
 public sealed class MainWindowAccessor
 {
     public Window? Window { get; set; }
+}
+
+/// <summary>Буфер обмена — для команд консоли CS2.</summary>
+public interface IClipboardService
+{
+    /// <returns>false — буфер обмена недоступен.</returns>
+    Task<bool> SetTextAsync(string text);
+}
+
+public sealed class AvaloniaClipboardService(MainWindowAccessor windowAccessor) : IClipboardService
+{
+    public async Task<bool> SetTextAsync(string text)
+    {
+        if (windowAccessor.Window?.Clipboard is not { } clipboard)
+            return false;
+        await clipboard.SetTextAsync(text);
+        return true;
+    }
 }
 
 public interface IFileDialogService

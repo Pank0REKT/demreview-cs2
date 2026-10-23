@@ -40,4 +40,10 @@ public sealed record GrenadeThrow(
     IReadOnlyList<FlashVictim> FlashVictims)
 {
     public bool Detonated => DetonatePosition.HasValue;
+
+    /// <summary>Как стоял бросивший (присед, в прыжке, шагом); null — демка разобрана версией без этих данных.</summary>
+    public MovementFlags? ThrowerMovement { get; init; }
+
+    /// <summary>Горизонтальная скорость бросившего в момент броска, units/s; null — нет данных.</summary>
+    public float? ThrowerSpeed { get; init; }
 }

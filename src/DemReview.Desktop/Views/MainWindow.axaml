@@ -92,14 +92,21 @@
                             <TextBlock Text="{l:T 'Профиль', 'Profile'}" />
                         </StackPanel>
                     </Button>
-                    <Button Classes="nav" Classes.active="{Binding IsLibraryTab}" Command="{Binding SelectTabCommand}" CommandParameter="3"
+                    <Button Classes="nav" Classes.active="{Binding IsGrenadesTab}" Command="{Binding SelectTabCommand}" CommandParameter="3"
+                            ToolTip.Tip="{l:T 'Эффективность гранат и библиотека раскидок', 'Grenade effectiveness and the lineup library'}">
+                        <StackPanel Spacing="4">
+                            <controls:Icon Width="22" Height="22" HorizontalAlignment="Center" Data="{StaticResource IconGrenade}" />
+                            <TextBlock Text="{l:T 'Гранаты', 'Grenades'}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav" Classes.active="{Binding IsLibraryTab}" Command="{Binding SelectTabCommand}" CommandParameter="4"
                             ToolTip.Tip="{l:T 'Библиотека демок и сводный профиль по нескольким матчам', 'Demo library and the combined profile across matches'}">
                         <StackPanel Spacing="4">
                             <controls:Icon Width="22" Height="22" HorizontalAlignment="Center" Data="{StaticResource IconLibrary}" />
                             <TextBlock Text="{l:T 'Библиотека', 'Library'}" />
                         </StackPanel>
                     </Button>
-                    <Button Classes="nav" Classes.active="{Binding IsSettingsTab}" Command="{Binding SelectTabCommand}" CommandParameter="4">
+                    <Button Classes="nav" Classes.active="{Binding IsSettingsTab}" Command="{Binding SelectTabCommand}" CommandParameter="5">
                         <StackPanel Spacing="4">
                             <controls:Icon Width="22" Height="22" HorizontalAlignment="Center" Data="{StaticResource IconSettings}" />
                             <TextBlock Text="{l:T 'Настройки', 'Settings'}" />
@@ -577,11 +584,23 @@
                                                             <ListBox Theme="{StaticResource CardList}" ItemsSource="{Binding GrenadeClusters}" SelectedItem="{Binding SelectedCluster}">
                                                                 <ListBox.ItemTemplate>
                                                                     <DataTemplate x:DataType="vm:GrenadeClusterRow">
-                                                                        <StackPanel Spacing="3">
-                                                                            <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding Header}" TextWrapping="Wrap" />
-                                                                            <TextBlock FontSize="12" Foreground="{StaticResource Text2Brush}" Text="{Binding RouteText}" TextWrapping="Wrap" />
-                                                                            <TextBlock Classes="subtle mono" FontSize="11.5" Text="{Binding RoundsText}" />
-                                                                        </StackPanel>
+                                                                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="2">
+                                                                            <StackPanel Spacing="3">
+                                                                                <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding Header}" TextWrapping="Wrap" />
+                                                                                <TextBlock FontSize="12" Foreground="{StaticResource Text2Brush}" Text="{Binding RouteText}" TextWrapping="Wrap" />
+                                                                                <TextBlock Classes="subtle mono" FontSize="11.5" Text="{Binding RoundsText}" />
+                                                                            </StackPanel>
+                                                                            <Button Grid.Column="1" Classes="icon-button compact" VerticalAlignment="Top"
+                                                                                    Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Grenades.CopyThrowCommand}" CommandParameter="{Binding Representative}"
+                                                                                    ToolTip.Tip="{l:T 'Скопировать setpos / setang — встать в точку броска на своём сервере', 'Copy setpos / setang to stand on the throw spot on your own server'}">
+                                                                                <controls:Icon Width="15" Height="15" Data="{StaticResource IconCopy}" />
+                                                                            </Button>
+                                                                            <Button Grid.Column="2" Classes="icon-button compact" VerticalAlignment="Top"
+                                                                                    Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Grenades.SaveThrowCommand}" CommandParameter="{Binding Representative}"
+                                                                                    ToolTip.Tip="{l:T 'Сохранить в библиотеку раскидок', 'Save to the lineup library'}">
+                                                                                <controls:Icon Width="15" Height="15" Data="{StaticResource IconBookmark}" />
+                                                                            </Button>
+                                                                        </Grid>
                                                                     </DataTemplate>
                                                                 </ListBox.ItemTemplate>
                                                             </ListBox>
@@ -591,10 +610,27 @@
                                                         <ListBox Theme="{StaticResource CardList}" ItemsSource="{Binding GrenadeThrows}" SelectedItem="{Binding SelectedThrow}">
                                                             <ListBox.ItemTemplate>
                                                                 <DataTemplate x:DataType="vm:GrenadeThrowRow">
-                                                                    <StackPanel Spacing="3">
-                                                                        <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding Header}" TextWrapping="Wrap" />
-                                                                        <TextBlock Classes="subtle" FontSize="12" Text="{Binding Details}" TextWrapping="Wrap" />
-                                                                    </StackPanel>
+                                                                    <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="2">
+                                                                        <StackPanel Spacing="3">
+                                                                            <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding Header}" TextWrapping="Wrap" />
+                                                                            <TextBlock Classes="subtle" FontSize="12" Text="{Binding Details}" TextWrapping="Wrap" />
+                                                                        </StackPanel>
+                                                                        <Button Grid.Column="3" Classes="icon-button compact" VerticalAlignment="Top"
+                                                                                Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).WatchThrowCommand}" CommandParameter="{Binding Throw}"
+                                                                                ToolTip.Tip="{l:T 'Смотреть бросок: раунд откроется на таймлайне за 2 с до броска, на паузе', 'Watch the throw: the round opens on the timeline 2 s before the throw, paused'}">
+                                                                            <controls:Icon Width="15" Height="15" Data="{StaticResource IconPlay}" />
+                                                                        </Button>
+                                                                        <Button Grid.Column="1" Classes="icon-button compact" VerticalAlignment="Top"
+                                                                                Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Grenades.CopyThrowCommand}" CommandParameter="{Binding Throw}"
+                                                                                ToolTip.Tip="{l:T 'Скопировать setpos / setang — встать в точку броска на своём сервере', 'Copy setpos / setang to stand on the throw spot on your own server'}">
+                                                                            <controls:Icon Width="15" Height="15" Data="{StaticResource IconCopy}" />
+                                                                        </Button>
+                                                                        <Button Grid.Column="2" Classes="icon-button compact" VerticalAlignment="Top"
+                                                                                Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Grenades.SaveThrowCommand}" CommandParameter="{Binding Throw}"
+                                                                                ToolTip.Tip="{l:T 'Сохранить в библиотеку раскидок', 'Save to the lineup library'}">
+                                                                            <controls:Icon Width="15" Height="15" Data="{StaticResource IconBookmark}" />
+                                                                        </Button>
+                                                                    </Grid>
                                                                 </DataTemplate>
                                                             </ListBox.ItemTemplate>
                                                         </ListBox>
@@ -1087,6 +1123,209 @@
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
+
+                <!-- ===== Гранаты: эффективность и библиотека раскидок ===== -->
+                <DockPanel IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsGrenadesTab}" DataContext="{Binding Grenades}" x:DataType="vm:GrenadesViewModel">
+                    <StackPanel DockPanel.Dock="Top" Margin="24,20,24,16">
+                        <TextBlock Classes="h1" Text="{l:T 'Гранаты', 'Grenades'}" />
+                        <TextBlock Classes="subtle" FontSize="13" Margin="0,2,0,0">
+                            <Run Text="{Binding PlayerName}" />
+                            <Run Text="{l:T '· какие гранаты принесли пользу, и лучшие раскидки', '· which grenades paid off, and the best lineups'}" />
+                        </TextBlock>
+                    </StackPanel>
+
+                    <ScrollViewer>
+                        <Grid ColumnDefinitions="*,14,400" Margin="24,0,24,32">
+                            <StackPanel Spacing="14">
+                                <Border Classes="card" Padding="24" IsVisible="{Binding !HasPlayer}">
+                                    <StackPanel Spacing="8" MaxWidth="640" HorizontalAlignment="Left">
+                                        <TextBlock Classes="h2" Text="{l:T 'Эффективность гранат', 'Grenade effectiveness'}" />
+                                        <TextBlock Classes="hint"
+                                                   Text="{l:T 'Откройте демку и выберите игрока слева: здесь появится, сколько урона нанесли его HE и молотовы, скольких противников ослепила каждая флешка — и скольких своих.', 'Open a demo and pick a player on the left: you will see how much damage their HEs and molotovs dealt, how many enemies each flash blinded, and how many teammates.'}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Плитки выбранного игрока -->
+                                <ItemsControl ItemsSource="{Binding Tiles}" IsVisible="{Binding HasPlayer}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><UniformGrid Rows="1" ColumnSpacing="12" /></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:GrenadeTile">
+                                            <Border Classes="card" CornerRadius="14" Padding="16,14">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock Classes="subtle" FontSize="12" Text="{Binding Label}" />
+                                                    <TextBlock Classes="mono" FontSize="26" FontWeight="SemiBold" Text="{Binding Value}" Classes.negative="{Binding IsWarning}" />
+                                                    <TextBlock Classes="subtle" FontSize="12" Text="{Binding Detail}" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Все игроки матча -->
+                                <Border Classes="card" Padding="18" IsVisible="{Binding !!PlayerRows.Count}">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Classes="caption" Text="{l:T 'ВСЕ ИГРОКИ МАТЧА', 'ALL PLAYERS OF THE MATCH'}" />
+                                            <TextBlock Classes="hint" FontSize="12.5" TextWrapping="Wrap"
+                                                       Text="{l:T 'HE и огонь — урон по противникам / брошено, флешки — ослеплено противников / брошено. «Убито ослепл.» — ослеплённые флешками игрока противники, которых убила его команда, пока они не видели.', 'HE and fire: damage to enemies / thrown; flashes: enemies blinded / thrown. Flash kills: enemies blinded by the player’s flashes and killed by the team while still blind.'}" />
+                                        </StackPanel>
+                                        <DataGrid ItemsSource="{Binding PlayerRows}" IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True" RowHeight="36"
+                                                  Classes="striped">
+                                            <DataGrid.Columns>
+                                                <DataGridTemplateColumn Header="{l:T 'Игрок', 'Player'}" Width="*" SortMemberPath="Name">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate x:DataType="vm:PlayerGrenadeRow">
+                                                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="8,0,0,0" VerticalAlignment="Center">
+                                                                <Border Classes="avatar" Classes.t="{Binding IsT}" Width="22" Height="22" CornerRadius="11">
+                                                                    <TextBlock Text="{Binding Initials}" FontSize="9" />
+                                                                </Border>
+                                                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="160"
+                                                                           FontWeight="{Binding NameWeight}" />
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTextColumn Header="HE" Binding="{Binding HeText}" SortMemberPath="HeDamage" x:DataType="vm:PlayerGrenadeRow" FontFamily="{StaticResource MonoFont}" />
+                                                <DataGridTextColumn Header="{l:T 'Огонь', 'Fire'}" Binding="{Binding FireText}" SortMemberPath="FireDamage" x:DataType="vm:PlayerGrenadeRow" FontFamily="{StaticResource MonoFont}" />
+                                                <DataGridTextColumn Header="{l:T 'Флешки', 'Flashes'}" Binding="{Binding FlashText}" SortMemberPath="EnemiesBlinded" x:DataType="vm:PlayerGrenadeRow" FontFamily="{StaticResource MonoFont}" />
+                                                <DataGridTextColumn Header="{l:T 'Слепота, с', 'Blind, s'}" Binding="{Binding BlindSecondsText}" x:DataType="vm:PlayerGrenadeRow" FontFamily="{StaticResource MonoFont}" />
+                                                <DataGridTextColumn Header="{l:T 'Убито ослепл.', 'Flash kills'}" Binding="{Binding FlashKills}" x:DataType="vm:PlayerGrenadeRow" FontFamily="{StaticResource MonoFont}" />
+                                                <DataGridTemplateColumn Header="{l:T 'Своих ослепил', 'Team flashed'}" SortMemberPath="TeammatesBlinded">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate x:DataType="vm:PlayerGrenadeRow">
+                                                            <TextBlock Classes="mono" Margin="12,0" VerticalAlignment="Center" Text="{Binding TeammatesBlinded}" Classes.negative="{Binding HasTeammatesBlinded}" />
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Header="{l:T 'Урон своим', 'Team dmg'}" SortMemberPath="TeamDamage">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate x:DataType="vm:PlayerGrenadeRow">
+                                                            <TextBlock Classes="mono" Margin="12,0" VerticalAlignment="Center" Text="{Binding TeamDamage}" Classes.negative="{Binding HasTeamDamage}" />
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTextColumn Header="{l:T 'Дым', 'Smokes'}" Binding="{Binding Smokes}" x:DataType="vm:PlayerGrenadeRow" FontFamily="{StaticResource MonoFont}" />
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Броски выбранного игрока -->
+                                <Border Classes="card" Padding="18" IsVisible="{Binding HasPlayer}">
+                                    <StackPanel Spacing="12">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                            <StackPanel Spacing="4" VerticalAlignment="Center">
+                                                <TextBlock Classes="caption" Text="{l:T 'БРОСКИ ИГРОКА', 'PLAYER THROWS'}" />
+                                                <TextBlock Classes="hint" FontSize="12.5" TextWrapping="Wrap"
+                                                           Text="{l:T 'Понравившийся бросок сохраните в библиотеку раскидок или сразу скопируйте команды setpos / setang.', 'Save a throw you like to the lineup library, or copy its setpos / setang commands right away.'}" />
+                                            </StackPanel>
+                                            <ListBox Grid.Column="1" Theme="{StaticResource ChipList}" ItemsSource="{Binding TypeFilters}" SelectedItem="{Binding SelectedTypeFilter}"
+                                                     ItemTemplate="{StaticResource OptionTemplate}" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <TextBlock Classes="subtle" FontSize="12.5" IsVisible="{Binding !HasPlayerThrows}"
+                                                   Text="{l:T 'Бросков нет.', 'No throws.'}" />
+                                        <ItemsControl ItemsSource="{Binding ThrowRows}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:GrenadeOutcomeRow">
+                                                    <Border Classes="inset" Padding="12,8" Margin="0,0,0,6">
+                                                        <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="4">
+                                                            <Button Grid.Column="3" Classes="icon-button" VerticalAlignment="Center"
+                                                                    Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).WatchThrowCommand}" CommandParameter="{Binding Throw}"
+                                                                    ToolTip.Tip="{l:T 'Смотреть на радаре: раунд откроется на таймлайне за 2 с до броска, на паузе — нажмите «Пуск» и смотрите полёт', 'Watch on the radar: the round opens on the timeline 2 s before the throw, paused; press Play to watch the flight'}">
+                                                                <controls:Icon Width="16" Height="16" Data="{StaticResource IconPlay}" />
+                                                            </Button>
+                                                            <StackPanel Spacing="3" VerticalAlignment="Center">
+                                                                <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding Header}" />
+                                                                <TextBlock FontSize="12" Foreground="{StaticResource Text2Brush}" Text="{Binding RouteText}" TextWrapping="Wrap" />
+                                                                <TextBlock FontSize="12" Classes="subtle" Text="{Binding OutcomeText}" TextWrapping="Wrap" IsVisible="{Binding HasOutcome}"
+                                                                           Classes.positive="{Binding PaidOff}" Classes.negative="{Binding HurtTeam}" />
+                                                            </StackPanel>
+                                                            <Button Grid.Column="1" Classes="icon-button" VerticalAlignment="Center"
+                                                                    Command="{Binding $parent[ItemsControl].((vm:GrenadesViewModel)DataContext).CopyThrowCommand}" CommandParameter="{Binding Throw}"
+                                                                    ToolTip.Tip="{l:T 'Скопировать setpos / setang', 'Copy setpos / setang'}">
+                                                                <controls:Icon Width="16" Height="16" Data="{StaticResource IconCopy}" />
+                                                            </Button>
+                                                            <Button Grid.Column="2" Classes="icon-button" VerticalAlignment="Center"
+                                                                    Command="{Binding $parent[ItemsControl].((vm:GrenadesViewModel)DataContext).SaveThrowCommand}" CommandParameter="{Binding Throw}"
+                                                                    ToolTip.Tip="{l:T 'Сохранить в библиотеку раскидок', 'Save to the lineup library'}">
+                                                                <controls:Icon Width="16" Height="16" Data="{StaticResource IconBookmark}" />
+                                                            </Button>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Библиотека раскидок -->
+                            <Border Grid.Column="2" Classes="card" Padding="18" VerticalAlignment="Top">
+                                <StackPanel Spacing="12">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="caption" Text="{l:T 'БИБЛИОТЕКА РАСКИДОК', 'LINEUP LIBRARY'}" />
+                                        <TextBlock Classes="hint" FontSize="12.5" TextWrapping="Wrap"
+                                                   Text="{l:T 'Кнопка копирования кладёт в буфер setpos и setang. На своём сервере с sv_cheats 1 вставьте их в консоль — окажетесь в точке броска и с тем же прицелом.', 'The copy button puts setpos and setang on the clipboard. Paste them into the console on your own server with sv_cheats 1 and you stand on the throw spot with the same aim.'}" />
+                                    </StackPanel>
+
+                                    <StackPanel Spacing="8" IsVisible="{Binding HasLineups}">
+                                        <ListBox Theme="{StaticResource ChipList}" ItemsSource="{Binding LineupMaps}" SelectedItem="{Binding SelectedLineupMap}"
+                                                 ItemTemplate="{StaticResource OptionTemplate}" />
+                                        <ListBox Theme="{StaticResource ChipList}" ItemsSource="{Binding TypeFilters}" SelectedItem="{Binding SelectedLineupType}"
+                                                 ItemTemplate="{StaticResource OptionTemplate}" />
+                                        <TextBlock Classes="subtle" FontSize="12" Text="{Binding LineupSummary}" />
+                                    </StackPanel>
+
+                                    <TextBlock Classes="hint" FontSize="12.5" TextWrapping="Wrap" IsVisible="{Binding HasNoLineups}"
+                                               Text="{l:T 'Раскидок пока нет. Сохраните бросок кнопкой с закладкой — здесь, в списке бросков игрока, или на радаре во вкладке «Гранаты».', 'No lineups yet. Save a throw with the bookmark button, here in the player throws or on the radar in the Grenades tab.'}" />
+
+                                    <ItemsControl ItemsSource="{Binding Lineups}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:LineupRowViewModel">
+                                                <Border Classes="inset" Padding="12,10" Margin="0,0,0,8">
+                                                    <StackPanel Spacing="6">
+                                                        <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="6">
+                                                            <Border Classes="badge neutral"><TextBlock Text="{Binding TypeText}" /></Border>
+                                                            <Border Grid.Column="1" Classes="badge" Classes.t="{Binding IsT}" Classes.ct="{Binding !IsT}">
+                                                                <TextBlock Text="{Binding SideText}" />
+                                                            </Border>
+                                                            <TextBlock Grid.Column="2" Classes="subtle mono" FontSize="11.5" Text="{Binding MapName}" VerticalAlignment="Center" />
+                                                            <Button Grid.Column="3" Classes="icon-button compact"
+                                                                    Command="{Binding $parent[ItemsControl].((vm:GrenadesViewModel)DataContext).RemoveLineupCommand}" CommandParameter="{Binding}"
+                                                                    ToolTip.Tip="{l:T 'Удалить раскидку', 'Remove the lineup'}">
+                                                                <controls:Icon Width="15" Height="15" Data="{StaticResource IconTrash}" />
+                                                            </Button>
+                                                        </Grid>
+                                                        <TextBox FontSize="13.5" FontWeight="SemiBold" MinHeight="32" Text="{Binding Title, UpdateSourceTrigger=LostFocus}"
+                                                                 ToolTip.Tip="{l:T 'Название можно изменить', 'You can rename it'}" />
+                                                        <TextBlock FontSize="12" Foreground="{StaticResource Text2Brush}" Text="{Binding RouteText}" TextWrapping="Wrap" />
+                                                        <TextBlock Classes="subtle" FontSize="11.5" Text="{Binding SourceText}" TextWrapping="Wrap" />
+                                                        <TextBlock Classes="hint" FontSize="11.5" TextWrapping="Wrap" IsVisible="{Binding IsJumpThrow}"
+                                                                   Text="{l:T 'Бросок в прыжке: setpos поставит вас в воздух, после приземления вы окажетесь там, откуда прыгали.', 'Jump throw: setpos puts you in the air; after landing you stand where the jump started.'}" />
+                                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                                            <SelectableTextBlock Classes="mono subtle" FontSize="11" Text="{Binding Command}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                                            <Button Grid.Column="1" Classes="small accent"
+                                                                    Command="{Binding $parent[ItemsControl].((vm:GrenadesViewModel)DataContext).CopyLineupCommand}" CommandParameter="{Binding}">
+                                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                    <controls:Icon Width="14" Height="14" StrokeThickness="2" Data="{StaticResource IconCopy}" />
+                                                                    <TextBlock Text="{l:T 'Копировать', 'Copy'}" VerticalAlignment="Center" />
+                                                                </StackPanel>
+                                                            </Button>
+                                                        </Grid>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <SelectableTextBlock Classes="subtle mono" FontSize="11" Text="{Binding LibraryPath}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </ScrollViewer>
+                </DockPanel>
 
                 <!-- ===== Библиотека и сводный профиль ===== -->
                 <DockPanel IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsLibraryTab}" DataContext="{Binding Library}" x:DataType="vm:LibraryViewModel">

@@ -29,8 +29,10 @@ public enum RadarGrenadeKind { HighExplosive, Flash, Smoke, Fire, Decoy }
 /// <summary>Граната для отрисовки: точка броска и детонации в пикселях радара.</summary>
 /// <param name="EffectRadius">Радиус зоны действия (дым, огонь) в пикселях радара.</param>
 /// <param name="DamageLabel">Урон гранаты (HE, огонь) — подпись у места взрыва.</param>
+/// <param name="Flying">Граната ещё летит (таймлайн): где она сейчас.</param>
 public sealed record RadarGrenade(
-    int Id, int Round, RadarGrenadeKind Kind, Point From, Point? To, double EffectRadius, Color Color, string? DamageLabel = null);
+    int Id, int Round, RadarGrenadeKind Kind, Point From, Point? To, double EffectRadius, Color Color, string? DamageLabel = null,
+    Point? Flying = null);
 
 /// <summary>
 /// Радар карты: подложка (изображение или сетка), слои данных, зум колесом мыши и панорамирование.
@@ -414,6 +416,12 @@ public sealed class RadarControl : Control
             var markBrush = new SolidColorBrush(Color.FromArgb((byte)(active ? 255 : 50), color.R, color.G, color.B));
 
             context.DrawEllipse(markBrush, null, g.From, 2.5 / scale, 2.5 / scale);
+            if (g.Flying is { } flying)
+            {
+                // Летящая граната: след от точки броска и сама граната.
+                context.DrawLine(new Pen(lineBrush, (active ? 1.6 : 1) / scale), g.From, flying);
+                context.DrawEllipse(markBrush, new Pen(Brushes.Black, 1.2 / scale), flying, 4 / scale, 4 / scale);
+            }
             if (g.To is not { } to)
                 continue;
 

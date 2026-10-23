@@ -126,7 +126,7 @@ internal sealed class MatchBuilder
 
     /// <summary>Бросок гранаты. Возвращает идентификатор для последующей детонации или null, если раунд не идёт.</summary>
     public int? ThrowGrenade(GrenadeType type, ulong thrower, int tick, Vector3 throwerPosition, float pitch, float yaw,
-        string place, Vector3 projectileStart)
+        string place, Vector3 projectileStart, MovementFlags movement = MovementFlags.None, float speed = 0)
     {
         if (CurrentRoundNumber is not { } round)
             return null;
@@ -134,7 +134,7 @@ internal sealed class MatchBuilder
         var freezeEnd = _current?.FreezeEndTick ?? _rounds.LastOrDefault()?.FreezeEndTick ?? tick;
         var side = _players.TryGetValue(thrower, out var p) && p.Sides.TryGetValue(round, out var s) ? s : Side.None;
         var state = new GrenadeState(_nextGrenadeId++, type, thrower, side, round, tick,
-            (tick - freezeEnd) / 64f, throwerPosition, pitch, yaw, place, projectileStart);
+            (tick - freezeEnd) / 64f, throwerPosition, pitch, yaw, place, projectileStart, movement, speed);
         _grenades.Add(state);
         return state.Id;
     }
@@ -162,11 +162,12 @@ internal sealed class MatchBuilder
         _grenades
             .Select(g => new GrenadeThrow(g.Id, g.Type, g.Thrower, g.Side, g.Round, g.ThrowTick, g.ThrowTime,
                 g.ThrowerPosition, g.Pitch, g.Yaw, g.Place, g.ProjectileStart, g.DetonateTick, g.DetonatePosition,
-                g.Victims.ToList()))
+                g.Victims.ToList()) { ThrowerMovement = g.Movement, ThrowerSpeed = g.Speed })
             .ToList();
 
     private sealed record GrenadeState(int Id, GrenadeType Type, ulong Thrower, Side Side, int Round, int ThrowTick,
-        float ThrowTime, Vector3 ThrowerPosition, float Pitch, float Yaw, string Place, Vector3 ProjectileStart)
+        float ThrowTime, Vector3 ThrowerPosition, float Pitch, float Yaw, string Place, Vector3 ProjectileStart,
+        MovementFlags Movement, float Speed)
     {
         public int? DetonateTick { get; set; }
         public Vector3? DetonatePosition { get; set; }

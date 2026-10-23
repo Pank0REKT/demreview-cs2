@@ -5,6 +5,14 @@ All notable changes are listed here. Versions follow [Semantic Versioning](https
 ## [Unreleased]
 
 ### Features
+- *Grenades* section — grenade effectiveness: HE and fire damage to enemies (per grenade too), enemies and teammates
+  blinded by each flash and for how long, kills of flashed enemies while they were still blind, grenade kills and
+  team damage. A table compares all players of the match; every throw of the selected player shows its outcome.
+- Lineup library: save a throw from a demo (bookmark button in *Grenades* or on the radar) — position, angle, how it
+  was thrown (jump throw, crouching, walking, running), the source demo and round. One button copies
+  `setpos` / `setang` to stand on the spot on your own server (`sv_cheats 1`). Lineups are filtered by map and
+  grenade type, can be renamed and are kept in `lineups.json`, separately from the cache and the demo library.
+- Throws now record the thrower's movement; demos parsed by an older version show it after re-parsing (Shift+F5).
 - New interface: a dark theme with a section bar (*Radar*, *Stats*, *Profile*, *Settings*) and a player panel with
   both teams, K / D / A, the kill-death difference and a nickname search. The top menu is gone; the hotkeys stay.
 - Radar: filters above the map, +/− and reset-view buttons, a legend, a timeline with a play button and speed picker,
