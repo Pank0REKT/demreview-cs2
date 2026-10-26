@@ -23,9 +23,10 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
 
         var demo = new CsDemoParser();
         var builder = new MatchBuilder();
-        Subscribe(demo, builder);
-        SubscribeSampling(demo, builder, Math.Clamp(options.SampleTickStep, 1, 128));
-        SubscribeGrenades(demo, builder);
+        var inventory = new GrenadeInventory();
+        Subscribe(demo, builder, inventory);
+        SubscribeSampling(demo, builder, inventory, Math.Clamp(options.SampleTickStep, 1, 128));
+        SubscribeGrenades(demo, builder, inventory);
         SubscribeBombAndDamage(demo, builder);
 
         var reader = DemoFileReader.Create(demo, stream);
@@ -106,7 +107,7 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
         throw new DemoParseException(Loc.T("Файл не является демкой CS2 (неверная сигнатура .dem).", "The file is not a CS2 demo (invalid .dem signature)."));
     }
 
-    private static void Subscribe(CsDemoParser demo, MatchBuilder builder)
+    private static void Subscribe(CsDemoParser demo, MatchBuilder builder, GrenadeInventory inventory)
     {
         int Tick() => (int)demo.CurrentGameTick.Value;
 
@@ -116,6 +117,7 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
         demo.Source1GameEvents.RoundFreezeEnd += _ =>
         {
             var rules = demo.GameRules;
+            inventory.Clear();
             builder.FreezeEnd(
                 Tick(),
                 rules.TotalRoundsPlayed + 1,
@@ -123,7 +125,8 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
                 demo.TeamCounterTerrorist.Score,
                 rules.OvertimePlaying > 0,
                 rules.WarmupPeriod,
-                demo.PlayersIncludingDisconnected.Select(Snapshot).ToList());
+                demo.PlayersIncludingDisconnected.Select(Snapshot).ToList(),
+                Tick() - demo.CurrentDemoTick.Value);
         };
 
         demo.Source1GameEvents.RoundEnd += e =>
@@ -152,7 +155,8 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
                 e.Weapon,
                 e.Headshot,
                 e.AttackerPawn is { } attackerPawn ? ToVector(attackerPawn.Origin) : null,
-                e.PlayerPawn is { } victimPawn ? ToVector(victimPawn.Origin) : Vector3.Zero);
+                e.PlayerPawn is { } victimPawn ? ToVector(victimPawn.Origin) : Vector3.Zero,
+                inventory.Take(KeyOf(victim)));
         };
     }
 
@@ -162,7 +166,7 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
     /// У inferno_startburn entity id — это CInferno, а не снаряд, поэтому молотов связывается с огнём
     /// по бросившему (OwnerEntity у CInferno) и удалению снаряда в тот же тик рядом с точкой возгорания.
     /// </summary>
-    private static void SubscribeGrenades(CsDemoParser demo, MatchBuilder builder)
+    private static void SubscribeGrenades(CsDemoParser demo, MatchBuilder builder, GrenadeInventory inventory)
     {
         int Tick() => (int)demo.CurrentGameTick.Value;
         var byEntity = new Dictionary<int, int>();
@@ -176,6 +180,7 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
                 return;
 
             var eye = pawn.EyeAngles;
+            inventory.Thrown(KeyOf(controller), type);
             var id = builder.ThrowGrenade(type, KeyOf(controller), Tick(), ToVector(pawn.Origin), eye.Pitch, eye.Yaw,
                 pawn.LastPlaceName ?? "", ToVector(projectile.InitialPosition), MovementOf(pawn), HorizontalSpeed(pawn));
             var entity = (int)projectile.EntityIndex.Value;
@@ -310,7 +315,7 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
     /// Выборка состояния живых игроков каждые <paramref name="step"/> тиков во время раунда.
     /// В DemoFile.Net 0.44.1 нет события TickEnd (упомянуто в README) — используется OnCommandFinishPersistent.
     /// </summary>
-    private static void SubscribeSampling(CsDemoParser demo, MatchBuilder builder, int step)
+    private static void SubscribeSampling(CsDemoParser demo, MatchBuilder builder, GrenadeInventory inventory, int step)
     {
         var lastSampleTick = int.MinValue;
         var strings = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -336,8 +341,64 @@ public sealed class DemoFileDemoParser(ILogger<DemoFileDemoParser> logger) : IDe
                     continue;
 
                 builder.AddSample(KeyOf(controller), CreateSample(controller, pawn, tick, round, timeInRound, Intern));
+                inventory.Set(KeyOf(controller), GrenadesOf(demo, pawn));
             }
         };
+    }
+
+    /// <summary>Гранаты в инвентаре игрока. Две флешки — одна сущность оружия, их число — в патронах игрока.</summary>
+    private static List<GrenadeType> GrenadesOf(CsDemoParser demo, CCSPlayerPawn pawn)
+    {
+        var result = new List<GrenadeType>();
+        if (pawn.WeaponServices is not { } services)
+            return result;
+
+        foreach (var handle in services.MyWeapons)
+        {
+            var type = demo.GetEntityByHandle(handle) switch
+            {
+                CHEGrenade => GrenadeType.HighExplosive,
+                CFlashbang => GrenadeType.Flashbang,
+                CSmokeGrenade => GrenadeType.Smoke,
+                CIncendiaryGrenade => GrenadeType.Incendiary,
+                CMolotovGrenade => GrenadeType.Molotov,
+                CDecoyGrenade => GrenadeType.Decoy,
+                _ => (GrenadeType?)null,
+            };
+            if (type is not { } grenade)
+                continue;
+
+            result.Add(grenade);
+            if (grenade == GrenadeType.Flashbang && services.Ammo.ElementAtOrDefault(FlashbangAmmoIndex) >= 2)
+                result.Add(grenade);
+        }
+        return result;
+    }
+
+    /// <summary>Индекс патронов флешек в CCSPlayer_WeaponServices.Ammo (13 — HE, 14 — флешки, 15 — дым, 16 — огонь).</summary>
+    private const int FlashbangAmmoIndex = 14;
+
+    /// <summary>
+    /// Неброшенные гранаты игроков. В момент player_death оружие уже выброшено, поэтому инвентарь запоминается
+    /// при каждом сэмпле, а гранаты, брошенные после него, вычитаются.
+    /// </summary>
+    private sealed class GrenadeInventory
+    {
+        private readonly Dictionary<ulong, List<GrenadeType>> _items = [];
+
+        public void Clear() => _items.Clear();
+
+        public void Set(ulong player, List<GrenadeType> grenades) => _items[player] = grenades;
+
+        public void Thrown(ulong player, GrenadeType type)
+        {
+            if (_items.TryGetValue(player, out var grenades))
+                grenades.Remove(type);
+        }
+
+        /// <summary>Гранаты погибшего игрока; инвентарь забывается до следующего сэмпла.</summary>
+        public IReadOnlyList<GrenadeType> Take(ulong player) =>
+            _items.Remove(player, out var grenades) ? grenades : [];
     }
 
     private static MovementFlags MovementOf(CCSPlayerPawn pawn)

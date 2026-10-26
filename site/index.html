@@ -41,6 +41,10 @@
         <a class="nav-home" href="./" aria-current="page"><span data-lang="ru">Главная</span><span data-lang="en">Home</span></a>
         <a href="usage.html"><span data-lang="ru"><span class="nav-long">Как пользоваться</span><span class="nav-short">Гайд</span></span><span data-lang="en"><span class="nav-long">How to use</span><span class="nav-short">Guide</span></span></a>
         <a href="roadmap.html"><span data-lang="ru">Планы</span><span data-lang="en">Roadmap</span></a>
+        <a class="nav-telegram" href="https://t.me/demreview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 4 3 11l6 2.5L21 4l-3.5 16L9 13.5"/><path d="M9 13.5V19l3-3.2"/></svg>
+          <span>Telegram</span>
+        </a>
         <a class="nav-github" href="https://github.com/Pank0REKT/demreview-cs2">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
           <span>GitHub</span>
@@ -222,13 +226,13 @@
             </a>
           </li>
           <li>
-            <a class="card roadmap-card" href="roadmap.html#self-review">
+            <a class="card roadmap-card is-done" href="roadmap.html#self-review">
               <span class="roadmap-card-top">
                 <span class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></span>
-                <span class="roadmap-num">03</span>
+                <span class="status-done"><span data-lang="ru">Готово · v0.4.0</span><span data-lang="en">Done · v0.4.0</span></span>
               </span>
               <h3><span data-lang="ru">Разбор своей игры</span><span data-lang="en">Self-review</span></h3>
-              <p><span data-lang="ru">Ошибки, клатчи и дуэли — и переход к нужному моменту прямо в CS2.</span><span data-lang="en">Mistakes, clutches and duels — and a jump to the exact moment in CS2.</span></p>
+              <p><span data-lang="ru">Ошибки, клатчи и дуэли — и переход к нужному моменту прямо в CS2. Уже в v0.4.0.</span><span data-lang="en">Mistakes, clutches and duels — and a jump to the exact moment in CS2. Available in v0.4.0.</span></p>
               <ul class="roadmap-tags">
                 <li><span data-lang="ru">Ошибки</span><span data-lang="en">Mistakes</span></li>
                 <li><span data-lang="ru">Момент в CS2</span><span data-lang="en">Jump to CS2</span></li>
@@ -337,6 +341,21 @@
             <p><span data-lang="ru">Индекс предсказуемости, роль на каждой стороне с метриками и обоснованием, сравнение T и CT, паттерны с уверенностью по малой выборке.</span><span data-lang="en">A predictability index, the role on each side with metrics and reasons, a T vs CT comparison, patterns with small-sample confidence.</span></p>
           </div>
           <div class="card">
+            <div class="feature-icon ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></div>
+            <h3><span data-lang="ru">Разбор игры</span><span data-lang="en">Self-review</span></h3>
+            <p><span data-lang="ru">Смерти без размена, в одиночку, с неброшенными гранатами и повторные пики; клатчи, ретейки, пост-плант и дуэли. Одна кнопка копирует <code>demo_gototick</code> — момент сразу в CS2.</span><span data-lang="en">Untraded deaths, deaths alone, unused grenades and re-peeks; clutches, retakes, post-plants and duels. One button copies <code>demo_gototick</code> to watch the moment in CS2.</span></p>
+          </div>
+          <div class="card">
+            <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="15" r="6"/><path d="M11 9V6h4"/><path d="m15 6 3-2.5"/><path d="M8.5 15h5"/></svg></div>
+            <h3><span data-lang="ru">Гранаты и раскидки</span><span data-lang="en">Grenades and lineups</span></h3>
+            <p><span data-lang="ru">Урон HE и огня, ослеплённые противники и свои, убийства ослеплённых. Лучшие броски — в библиотеку раскидок с командами <code>setpos</code> / <code>setang</code>.</span><span data-lang="en">HE and fire damage, enemies and teammates blinded, flash kills. Save the best throws to the lineup library with <code>setpos</code> / <code>setang</code> commands.</span></p>
+          </div>
+          <div class="card">
+            <div class="feature-icon ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg></div>
+            <h3><span data-lang="ru">Профиль по многим демкам</span><span data-lang="en">Profile across many demos</span></h3>
+            <p><span data-lang="ru">Библиотека демок: паттерны, роли и тепловые карты сразу по многим матчам на карте — и ваш профиль, который растёт с каждой демкой.</span><span data-lang="en">A demo library: patterns, roles and heatmaps across many matches on a map — and your own profile that grows with every demo.</span></p>
+          </div>
+          <div class="card">
             <div class="feature-icon ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M14 3v6h6"/><path d="M9 15h6"/></svg></div>
             <h3><span data-lang="ru">Экспорт</span><span data-lang="en">Export</span></h3>
             <p><span data-lang="ru">Профиль в Markdown или JSON — чтобы поделиться с командой или сохранить заметки к сопернику.</span><span data-lang="en">The profile to Markdown or JSON — to share with your team or keep notes on an opponent.</span></p>
@@ -427,6 +446,12 @@
             <span data-lang="ru">Windows 10/11 и Linux · бесплатно</span><span data-lang="en">Windows 10/11 and Linux · free</span>
           </p>
         </div>
+        <div class="download-buttons cta-telegram">
+          <a class="btn btn-ghost" href="https://t.me/demreview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 4 3 11l6 2.5L21 4l-3.5 16L9 13.5"/><path d="M9 13.5V19l3-3.2"/></svg>
+            <span data-lang="ru">Новости в Telegram</span><span data-lang="en">News on Telegram</span>
+          </a>
+        </div>
         <div class="cta-notes">
           <p class="note"><span data-lang="ru"><strong>Windows:</strong> программа не подписана, поэтому SmartScreen может предупредить при первом запуске — «Подробнее → Выполнить в любом случае».</span><span data-lang="en"><strong>Windows:</strong> the app is not code-signed, so SmartScreen may warn on first start — <em>More info → Run anyway</em>.</span></p>
           <p class="note"><span data-lang="ru"><strong>Проверка файлов:</strong> к каждому релизу приложен <code>SHA256SUMS.txt</code>. На Linux нужен графический сеанс с X11 или XWayland.</span><span data-lang="en"><strong>Verify downloads:</strong> each release has <code>SHA256SUMS.txt</code>. Linux needs a desktop session with X11 or XWayland.</span></p>
@@ -443,6 +468,7 @@
       </div>
       <ul class="footer-links">
         <li><a href="https://github.com/Pank0REKT/demreview-cs2">GitHub</a></li>
+        <li><a href="https://t.me/demreview">Telegram</a></li>
         <li><a href="https://github.com/Pank0REKT/demreview-cs2/issues"><span data-lang="ru">Сообщить об ошибке</span><span data-lang="en">Report a bug</span></a></li>
         <li><a href="roadmap.html"><span data-lang="ru">Дорожная карта</span><span data-lang="en">Roadmap</span></a></li>
         <li><a href="https://github.com/Pank0REKT/demreview-cs2/discussions/1"><span data-lang="ru">Предложить идею</span><span data-lang="en">Suggest an idea</span></a></li>

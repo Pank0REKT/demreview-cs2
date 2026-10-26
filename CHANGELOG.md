@@ -5,6 +5,21 @@ All notable changes are listed here. Versions follow [Semantic Versioning](https
 ## [Unreleased]
 
 ### Features
+- *Review* section — moments worth rewatching. *Mistakes* lists the player's deaths that were not traded (nobody
+  killed the killer within 5 s although teammates were alive), deaths alone far from the team, deaths with unused
+  grenades (and how much money they cost) and re-peeks after a won duel, with a filter by kind.
+- Jump to the moment in CS2: a button copies `demo_gototick` with the right demo tick (5 s before the death,
+  2 s before a clutch or a plant) — open the same demo in CS2 and paste it into the console. The ▶ button opens the
+  moment on the radar timeline.
+- Clutches, post-plants and retakes: how often the player wins them, clutches by matchup (1v1, 1v2…), and where the
+  player stands in each situation with the round win rate per position.
+- Duels: wins and losses by distance, weapon class, weapon and side of the angle (peeking or holding).
+- Demos now record unused grenades at death and the demo tick of every round; demos parsed by an older version show
+  them after re-parsing (Shift+F5).
+
+## [0.3.0]
+
+### Features
 - *Grenades* section — grenade effectiveness: HE and fire damage to enemies (per grenade too), enemies and teammates
   blinded by each flash and for how long, kills of flashed enemies while they were still blind, grenade kills and
   team damage. A table compares all players of the match; every throw of the selected player shows its outcome.
@@ -13,6 +28,12 @@ All notable changes are listed here. Versions follow [Semantic Versioning](https
   `setpos` / `setang` to stand on the spot on your own server (`sv_cheats 1`). Lineups are filtered by map and
   grenade type, can be renamed and are kept in `lineups.json`, separately from the cache and the demo library.
 - Throws now record the thrower's movement; demos parsed by an older version show it after re-parsing (Shift+F5).
+- Watch a throw: the ▶ button opens the round on the radar timeline 2 s before the throw, paused, with the grenade
+  highlighted.
+
+## [0.2.0]
+
+### Features
 - New interface: a dark theme with a section bar (*Radar*, *Stats*, *Profile*, *Settings*) and a player panel with
   both teams, K / D / A, the kill-death difference and a nickname search. The top menu is gone; the hotkeys stay.
 - Radar: filters above the map, +/− and reset-view buttons, a legend, a timeline with a play button and speed picker,

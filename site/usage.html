@@ -39,6 +39,10 @@
         <a class="nav-home" href="./"><span data-lang="ru">Главная</span><span data-lang="en">Home</span></a>
         <a href="usage.html" aria-current="page"><span data-lang="ru"><span class="nav-long">Как пользоваться</span><span class="nav-short">Гайд</span></span><span data-lang="en"><span class="nav-long">How to use</span><span class="nav-short">Guide</span></span></a>
         <a href="roadmap.html"><span data-lang="ru">Планы</span><span data-lang="en">Roadmap</span></a>
+        <a class="nav-telegram" href="https://t.me/demreview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 4 3 11l6 2.5L21 4l-3.5 16L9 13.5"/><path d="M9 13.5V19l3-3.2"/></svg>
+          <span>Telegram</span>
+        </a>
         <a class="nav-github" href="https://github.com/Pank0REKT/demreview-cs2">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
           <span>GitHub</span>
@@ -55,6 +59,7 @@
       <ul class="toc">
         <li><a href="#install"><span data-lang="ru">Установка</span><span data-lang="en">Install</span></a></li>
         <li><a href="#guide"><span data-lang="ru">Пошагово</span><span data-lang="en">Step by step</span></a></li>
+        <li><a href="#review"><span data-lang="ru">Разбор игры</span><span data-lang="en">Self-review</span></a></li>
         <li><a href="#hotkeys"><span data-lang="ru">Горячие клавиши</span><span data-lang="en">Hotkeys</span></a></li>
         <li><a href="#settings"><span data-lang="ru">Настройки и данные</span><span data-lang="en">Settings and data</span></a></li>
         <li><a href="#faq">FAQ</a></li>
@@ -109,7 +114,7 @@
               <li><span data-lang="ru">Разбор идёт в фоне, прогресс — внизу окна, отмена — <kbd>Esc</kbd>. Повторное открытие той же демки — из кеша за секунды.</span><span data-lang="en">Parsing runs in the background with progress at the bottom of the window; <kbd>Esc</kbd> cancels. Reopening the same demo takes seconds thanks to the cache.</span></li>
               <li><span data-lang="ru"><strong>Выберите игрока</strong> в панели игроков: команды — отдельными списками, ник можно найти поиском. Все разделы покажут только его.</span><span data-lang="en"><strong>Pick a player</strong> in the player panel: teams are listed separately and the search finds a nickname. Every section now shows only them.</span></li>
               <li><span data-lang="ru">При первой демке программа предложит отметить себя — дальше вы будете выбраны сразу и отмечены «Вы».</span><span data-lang="en">On the first demo the app offers to mark yourself — from then on you are selected right away and marked <em>You</em>.</span></li>
-              <li><span data-lang="ru">Разделы переключаются в полосе слева: «Радар», «Статистика», «Профиль», «Настройки».</span><span data-lang="en">Sections are switched in the bar on the far left: <em>Radar</em>, <em>Stats</em>, <em>Profile</em>, <em>Settings</em>.</span></li>
+              <li><span data-lang="ru">Разделы переключаются в полосе слева: «Радар», «Статистика», «Профиль», «Гранаты», «Разбор», «Библиотека», «Настройки». Внизу полосы — Telegram-канал с новостями.</span><span data-lang="en">Sections are switched in the bar on the far left: <em>Radar</em>, <em>Stats</em>, <em>Profile</em>, <em>Grenades</em>, <em>Review</em>, <em>Library</em>, <em>Settings</em>. At the bottom of the bar is the Telegram channel with news.</span></li>
             </ul>
           </div>
           <img class="shot" src="assets/shots/radar-routes.webp" width="1600" height="848" loading="lazy" data-i18n-attr="alt"
@@ -162,9 +167,23 @@
                data-ru-alt="Профиль игрока с паттернами" data-en-alt="Player profile with patterns" alt="Player profile with patterns">
         </div>
 
-        <div class="guide-step">
+        <div class="guide-step text-only" id="review">
           <div>
             <p class="num"><span data-lang="ru">Шаг 7</span><span data-lang="en">Step 7</span></p>
+            <h3><span data-lang="ru">Разбор игры: моменты, которые стоит пересмотреть</span><span data-lang="en">Self-review: moments worth rewatching</span></h3>
+            <ul>
+              <li><span data-lang="ru"><strong>«Ошибки»</strong> — смерти со спорными моментами: без размена (убийцу не убили за 5 с, хотя союзники были живы), в одиночку (ближайший живой союзник дальше ~29 м), с неброшенными гранатами (какие и сколько денег пропало), повторный пик (погиб на том же месте в течение 4 с после своего убийства).</span><span data-lang="en"><strong>Mistakes</strong> — deaths with questionable moments: not traded (nobody killed the killer within 5 s although teammates were alive), alone (the nearest living teammate was over ~29 m away), unused grenades (which ones and how much money was lost), re-peek (died on the same spot within 4 s of their own kill).</span></li>
+              <li><span data-lang="ru"><strong>«Клатчи и бомба»</strong> — клатчи по соотношению (1v1, 1v2…), пост-планты и ретейки: каждый раунд с позицией игрока и таблица позиций с долей выигранных раундов.</span><span data-lang="en"><strong>Clutches and the bomb</strong> — clutches by matchup (1v1, 1v2…), post-plants and retakes: every round with the player's position and a table of positions with the round win rate.</span></li>
+              <li><span data-lang="ru"><strong>«Дуэли»</strong> — победы и поражения по дистанции, классу оружия, оружию и стороне угла: выходил на угол или держал его.</span><span data-lang="en"><strong>Duels</strong> — wins and losses by distance, weapon class, weapon and side of the angle: peeking or holding.</span></li>
+              <li><span data-lang="ru"><strong>Момент в CS2:</strong> кнопка копирования кладёт в буфер <code>demo_gototick</code> — откройте ту же демку в CS2 и вставьте команду в консоль: воспроизведение начнётся за 5 с до смерти (за 2 с до клатча или закладки). Кнопка ▶ открывает момент на таймлайне радара.</span><span data-lang="en"><strong>The moment in CS2:</strong> the copy button puts <code>demo_gototick</code> on the clipboard — open the same demo in CS2 and paste the command into the console: playback starts 5 s before the death (2 s before a clutch or a plant). The ▶ button opens the moment on the radar timeline.</span></li>
+              <li><span data-lang="ru">Демки, разобранные до v0.4.0, покажут неброшенные гранаты и <code>demo_gototick</code> после повторного разбора — <kbd>Shift</kbd>+<kbd>F5</kbd>.</span><span data-lang="en">Demos parsed before v0.4.0 show unused grenades and <code>demo_gototick</code> after a reparse — <kbd>Shift</kbd>+<kbd>F5</kbd>.</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="guide-step">
+          <div>
+            <p class="num"><span data-lang="ru">Шаг 8</span><span data-lang="en">Step 8</span></p>
             <h3><span data-lang="ru">Настройки</span><span data-lang="en">Settings</span></h3>
             <ul>
               <li><span data-lang="ru">Язык интерфейса переключается сразу, вместе с формулировками паттернов и экспортом.</span><span data-lang="en">The interface language switches right away, along with pattern wording and export.</span></li>
@@ -310,6 +329,7 @@
       </div>
       <ul class="footer-links">
         <li><a href="https://github.com/Pank0REKT/demreview-cs2">GitHub</a></li>
+        <li><a href="https://t.me/demreview">Telegram</a></li>
         <li><a href="https://github.com/Pank0REKT/demreview-cs2/issues"><span data-lang="ru">Сообщить об ошибке</span><span data-lang="en">Report a bug</span></a></li>
         <li><a href="roadmap.html"><span data-lang="ru">Дорожная карта</span><span data-lang="en">Roadmap</span></a></li>
         <li><a href="https://github.com/Pank0REKT/demreview-cs2/discussions/1"><span data-lang="ru">Предложить идею</span><span data-lang="en">Suggest an idea</span></a></li>

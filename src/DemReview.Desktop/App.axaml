@@ -41,6 +41,7 @@
             <SolidColorBrush x:Key="NegativeBrush" Color="#F28B85" />
             <SolidColorBrush x:Key="DangerBorderBrush" Color="#4A2422" />
             <SolidColorBrush x:Key="WarningBrush" Color="#F0C25A" />
+            <SolidColorBrush x:Key="TelegramBrush" Color="#2AABEE" />
             <SolidColorBrush x:Key="ToggleOffBrush" Color="#2A303C" />
             <SolidColorBrush x:Key="OverlayBrush" Color="#EB12151B" />
 
@@ -143,6 +144,8 @@
             <StreamGeometry x:Key="IconGrenade">M5,15 a6,6 0 1 0 12,0 a6,6 0 1 0 -12,0 M11,9 V6 H15 M15,6 L18,3.5 M8.5,15 H13.5</StreamGeometry>
             <StreamGeometry x:Key="IconCopy">M9,9 H19 V19 H9 Z M5,15 V5 H15</StreamGeometry>
             <StreamGeometry x:Key="IconBookmark">M6,4 H18 V20 L12,16 L6,20 Z</StreamGeometry>
+            <StreamGeometry x:Key="IconTelegram">M20,5 L3.5,11.5 L9,13.5 Z M20,5 L17,19 L9,13.5 M20,5 L9,13.5 L9.5,18 L12,15.2</StreamGeometry>
+            <StreamGeometry x:Key="IconReview">M4.5,12 a7.5,7.5 0 1 0 2.2,-5.3 M4,4 V9 H9 M10.5,9 V15 L15.5,12 Z</StreamGeometry>
 
             <!-- Сегментированный переключатель: ListBox в рамке, выбранный элемент подсвечен -->
             <ControlTheme x:Key="SegmentedList" TargetType="ListBox">
@@ -477,6 +480,13 @@
         </Style>
         <Style Selector="Border.badge.neutral > TextBlock">
             <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+            <Setter Property="FontWeight" Value="Medium" />
+        </Style>
+        <Style Selector="Border.badge.warning">
+            <Setter Property="Background" Value="#2A1718" />
+        </Style>
+        <Style Selector="Border.badge.warning > TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource NegativeBrush}" />
             <Setter Property="FontWeight" Value="Medium" />
         </Style>
         <Style Selector="Border.buy">

@@ -58,6 +58,15 @@ public sealed record RoundInfo(
     bool IsOvertime)
 {
     public bool ContainsTick(int tick) => tick >= StartTick && tick <= EndTick;
+
+    /// <summary>
+    /// Разница между игровым тиком и тиком демки (DemoTick) в этом раунде: тик для demo_gototick = GameTick − смещение.
+    /// null — демка разобрана версией без этих данных.
+    /// </summary>
+    public int? DemoTickOffset { get; init; }
+
+    /// <summary>Тик демки для команды demo_gototick; null — смещение неизвестно.</summary>
+    public int? DemoTickOf(int tick) => DemoTickOffset is { } offset ? Math.Max(0, tick - offset) : null;
 }
 
 /// <summary>Игрок матча. Идентифицируется по SteamID (боты — по синтетическому ID).</summary>
@@ -85,4 +94,8 @@ public sealed record KillEvent(
     string Weapon,
     bool Headshot,
     Vector3? AttackerPosition,
-    Vector3 VictimPosition);
+    Vector3 VictimPosition)
+{
+    /// <summary>Гранаты, которые остались у жертвы неброшенными; null — демка разобрана версией без этих данных.</summary>
+    public IReadOnlyList<GrenadeType>? VictimGrenades { get; init; }
+}

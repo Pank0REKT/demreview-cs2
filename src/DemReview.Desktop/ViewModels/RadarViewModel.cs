@@ -537,22 +537,36 @@ public partial class RadarViewModel : ViewModelBase
     /// </summary>
     public bool WatchThrow(GrenadeThrow g)
     {
+        if (!WatchMoment(g.Round, g.ThrowTick, WatchLeadSeconds))
+            return false;
+        HighlightedGrenades = new HashSet<int> { g.Id };
+        return true;
+    }
+
+    /// <summary>Подходит ли раунд под текущий фильтр (иначе его нельзя открыть на таймлайне).</summary>
+    public bool ShowsRound(int round) => (_filter.Round is null || _filter.Round == round) && IncludesRound(round);
+
+    /// <summary>
+    /// Открыть раунд на таймлайне за <paramref name="leadSeconds"/> до момента, на паузе. false — раунд открыть не удалось.
+    /// </summary>
+    public bool WatchMoment(int round, int tick, float leadSeconds)
+    {
         if (_match is not { } match || _steamId is null)
             return false;
 
         ClearFocus();
         if (_filter.Round is null)
         {
-            if (RoundRows.FirstOrDefault(r => r.Round == g.Round) is not { } row)
+            if (RoundRows.FirstOrDefault(r => r.Round == round) is not { } row)
                 return false;
             SelectedRound = row;
         }
-        if (Timeline.Round?.Number != g.Round)
+        if (Timeline.Round?.Number != round)
             return false;
 
-        HighlightedRounds = new HashSet<int> { g.Round };
-        HighlightedGrenades = new HashSet<int> { g.Id };
-        Timeline.Seek(g.ThrowTick - (int)(WatchLeadSeconds * match.TickRate));
+        HighlightedRounds = new HashSet<int> { round };
+        HighlightedGrenades = new HashSet<int>();
+        Timeline.Seek(tick - (int)(leadSeconds * match.TickRate));
         return true;
     }
 

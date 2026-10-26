@@ -35,6 +35,18 @@
             <TextBlock Text="{Binding Label}" Classes.t="{Binding IsT}" Classes.ct="{Binding IsCT}" />
         </DataTemplate>
 
+        <!-- Строка «победы–поражения» в разделе «Разбор»: подпись, счёт, шкала и доля побед -->
+        <DataTemplate x:Key="WinRateRowTemplate" x:DataType="vm:WinRateRow">
+            <Grid ColumnDefinitions="*,Auto,80,44" ColumnSpacing="10" Margin="0,3">
+                <TextBlock Text="{Binding Label}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="1" Classes="mono subtle" Text="{Binding RecordText}" VerticalAlignment="Center" />
+                <ProgressBar Grid.Column="2" Classes="bar thin" Minimum="0" Maximum="1" Value="{Binding WinRate}" VerticalAlignment="Center"
+                             Classes.negative="{Binding IsBad}" />
+                <TextBlock Grid.Column="3" Classes="mono" TextAlignment="Right" Text="{Binding WinRateText}" VerticalAlignment="Center"
+                           Classes.positive="{Binding IsGood}" Classes.negative="{Binding IsBad}" />
+            </Grid>
+        </DataTemplate>
+
         <!-- Строка игрока в боковой панели -->
         <DataTemplate x:Key="PlayerRowTemplate" x:DataType="vm:PlayerRowViewModel">
             <Button Classes="player" Classes.selected="{Binding IsSelected}"
@@ -71,6 +83,11 @@
                         ToolTip.Tip="{l:T 'Открыть демку (Ctrl+O)', 'Open a demo (Ctrl+O)'}">
                     <controls:Icon Width="20" Height="20" Data="{StaticResource IconOpen}" />
                 </Button>
+                <Button DockPanel.Dock="Bottom" Classes="icon-button" Width="44" Height="44" CornerRadius="22" HorizontalAlignment="Center"
+                        Margin="0,0,0,10" Background="{StaticResource TelegramBrush}" Command="{Binding OpenTelegramCommand}"
+                        ToolTip.Tip="{l:T 'Telegram-канал DemReview: новости и обновления', 'DemReview Telegram channel: news and updates'}">
+                    <controls:Icon Width="22" Height="22" Margin="0,0,2,0" Brush="White" StrokeThickness="1.8" Data="{StaticResource IconTelegram}" />
+                </Button>
                 <StackPanel Spacing="6" HorizontalAlignment="Center">
                     <Button Classes="nav" Classes.active="{Binding IsRadarTab}" Command="{Binding SelectTabCommand}" CommandParameter="0">
                         <StackPanel Spacing="4">
@@ -99,14 +116,22 @@
                             <TextBlock Text="{l:T 'Гранаты', 'Grenades'}" />
                         </StackPanel>
                     </Button>
-                    <Button Classes="nav" Classes.active="{Binding IsLibraryTab}" Command="{Binding SelectTabCommand}" CommandParameter="4"
+                    <Button Classes="nav" Classes.active="{Binding IsReviewTab}" Command="{Binding SelectTabCommand}" CommandParameter="4"
+                            IsEnabled="{Binding HasMatch}"
+                            ToolTip.Tip="{l:T 'Разбор игры: ошибки, клатчи и дуэли — с переходом к моменту в CS2', 'Self-review: mistakes, clutches and duels, with a jump to the moment in CS2'}">
+                        <StackPanel Spacing="4">
+                            <controls:Icon Width="22" Height="22" HorizontalAlignment="Center" Data="{StaticResource IconReview}" />
+                            <TextBlock Text="{l:T 'Разбор', 'Review'}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav" Classes.active="{Binding IsLibraryTab}" Command="{Binding SelectTabCommand}" CommandParameter="5"
                             ToolTip.Tip="{l:T 'Библиотека демок и сводный профиль по нескольким матчам', 'Demo library and the combined profile across matches'}">
                         <StackPanel Spacing="4">
                             <controls:Icon Width="22" Height="22" HorizontalAlignment="Center" Data="{StaticResource IconLibrary}" />
                             <TextBlock Text="{l:T 'Библиотека', 'Library'}" />
                         </StackPanel>
                     </Button>
-                    <Button Classes="nav" Classes.active="{Binding IsSettingsTab}" Command="{Binding SelectTabCommand}" CommandParameter="5">
+                    <Button Classes="nav" Classes.active="{Binding IsSettingsTab}" Command="{Binding SelectTabCommand}" CommandParameter="6">
                         <StackPanel Spacing="4">
                             <controls:Icon Width="22" Height="22" HorizontalAlignment="Center" Data="{StaticResource IconSettings}" />
                             <TextBlock Text="{l:T 'Настройки', 'Settings'}" />
@@ -1324,6 +1349,222 @@
                                 </StackPanel>
                             </Border>
                         </Grid>
+                    </ScrollViewer>
+                </DockPanel>
+
+                <!-- ===== Разбор игры: ошибки, клатчи и бомба, дуэли ===== -->
+                <DockPanel IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsReviewTab}" DataContext="{Binding Review}" x:DataType="vm:ReviewViewModel">
+                    <StackPanel DockPanel.Dock="Top" Margin="24,20,24,16">
+                        <TextBlock Classes="h1" Text="{l:T 'Разбор игры', 'Self-review'}" />
+                        <TextBlock Classes="subtle" FontSize="13" Margin="0,2,0,0">
+                            <Run Text="{Binding PlayerName}" />
+                            <Run Text="{l:T '· моменты, которые стоит пересмотреть, — сразу в CS2', '· moments worth rewatching, straight in CS2'}" />
+                        </TextBlock>
+                    </StackPanel>
+
+                    <TextBlock IsVisible="{Binding !HasPlayer}" Classes="subtle" HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Text="{l:T 'Выберите игрока в списке слева.', 'Select a player in the list on the left.'}" />
+
+                    <ScrollViewer IsVisible="{Binding HasPlayer}">
+                        <StackPanel Margin="24,0,24,32" Spacing="14">
+                            <Border Classes="card" CornerRadius="12" Padding="14,10" IsVisible="{Binding IsOldParse}">
+                                <TextBlock Classes="hint" FontSize="12.5" TextWrapping="Wrap"
+                                           Text="{l:T 'Демка разобрана прошлой версией DemReview: неброшенные гранаты и команды demo_gototick появятся после повторного разбора (Shift+F5).', 'This demo was parsed by an older DemReview: unused grenades and demo_gototick commands appear after re-parsing it (Shift+F5).'}" />
+                            </Border>
+
+                            <!-- Плитки -->
+                            <ItemsControl ItemsSource="{Binding Tiles}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><UniformGrid Rows="1" ColumnSpacing="12" /></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ReviewTile">
+                                        <Border Classes="card" CornerRadius="14" Padding="16,14">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Classes="subtle" FontSize="12" Text="{Binding Label}" />
+                                                <TextBlock Classes="mono" FontSize="24" FontWeight="SemiBold" Text="{Binding Value}" Classes.negative="{Binding IsWarning}" />
+                                                <TextBlock Classes="subtle" FontSize="12" Text="{Binding Detail}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TabControl Theme="{StaticResource SegmentedTabs}" Padding="0,14,0,0">
+                                <!-- Ошибки -->
+                                <TabItem Header="{l:T 'Ошибки', 'Mistakes'}">
+                                    <Border Classes="card" Padding="18">
+                                        <StackPanel Spacing="12">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Classes="caption" Text="{l:T 'СПОРНЫЕ МОМЕНТЫ', 'QUESTIONABLE MOMENTS'}" />
+                                                <TextBlock Classes="hint" FontSize="12.5" TextWrapping="Wrap"
+                                                           Text="{l:T 'Без размена — убийцу не убили в течение 5 с, хотя союзники были живы. В одиночку — ближайший живой союзник дальше ~29 м. С гранатами — погиб, не бросив купленные гранаты. Повторный пик — погиб на том же месте в течение 4 с после своего убийства.', 'Not traded: nobody killed the killer within 5 s although teammates were alive. Alone: the nearest living teammate was over ~29 m away. Unused grenades: died without throwing the grenades they had. Re-peek: died on the same spot within 4 s of their own kill.'}" />
+                                                <TextBlock Classes="hint" FontSize="12.5" TextWrapping="Wrap"
+                                                           Text="{l:T 'Кнопка копирования кладёт в буфер demo_gototick: откройте ту же демку в CS2 и вставьте команду в консоль — момент начнётся за 5 с до смерти.', 'The copy button puts demo_gototick on the clipboard: open the same demo in CS2 and paste it into the console — playback starts 5 s before the death.'}" />
+                                            </StackPanel>
+                                            <ListBox Theme="{StaticResource ChipList}" ItemsSource="{Binding MistakeFilters}" SelectedItem="{Binding SelectedMistakeFilter}"
+                                                     ItemTemplate="{StaticResource OptionTemplate}" />
+                                            <TextBlock Classes="subtle" FontSize="12.5" Text="{Binding MistakeSummary}" />
+                                            <ItemsControl ItemsSource="{Binding MistakeRows}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="vm:MistakeRowViewModel">
+                                                        <Border Classes="inset" Padding="12,8" Margin="0,0,0,6">
+                                                            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
+                                                                <Border Classes="badge" Classes.t="{Binding IsT}" Classes.ct="{Binding !IsT}" MinWidth="26"
+                                                                        VerticalAlignment="Top" Margin="0,2,0,0">
+                                                                    <TextBlock Text="{Binding SideText}" HorizontalAlignment="Center" />
+                                                                </Border>
+                                                                <StackPanel Grid.Column="1" Spacing="4">
+                                                                    <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding Header}" TextWrapping="Wrap" />
+                                                                    <TextBlock FontSize="12" Foreground="{StaticResource Text2Brush}" Text="{Binding KilledByText}" TextWrapping="Wrap" />
+                                                                    <ItemsControl ItemsSource="{Binding Tags}">
+                                                                        <ItemsControl.ItemsPanel>
+                                                                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate>
+                                                                        </ItemsControl.ItemsPanel>
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate x:DataType="x:String">
+                                                                                <Border Classes="badge warning"><TextBlock Text="{Binding}" /></Border>
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                    <TextBlock FontSize="12" Classes="subtle" Text="{Binding DetailText}" TextWrapping="Wrap" />
+                                                                </StackPanel>
+                                                                <Button Grid.Column="2" Classes="icon-button" VerticalAlignment="Center" IsEnabled="{Binding CanGoToTick}"
+                                                                        Command="{Binding $parent[ItemsControl].((vm:ReviewViewModel)DataContext).CopyGoToTickCommand}" CommandParameter="{Binding Moment}"
+                                                                        ToolTip.Tip="{l:T 'Скопировать demo_gototick — за 5 с до смерти', 'Copy demo_gototick — 5 s before the death'}">
+                                                                    <controls:Icon Width="16" Height="16" Data="{StaticResource IconCopy}" />
+                                                                </Button>
+                                                                <Button Grid.Column="3" Classes="icon-button" VerticalAlignment="Center"
+                                                                        Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).WatchMomentCommand}" CommandParameter="{Binding Moment}"
+                                                                        ToolTip.Tip="{l:T 'Смотреть на радаре: раунд откроется на таймлайне за 5 с до смерти, на паузе', 'Watch on the radar: the round opens on the timeline 5 s before the death, paused'}">
+                                                                    <controls:Icon Width="16" Height="16" Data="{StaticResource IconPlay}" />
+                                                                </Button>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </TabItem>
+
+                                <!-- Клатчи, пост-плант, ретейк -->
+                                <TabItem Header="{l:T 'Клатчи и бомба', 'Clutches and the bomb'}">
+                                    <StackPanel Spacing="14">
+                                        <ItemsControl ItemsSource="{Binding SituationSummaries}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate><UniformGrid Rows="1" ColumnSpacing="12" /></ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:SituationSummaryViewModel">
+                                                    <Border Classes="card" CornerRadius="14" Padding="16,14">
+                                                        <StackPanel Spacing="4">
+                                                            <TextBlock Classes="subtle" FontSize="12" Text="{Binding Title}" />
+                                                            <TextBlock Classes="mono" FontSize="24" FontWeight="SemiBold" Text="{Binding Value}" />
+                                                            <TextBlock Classes="subtle" FontSize="12" Text="{Binding Detail}" TextWrapping="Wrap" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <ListBox Theme="{StaticResource ChipList}" ItemsSource="{Binding SituationFilters}" SelectedItem="{Binding SelectedSituationFilter}"
+                                                 ItemTemplate="{StaticResource OptionTemplate}" />
+
+                                        <Grid ColumnDefinitions="*,14,380">
+                                            <Border Classes="card" Padding="18" VerticalAlignment="Top">
+                                                <StackPanel Spacing="12">
+                                                    <StackPanel Spacing="4">
+                                                        <TextBlock Classes="caption" Text="{l:T 'РАУНДЫ', 'ROUNDS'}" />
+                                                        <TextBlock Classes="hint" FontSize="12.5" TextWrapping="Wrap" Text="{Binding SituationHint}" />
+                                                    </StackPanel>
+                                                    <TextBlock Classes="subtle" FontSize="12.5" IsVisible="{Binding !SituationRows.Count}"
+                                                               Text="{l:T 'Таких раундов нет.', 'No such rounds.'}" />
+                                                    <ItemsControl ItemsSource="{Binding SituationRows}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:KeySituationRowViewModel">
+                                                                <Border Classes="inset" Padding="12,8" Margin="0,0,0,6">
+                                                                    <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
+                                                                        <Border Classes="badge" Classes.t="{Binding IsT}" Classes.ct="{Binding !IsT}" MinWidth="26"
+                                                                                VerticalAlignment="Top" Margin="0,2,0,0">
+                                                                            <TextBlock Text="{Binding SideText}" HorizontalAlignment="Center" />
+                                                                        </Border>
+                                                                        <StackPanel Grid.Column="1" Spacing="3">
+                                                                            <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding Header}" TextWrapping="Wrap" />
+                                                                            <TextBlock FontSize="12" Foreground="{StaticResource Text2Brush}" Text="{Binding DetailText}" TextWrapping="Wrap" />
+                                                                            <TextBlock FontSize="12" Text="{Binding OutcomeText}" Classes.positive="{Binding Won}" Classes.negative="{Binding !Won}" />
+                                                                        </StackPanel>
+                                                                        <Button Grid.Column="2" Classes="icon-button" VerticalAlignment="Center" IsEnabled="{Binding CanGoToTick}"
+                                                                                Command="{Binding $parent[ItemsControl].((vm:ReviewViewModel)DataContext).CopyGoToTickCommand}" CommandParameter="{Binding Moment}"
+                                                                                ToolTip.Tip="{l:T 'Скопировать demo_gototick — за 2 с до начала ситуации', 'Copy demo_gototick — 2 s before the situation starts'}">
+                                                                            <controls:Icon Width="16" Height="16" Data="{StaticResource IconCopy}" />
+                                                                        </Button>
+                                                                        <Button Grid.Column="3" Classes="icon-button" VerticalAlignment="Center"
+                                                                                Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).WatchMomentCommand}" CommandParameter="{Binding Moment}"
+                                                                                ToolTip.Tip="{l:T 'Смотреть на радаре: раунд откроется на таймлайне за 2 с до начала ситуации, на паузе', 'Watch on the radar: the round opens on the timeline 2 s before the situation starts, paused'}">
+                                                                            <controls:Icon Width="16" Height="16" Data="{StaticResource IconPlay}" />
+                                                                        </Button>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Border Grid.Column="2" Classes="card" Padding="18" VerticalAlignment="Top">
+                                                <StackPanel Spacing="10">
+                                                    <StackPanel Spacing="4">
+                                                        <TextBlock Classes="caption" Text="{l:T 'ПОЗИЦИИ', 'POSITIONS'}" />
+                                                        <TextBlock Classes="hint" FontSize="12.5" TextWrapping="Wrap"
+                                                                   Text="{l:T 'Где игрок стоит в этих ситуациях и как часто его команда выигрывает раунд (победы–поражения).', 'Where the player stands in these situations and how often the team wins the round (wins–losses).'}" />
+                                                    </StackPanel>
+                                                    <TextBlock Classes="subtle" FontSize="12.5" IsVisible="{Binding !PlaceRows.Count}" Text="—" />
+                                                    <ItemsControl ItemsSource="{Binding PlaceRows}" ItemTemplate="{StaticResource WinRateRowTemplate}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+                                    </StackPanel>
+                                </TabItem>
+
+                                <!-- Дуэли -->
+                                <TabItem Header="{l:T 'Дуэли', 'Duels'}">
+                                    <StackPanel Spacing="14">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock FontSize="13" Text="{Binding DuelSummary}" TextWrapping="Wrap" />
+                                            <TextBlock Classes="hint" FontSize="12.5" TextWrapping="Wrap"
+                                                       Text="{l:T 'Дуэль — убийство из оружия между игроком и противником (гранаты и бомба не считаются). «Выходил на угол» — за последнюю секунду перед дуэлью игрок сместился больше чем на ~1 м, «Держал угол» — стоял на месте.', 'A duel is a gun kill between the player and an enemy (grenades and the bomb do not count). Peeking: the player moved more than ~1 m in the last second before the duel; holding: they stood still.'}" />
+                                        </StackPanel>
+                                        <Grid ColumnDefinitions="*,14,*" RowDefinitions="Auto,14,Auto">
+                                            <Border Classes="card" Padding="18">
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock Classes="caption" Text="{l:T 'ДИСТАНЦИЯ', 'DISTANCE'}" />
+                                                    <ItemsControl ItemsSource="{Binding RangeRows}" ItemTemplate="{StaticResource WinRateRowTemplate}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Grid.Column="2" Classes="card" Padding="18">
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock Classes="caption" Text="{l:T 'СТОРОНА УГЛА', 'SIDE OF THE ANGLE'}" />
+                                                    <ItemsControl ItemsSource="{Binding StanceRows}" ItemTemplate="{StaticResource WinRateRowTemplate}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Grid.Row="2" Classes="card" Padding="18">
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock Classes="caption" Text="{l:T 'КЛАСС ОРУЖИЯ', 'WEAPON CLASS'}" />
+                                                    <ItemsControl ItemsSource="{Binding WeaponClassRows}" ItemTemplate="{StaticResource WinRateRowTemplate}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Grid.Row="2" Grid.Column="2" Classes="card" Padding="18">
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock Classes="caption" Text="{l:T 'ОРУЖИЕ', 'WEAPON'}" />
+                                                    <ItemsControl ItemsSource="{Binding WeaponRows}" ItemTemplate="{StaticResource WinRateRowTemplate}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+                                    </StackPanel>
+                                </TabItem>
+                            </TabControl>
+                        </StackPanel>
                     </ScrollViewer>
                 </DockPanel>
 

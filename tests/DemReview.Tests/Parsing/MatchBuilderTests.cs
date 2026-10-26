@@ -26,6 +26,21 @@ public class MatchBuilderTests
     private static MatchData Build(MatchBuilder b) => b.Build("x.dem", "de_mirage", 64, 100_000, "A", "B", 0, 0);
 
     [Fact]
+    public void Demo_tick_offset_and_victim_grenades_are_kept()
+    {
+        var b = new MatchBuilder();
+        b.RoundStart(5000);
+        b.FreezeEnd(5100, 1, 0, 0, isOvertime: false, isWarmup: false, Lineup(), demoTickOffset: 4000);
+        b.Kill(5500, Alice, Bob, null, "ak47", false, null, Vector3.Zero, [GrenadeType.Smoke, GrenadeType.Flashbang]);
+        b.RoundEnd(6000, Side.T, RoundEndReason.TerroristsWin);
+
+        var match = Build(b);
+
+        Assert.Equal(1500, match.Rounds[0].DemoTickOf(5500));
+        Assert.Equal([GrenadeType.Smoke, GrenadeType.Flashbang], match.Kills[0].VictimGrenades);
+    }
+
+    [Fact]
     public void Rounds_before_begin_new_match_are_discarded()
     {
         var b = new MatchBuilder();
