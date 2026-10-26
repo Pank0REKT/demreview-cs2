@@ -1,6 +1,15 @@
-# DemReview
+<div align="center">
 
-**English** · [Русский](README.ru.md) · [Website](https://pank0rekt.github.io/demreview-cs2/) · [Telegram](https://t.me/demreview)
+<h1>DemReview</h1>
+
+<img src="docs/images/logo.png" alt="DemReview logo" width="160">
+
+<a href="https://pank0rekt.github.io/demreview-cs2/"><img src="https://img.shields.io/badge/Website-demreview-E07A1F?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Website"></a>
+<a href="https://t.me/demreview"><img src="https://img.shields.io/badge/Telegram-%40demreview-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram"></a>
+
+<sub><b>English</b> · <a href="README.ru.md">Русский</a></sub>
+
+</div>
 
 DemReview is a desktop app that analyzes how **one specific player** behaves in a Counter-Strike 2 demo (`.dem`):
 where they go, which grenades they throw, how they react to the situation in a round, and which habits repeat

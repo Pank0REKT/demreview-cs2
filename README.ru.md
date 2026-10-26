@@ -1,6 +1,15 @@
-# DemReview
+<div align="center">
 
-[English](README.md) · **Русский** · [Сайт](https://pank0rekt.github.io/demreview-cs2/) · [Telegram](https://t.me/demreview)
+<h1>DemReview</h1>
+
+<img src="docs/images/logo.png" alt="Логотип DemReview" width="160">
+
+<a href="https://pank0rekt.github.io/demreview-cs2/"><img src="https://img.shields.io/badge/%D0%A1%D0%B0%D0%B9%D1%82-demreview-E07A1F?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Сайт"></a>
+<a href="https://t.me/demreview"><img src="https://img.shields.io/badge/Telegram-%40demreview-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram"></a>
+
+<sub><a href="README.md">English</a> · <b>Русский</b></sub>
+
+</div>
 
 DemReview — десктопное приложение для анализа поведения **конкретного игрока** по демке Counter-Strike 2 (`.dem`):
 как он перемещается по карте, какие гранаты кидает, как реагирует на ситуацию в раунде и какие привычки

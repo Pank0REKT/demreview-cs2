@@ -74,10 +74,8 @@
         <!-- ===== Полоса разделов ===== -->
         <Border BorderBrush="{StaticResource RailBorderBrush}" BorderThickness="0,0,1,0">
             <DockPanel Margin="0,16">
-                <Border DockPanel.Dock="Top" Width="38" Height="38" CornerRadius="11" Background="{StaticResource AccentBrush}"
-                        Margin="0,0,0,16" ToolTip.Tip="DemReview">
-                    <controls:Icon Width="22" Height="22" Brush="{StaticResource OnAccentBrush}" StrokeThickness="2" Data="{StaticResource IconLogo}" />
-                </Border>
+                <Image DockPanel.Dock="Top" Width="44" Height="44" Margin="0,0,0,12" Source="avares://DemReview/Assets/demreview.png"
+                       RenderOptions.BitmapInterpolationMode="HighQuality" ToolTip.Tip="DemReview" />
                 <Button DockPanel.Dock="Bottom" Classes="icon-button" Width="44" Height="44" CornerRadius="11" HorizontalAlignment="Center"
                         Background="{StaticResource CardBrush}" Command="{Binding OpenCommand}" IsEnabled="{Binding IsIdle}"
                         ToolTip.Tip="{l:T 'Открыть демку (Ctrl+O)', 'Open a demo (Ctrl+O)'}">
