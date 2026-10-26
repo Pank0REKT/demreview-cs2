@@ -1,6 +1,6 @@
 # DemReview
 
-**English** · [Русский](README.ru.md) · [Website](https://pank0rekt.github.io/demreview-cs2/)
+**English** · [Русский](README.ru.md) · [Website](https://pank0rekt.github.io/demreview-cs2/) · [Telegram](https://t.me/demreview)
 
 DemReview is a desktop app that analyzes how **one specific player** behaves in a Counter-Strike 2 demo (`.dem`):
 where they go, which grenades they throw, how they react to the situation in a round, and which habits repeat
@@ -12,6 +12,7 @@ demos of the same player and keep your own profile that grows with every match. 
 > **About the project.** DemReview is a pet project built with the help of [Claude Code](https://claude.com/claude-code).
 > It is fully open source under the [MIT License](LICENSE) and is maintained by me
 > ([@Pank0REKT](https://github.com/Pank0REKT)). Bug reports go to [Issues](../../issues), ideas and suggestions — to [Discussions](https://github.com/Pank0REKT/demreview-cs2/discussions/1).
+> News and updates are posted in the [Telegram channel](https://t.me/demreview).
 
 ## What it shows
 
@@ -36,6 +37,10 @@ demos of the same player and keep your own profile that grows with every match. 
   timeline a couple of seconds before it, paused, to watch the grenade fly.
 - **Lineup library.** Save the throws you like: position, angle and how it was thrown (jump throw, crouching, walking).
   One button copies `setpos` / `setang` so you can stand on the spot on your own server and practice the throw.
+- **Self-review.** Moments worth rewatching: deaths that weren't traded, deaths alone far from the team, deaths with
+  unused grenades (and how much money was lost), re-peeks after a won duel. One button copies `demo_gototick` with
+  the right tick, so you watch exactly that moment in CS2. Clutches, retakes and post-plants: where the player stands
+  and how often the round is won. Duels: wins and losses by distance, weapon and side of the angle (peeking or holding).
 - **Library and the profile across many demos.** Add a folder with demos and DemReview parses each one once and keeps
   the analysis. Pick a player (found in every demo by SteamID), a map and the demos, and patterns, roles, the radar and
   heatmaps are computed across all the rounds together. The profile is built from the library in seconds, even if the
@@ -71,8 +76,9 @@ Each release has `SHA256SUMS.txt` to verify the downloads.
 
 ## How to use
 
-The window has a section bar on the far left (*Radar*, *Stats*, *Profile*, *Grenades*, *Library*, *Settings*, and the open-demo button
-at the bottom), the match and its players next to it, and the selected section on the right.
+The window has a section bar on the far left (*Radar*, *Stats*, *Profile*, *Grenades*, *Review*, *Library*, *Settings*;
+at the bottom — the Telegram channel and the open-demo button), the match and its players next to it, and the selected
+section on the right.
 
 1. **Open a demo:** the *Open demo* button (Ctrl+O), drag a `.dem` file onto the window, or pass the path on the
    command line (on Windows you can use *Open with → DemReview*). Parsing runs in the background with progress at
@@ -103,13 +109,26 @@ at the bottom), the match and its players next to it, and the selected section o
      and can be renamed.
 
    How the player moved during the throw is recorded since v0.3.0; demos parsed earlier show it after a reparse (Shift+F5).
-8. **Library.** *Add a demo folder* parses every `.dem` in it (subfolders included) into the library; *Rescan* adds new
+8. **Review.** Tiles sum up the player's mistakes, clutches and duels. Three tabs:
+   - *Mistakes* — deaths with questionable moments, filtered by kind: *Not traded* (nobody killed the killer within 5 s
+     although teammates were alive), *Alone* (the nearest living teammate was over ~29 m away), *Unused grenades*
+     (which ones and how much they cost), *Re-peek* (died on the same spot within 4 s of their own kill);
+   - *Clutches and the bomb* — clutches (by matchup: 1v1, 1v2…), post-plants and retakes: each round with the
+     player's position and the outcome, and a table of positions with the round win rate;
+   - *Duels* — wins and losses by distance, weapon class, weapon and side of the angle (peeking — the player moved
+     in the last second before the duel, holding — stood still).
+
+   Next to every moment: ▶ opens it on the radar timeline, paused; copy puts `demo_gototick N` on the clipboard —
+   open the same demo in CS2 and paste the command into the console to watch the moment (5 s before a death,
+   2 s before a clutch or a plant). Unused grenades and demo ticks are recorded since v0.4.0; demos parsed earlier
+   show them after a reparse (Shift+F5).
+9. **Library.** *Add a demo folder* parses every `.dem` in it (subfolders included) into the library; *Rescan* adds new
    and changed demos from all folders. Pick a player (*My profile* selects you) and a map: the list shows the player's
    demos there with the score from their side and K / D / A. Tick the demos and press *Build the profile*: all sections
    (radar, statistics, profile) now show the combined match, with rounds numbered consecutively; the *Demos in the
    profile* card shows which rounds come from which demo. The profile is built per map, since habits differ from map
    to map. A single demo opens from the list too, from the file or, if it is gone, from the saved analysis.
-9. **Settings:** interface language, main player (your SteamID), the parsed demo cache (fill level, clearing), data and
+10. **Settings:** interface language, main player (your SteamID), the parsed demo cache (fill level, clearing), data and
    map folders, analysis thresholds, update check, usage statistics.
 
 ### Keyboard shortcuts
@@ -210,7 +229,7 @@ Self-contained single-file builds go to `artifacts/<rid>/`:
 | Project | Purpose |
 |---|---|
 | `DemReview.Domain` | Immutable models: match, rounds, players, position samples, grenades, events |
-| `DemReview.Application` | Analysis: routes, grenades and their effectiveness, lineups, damage, round context and economy, conditions → actions, heatmaps, filters, patterns, merging demos into a combined match, export, localization |
+| `DemReview.Application` | Analysis: routes, grenades and their effectiveness, lineups, damage, round context and economy, conditions → actions, heatmaps, filters, patterns, self-review (mistakes, clutches, duels), merging demos into a combined match, export, localization |
 | `DemReview.Infrastructure` | Demo parsing with [DemoFile.Net](https://github.com/saul/demofile-net), map data, SQLite cache and demo library (EF Core), lineup library (JSON), settings, update check, platform services |
 | `DemReview.Desktop` | Avalonia UI (MVVM with CommunityToolkit.Mvvm), radar control, DI host |
 | `DemReview.Tests` | xUnit v3 tests |
