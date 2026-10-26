@@ -331,6 +331,22 @@ public partial class MainWindowViewModel(
     [RelayCommand]
     private void OpenDataFolder() => platform.OpenFolder(platform.AppDataDirectory);
 
+    /// <summary>Telegram-канал проекта: новости и обновления.</summary>
+    public const string TelegramUrl = "https://t.me/demreview";
+
+    [RelayCommand]
+    private void OpenTelegram()
+    {
+        try
+        {
+            platform.OpenUrl(TelegramUrl);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Не удалось открыть ссылку {Url}", TelegramUrl);
+        }
+    }
+
     /// <summary>Загрузка демки: разбор в фоне, прогресс и отмена.</summary>
     [RelayCommand]
     public Task LoadFileAsync(string path) => LoadAsync(path, bypassCache: false);
