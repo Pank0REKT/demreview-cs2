@@ -49,6 +49,25 @@ public class MatchMergerTests
     }
 
     [Fact]
+    public void Demo_ticks_survive_the_tick_shift()
+    {
+        var a = Demo("a.dem");
+        a = a with { Rounds = a.Rounds.Select(r => r with { DemoTickOffset = 50 }).ToList() };
+
+        var merged = MatchMerger.Merge([new(a, Day), new(a, Day.AddDays(1))]);
+
+        for (var i = 0; i < 3; i++)
+        {
+            var original = a.Rounds[i];
+            var copy = merged.Rounds[i + 3];
+            var shift = copy.StartTick - original.StartTick;
+            Assert.True(shift > 0);
+            Assert.Equal(original.DemoTickOf(original.FreezeEndTick), copy.DemoTickOf(original.FreezeEndTick + shift));
+        }
+        Assert.All(merged.Kills, k => Assert.NotNull(k.VictimGrenades));
+    }
+
+    [Fact]
     public void Same_player_is_one_player_with_summed_stats()
     {
         var a = Demo("a.dem");

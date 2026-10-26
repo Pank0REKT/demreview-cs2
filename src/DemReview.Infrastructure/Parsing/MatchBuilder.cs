@@ -51,8 +51,9 @@ internal sealed class MatchBuilder
     public void RoundStart(int tick) => _pendingStartTick = tick;
 
     /// <summary>Конец фризтайма — с этого момента раунд считается начавшимся.</summary>
+    /// <param name="demoTickOffset">Игровой тик минус тик демки — для команды demo_gototick.</param>
     public void FreezeEnd(int tick, int number, int scoreT, int scoreCT, bool isOvertime, bool isWarmup,
-        IEnumerable<PlayerSnapshot> players)
+        IEnumerable<PlayerSnapshot> players, int? demoTickOffset = null)
     {
         if (isWarmup)
             return;
@@ -69,7 +70,7 @@ internal sealed class MatchBuilder
             player.Sides.Remove(number);
 
         var startTick = _pendingStartTick >= 0 && _pendingStartTick <= tick ? _pendingStartTick : tick;
-        _current = new OpenRound(number, startTick, tick, scoreT, scoreCT, isOvertime);
+        _current = new OpenRound(number, startTick, tick, scoreT, scoreCT, isOvertime, demoTickOffset);
         _pendingStartTick = -1;
 
         foreach (var snapshot in players)
@@ -101,14 +102,18 @@ internal sealed class MatchBuilder
             state.Sides[number] = snapshot.Side;
     }
 
+    /// <param name="victimGrenades">Неброшенные гранаты жертвы на момент смерти.</param>
     public void Kill(int tick, ulong? attacker, ulong victim, ulong? assister, string weapon, bool headshot,
-        Vector3? attackerPosition, Vector3 victimPosition)
+        Vector3? attackerPosition, Vector3 victimPosition, IReadOnlyList<GrenadeType>? victimGrenades = null)
     {
         // Убийства после конца раунда (добивания) относим к последнему раунду.
         if (CurrentRoundNumber is not { } round)
             return;
 
-        _kills.Add(new KillEvent(tick, round, attacker, victim, assister, weapon, headshot, attackerPosition, victimPosition));
+        _kills.Add(new KillEvent(tick, round, attacker, victim, assister, weapon, headshot, attackerPosition, victimPosition)
+        {
+            VictimGrenades = victimGrenades,
+        });
     }
 
     public void Bomb(int tick, BombEventType type, BombSite site, Vector3 position, ulong? player)
@@ -241,10 +246,11 @@ internal sealed class MatchBuilder
             kills, deaths, assists, new Dictionary<int, Side>(state.Sides));
     }
 
-    private sealed record OpenRound(int Number, int StartTick, int FreezeEndTick, int ScoreT, int ScoreCT, bool IsOvertime)
+    private sealed record OpenRound(int Number, int StartTick, int FreezeEndTick, int ScoreT, int ScoreCT, bool IsOvertime,
+        int? DemoTickOffset)
     {
         public RoundInfo Close(int endTick, Side winner, RoundEndReason reason) =>
-            new(Number, StartTick, FreezeEndTick, endTick, winner, reason, ScoreT, ScoreCT, IsOvertime);
+            new(Number, StartTick, FreezeEndTick, endTick, winner, reason, ScoreT, ScoreCT, IsOvertime) { DemoTickOffset = DemoTickOffset };
     }
 
     private sealed class PlayerState(ulong key)

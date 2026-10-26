@@ -75,9 +75,14 @@ internal sealed class SyntheticMatch
         return this;
     }
 
-    public SyntheticMatch Kill(int round, float seconds, ulong? attacker, ulong victim)
+    /// <param name="grenades">Неброшенные гранаты жертвы.</param>
+    public SyntheticMatch Kill(int round, float seconds, ulong? attacker, ulong victim, string weapon = "ak47",
+        IReadOnlyList<GrenadeType>? grenades = null)
     {
-        _kills.Add(new KillEvent(At(round, seconds), round, attacker, victim, null, "ak47", false, null, Vector3.Zero));
+        _kills.Add(new KillEvent(At(round, seconds), round, attacker, victim, null, weapon, false, null, Vector3.Zero)
+        {
+            VictimGrenades = grenades ?? [],
+        });
         return this;
     }
 

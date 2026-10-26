@@ -56,6 +56,8 @@ public static class MatchMerger
                     StartTick = Tick(r.StartTick),
                     FreezeEndTick = Tick(r.FreezeEndTick),
                     EndTick = Tick(r.EndTick),
+                    // Тики сдвинуты — тик демки для demo_gototick должен остаться прежним.
+                    DemoTickOffset = r.DemoTickOffset + tickOffset,
                 });
             }
 

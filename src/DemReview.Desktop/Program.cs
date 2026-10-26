@@ -76,6 +76,7 @@ internal static class Program
             .AddSingleton<IClipboardService, AvaloniaClipboardService>()
             .AddSingleton<RadarViewModel>()
             .AddSingleton<GrenadesViewModel>()
+            .AddSingleton<ReviewViewModel>()
             .AddSingleton<StatisticsViewModel>()
             .AddSingleton(CreateAppInfo())
             .AddSingleton<LanguageService>()

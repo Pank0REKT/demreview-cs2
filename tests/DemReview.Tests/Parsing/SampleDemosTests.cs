@@ -86,6 +86,24 @@ public class SampleDemosTests
 
         var flashes = grenades.Where(g => g.Type == GrenadeType.Flashbang).ToList();
         Assert.True(flashes.Count(f => f.FlashVictims.Count > 0) >= flashes.Count / 3, "Слишком мало флешек с ослеплёнными");
+
+        // demo_gototick: смещение тика демки известно для каждого раунда, тик демки — внутри демки.
+        Assert.All(match.Rounds, r => Assert.InRange(r.DemoTickOf(r.FreezeEndTick)!.Value, 1, r.FreezeEndTick));
+
+        // Неброшенные гранаты записаны у каждой смерти; у кого-то за матч они остаются (не больше 4 + вторая флешка).
+        Assert.All(match.Kills, k => Assert.NotNull(k.VictimGrenades));
+        Assert.Contains(match.Kills, k => k.VictimGrenades!.Count > 0);
+        Assert.All(match.Kills, k => Assert.InRange(k.VictimGrenades!.Count, 0, 5));
+
+        // Разбор игры работает для каждого игрока; дуэлей не больше, чем убийств и смертей игрока.
+        foreach (var player in match.Players)
+        {
+            var review = DemReview.Application.Review.SelfReview.Analyze(context, player.SteamId);
+            Assert.True(review.HasGrenadeData && review.HasDemoTicks);
+            Assert.True(review.Duels.Count <= player.Kills + player.Deaths + 2, $"{player.Name}: дуэлей {review.Duels.Count}");
+            Assert.All(review.Mistakes, m => Assert.Equal(player.SteamId, m.Death.VictimSteamId));
+        }
+        Assert.Contains(match.Players, p => DemReview.Application.Review.SelfReview.Analyze(context, p.SteamId).Situations.Count > 0);
     }
 
     /// <summary>

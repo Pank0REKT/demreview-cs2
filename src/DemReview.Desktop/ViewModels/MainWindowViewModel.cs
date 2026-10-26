@@ -21,6 +21,7 @@ public partial class MainWindowViewModel(
     StartupOptions startup,
     RadarViewModel radar,
     GrenadesViewModel grenades,
+    ReviewViewModel review,
     StatisticsViewModel statistics,
     ProfileViewModel profile,
     SettingsViewModel settings,
@@ -63,6 +64,8 @@ public partial class MainWindowViewModel(
 
     public GrenadesViewModel Grenades { get; } = grenades;
 
+    public ReviewViewModel Review { get; } = review;
+
     public StatisticsViewModel Statistics { get; } = statistics;
 
     public FilterViewModel Filter { get; } = CreateFilter(radar, statistics, logger);
@@ -73,7 +76,7 @@ public partial class MainWindowViewModel(
 
     public LibraryViewModel Library { get; } = library;
 
-    /// <summary>Вкладка центральной области: 0 — радар, 1 — статистика, 2 — профиль, 3 — гранаты, 4 — библиотека, 5 — настройки.</summary>
+    /// <summary>Вкладка центральной области: 0 — радар, 1 — статистика, 2 — профиль, 3 — гранаты, 4 — разбор, 5 — библиотека, 6 — настройки.</summary>
     [ObservableProperty]
     public partial int SelectedTabIndex { get; set; }
 
@@ -141,6 +144,8 @@ public partial class MainWindowViewModel(
 
     public bool IsGrenadesTab => SelectedTabIndex == GrenadesTabIndex;
 
+    public bool IsReviewTab => SelectedTabIndex == ReviewTabIndex;
+
     public bool IsLibraryTab => SelectedTabIndex == LibraryTabIndex;
 
     public bool IsSettingsTab => SelectedTabIndex == SettingsTabIndex;
@@ -163,6 +168,22 @@ public partial class MainWindowViewModel(
         SelectedTabIndex = 0;
         if (!Radar.WatchThrow(grenade))
             StatusText = Loc.T($"Не удалось открыть раунд {grenade.Round} на таймлайне.", $"Could not open round {grenade.Round} on the timeline.");
+    }
+
+    /// <summary>
+    /// «Смотреть на радаре» из раздела «Разбор»: раунд на таймлайне незадолго до момента, на паузе.
+    /// Если фильтр скрывает раунд, он сбрасывается.
+    /// </summary>
+    [RelayCommand]
+    private void WatchMoment(ReviewMoment? moment)
+    {
+        if (moment is null)
+            return;
+        if (!Radar.ShowsRound(moment.Round))
+            Filter.ResetCommand.Execute(null);
+        SelectedTabIndex = 0;
+        if (!Radar.WatchMoment(moment.Round, moment.Tick, moment.LeadSeconds))
+            StatusText = Loc.T($"Не удалось открыть раунд {moment.Round} на таймлайне.", $"Could not open round {moment.Round} on the timeline.");
     }
 
     [RelayCommand]
@@ -247,7 +268,8 @@ public partial class MainWindowViewModel(
         try
         {
             Grenades.ShowPlayer(steamId);
-            await Task.WhenAll(Radar.ShowPlayerAsync(steamId), Statistics.ShowPlayerAsync(steamId), Profile.ShowPlayerAsync(steamId));
+            await Task.WhenAll(Radar.ShowPlayerAsync(steamId), Statistics.ShowPlayerAsync(steamId), Profile.ShowPlayerAsync(steamId),
+                Review.ShowPlayerAsync(steamId));
         }
         catch (Exception ex)
         {
@@ -272,6 +294,7 @@ public partial class MainWindowViewModel(
         Library.OpenDemoRequested += entry => _ = OpenLibraryDemoAsync(entry);
         _ = Library.InitializeAsync();
         Grenades.Notice += text => StatusText = text;
+        Review.Notice += text => StatusText = text;
         _ = Grenades.InitializeAsync();
         _ = Settings.CheckOnStartupAsync();
         analytics.Track(AnalyticsEvents.AppStarted, new Dictionary<string, object> { ["language"] = Loc.Language.ToString() });
@@ -372,6 +395,7 @@ public partial class MainWindowViewModel(
         OnPropertyChanged(nameof(IsStatisticsTab));
         OnPropertyChanged(nameof(IsProfileTab));
         OnPropertyChanged(nameof(IsGrenadesTab));
+        OnPropertyChanged(nameof(IsReviewTab));
         OnPropertyChanged(nameof(IsLibraryTab));
         OnPropertyChanged(nameof(IsSettingsTab));
         if (value == SettingsTabIndex)
@@ -382,9 +406,11 @@ public partial class MainWindowViewModel(
 
     public const int GrenadesTabIndex = 3;
 
-    public const int LibraryTabIndex = 4;
+    public const int ReviewTabIndex = 4;
 
-    public const int SettingsTabIndex = 5;
+    public const int LibraryTabIndex = 5;
+
+    public const int SettingsTabIndex = 6;
 
     [RelayCommand]
     private void OpenSettings() => SelectedTabIndex = SettingsTabIndex;
@@ -396,6 +422,7 @@ public partial class MainWindowViewModel(
         Settings.RefreshLanguage();
         Library.RefreshLanguage();
         Grenades.RefreshLanguage();
+        Review.RefreshLanguage();
         if (IsBusy)
             return;
 
@@ -460,6 +487,7 @@ public partial class MainWindowViewModel(
         Statistics.SetMatch(match);
         Filter.SetMatch(match);
         Profile.SetMatch(match);
+        Review.SetMatch(match);
         _ = SetGrenadesMatchAsync(match);
 
         var mainSteamId = Settings.MainPlayerSteamId;
